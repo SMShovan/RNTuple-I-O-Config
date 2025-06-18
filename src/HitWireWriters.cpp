@@ -274,16 +274,6 @@ void generateAndWriteSpilHitAndWireDataSoA(int eventCount, int spilCount, int fi
 }
 
 void generateAndWriteHitWireDataAoS(int eventCount, int fieldSize) {
-    std::vector<HitAoS> hits;
-    std::vector<WireAoS> wires;
-    hits.reserve(eventCount * fieldSize);
-    wires.reserve(eventCount * fieldSize);
-    for (int i = 0; i < eventCount; ++i) {
-        for (int j = 0; j < fieldSize; ++j) {
-            hits.push_back(generateRandomHitAoS(i));
-            wires.push_back(generateRandomWireAoS(i));
-        }
-    }
     auto file = TFile::Open("./hitwire/HitWireAoS.root", "RECREATE");
     auto hitModel = ROOT::RNTupleModel::Create();
     auto eventID = hitModel->MakeField<long long>("EventID");
@@ -320,44 +310,47 @@ void generateAndWriteHitWireDataAoS(int eventCount, int fieldSize) {
     auto fSignalROI_data = wireModel->MakeField<float>("SignalROI_data");
     auto wireWriter = ROOT::RNTupleWriter::Append(std::move(wireModel), "WireAoS", *file);
 
-    for (const auto& h : hits) {
-        *eventID = h.EventID;
-        *fChannel = h.fChannel;
-        *fView = h.fView;
-        *fStartTick = h.fStartTick;
-        *fEndTick = h.fEndTick;
-        *fPeakTime = h.fPeakTime;
-        *fSigmaPeakTime = h.fSigmaPeakTime;
-        *fRMS = h.fRMS;
-        *fPeakAmplitude = h.fPeakAmplitude;
-        *fSigmaPeakAmplitude = h.fSigmaPeakAmplitude;
-        *fROISummedADC = h.fROISummedADC;
-        *fHitSummedADC = h.fHitSummedADC;
-        *fIntegral = h.fIntegral;
-        *fSigmaIntegral = h.fSigmaIntegral;
-        *fMultiplicity = h.fMultiplicity;
-        *fLocalIndex = h.fLocalIndex;
-        *fGoodnessOfFit = h.fGoodnessOfFit;
-        *fNDF = h.fNDF;
-        *fSignalType = h.fSignalType;
-        *fWireID_Cryostat = h.fWireID_Cryostat;
-        *fWireID_TPC = h.fWireID_TPC;
-        *fWireID_Plane = h.fWireID_Plane;
-        *fWireID_Wire = h.fWireID_Wire;
-        hitWriter->Fill();
+    for (int i = 0; i < eventCount; ++i) {
+        for (int j = 0; j < fieldSize; ++j) {
+            HitAoS hit = generateRandomHitAoS(i);
+            WireAoS wire = generateRandomWireAoS(i);
+            
+            *eventID = hit.EventID;
+            *fChannel = hit.fChannel;
+            *fView = hit.fView;
+            *fStartTick = hit.fStartTick;
+            *fEndTick = hit.fEndTick;
+            *fPeakTime = hit.fPeakTime;
+            *fSigmaPeakTime = hit.fSigmaPeakTime;
+            *fRMS = hit.fRMS;
+            *fPeakAmplitude = hit.fPeakAmplitude;
+            *fSigmaPeakAmplitude = hit.fSigmaPeakAmplitude;
+            *fROISummedADC = hit.fROISummedADC;
+            *fHitSummedADC = hit.fHitSummedADC;
+            *fIntegral = hit.fIntegral;
+            *fSigmaIntegral = hit.fSigmaIntegral;
+            *fMultiplicity = hit.fMultiplicity;
+            *fLocalIndex = hit.fLocalIndex;
+            *fGoodnessOfFit = hit.fGoodnessOfFit;
+            *fNDF = hit.fNDF;
+            *fSignalType = hit.fSignalType;
+            *fWireID_Cryostat = hit.fWireID_Cryostat;
+            *fWireID_TPC = hit.fWireID_TPC;
+            *fWireID_Plane = hit.fWireID_Plane;
+            *fWireID_Wire = hit.fWireID_Wire;
+            hitWriter->Fill();
+
+            *eventID_w = wire.EventID;
+            *fWire_Channel = wire.fWire_Channel;
+            *fWire_View = wire.fWire_View;
+            *fSignalROI_nROIs = wire.fSignalROI_nROIs;
+            *fSignalROI_offsets = wire.fSignalROI_offsets;
+            *fSignalROI_data = wire.fSignalROI_data;
+            wireWriter->Fill();
+        }
     }
     hitWriter->CommitCluster();
     hitWriter->CommitDataset();
-
-    for (const auto& w : wires) {
-        *eventID_w = w.EventID;
-        *fWire_Channel = w.fWire_Channel;
-        *fWire_View = w.fWire_View;
-        *fSignalROI_nROIs = w.fSignalROI_nROIs;
-        *fSignalROI_offsets = w.fSignalROI_offsets;
-        *fSignalROI_data = w.fSignalROI_data;
-        wireWriter->Fill();
-    }
     wireWriter->CommitCluster();
     wireWriter->CommitDataset();
     std::cout << "HitWireAoS RNTuple written to ./hitwire/HitWireAoS.root" << std::endl;
@@ -366,16 +359,6 @@ void generateAndWriteHitWireDataAoS(int eventCount, int fieldSize) {
 }
 
 void generateAndWriteSplitHitAndWireDataAoS(int eventCount, int fieldSize) {
-    std::vector<HitAoS> hits;
-    std::vector<WireAoS> wires;
-    hits.reserve(eventCount * fieldSize);
-    wires.reserve(eventCount * fieldSize);
-    for (int i = 0; i < eventCount; ++i) {
-        for (int j = 0; j < fieldSize; ++j) {
-            hits.push_back(generateRandomHitAoS(i));
-            wires.push_back(generateRandomWireAoS(i));
-        }
-    }
     auto file = TFile::Open("./hitwire/split_hitwireAoS.root", "RECREATE");
     // Hit dataset
     auto hitModel = ROOT::RNTupleModel::Create();
@@ -412,44 +395,52 @@ void generateAndWriteSplitHitAndWireDataAoS(int eventCount, int fieldSize) {
     auto fSignalROI_offsets = wireModel->MakeField<std::size_t>("SignalROI_offsets");
     auto fSignalROI_data = wireModel->MakeField<float>("SignalROI_data");
     auto wireWriter = ROOT::RNTupleWriter::Append(std::move(wireModel), "WireAoS", *file);
+    
     // Write hits
-    for (const auto& h : hits) {
-        *eventID_hit = h.EventID;
-        *fChannel = h.fChannel;
-        *fView = h.fView;
-        *fStartTick = h.fStartTick;
-        *fEndTick = h.fEndTick;
-        *fPeakTime = h.fPeakTime;
-        *fSigmaPeakTime = h.fSigmaPeakTime;
-        *fRMS = h.fRMS;
-        *fPeakAmplitude = h.fPeakAmplitude;
-        *fSigmaPeakAmplitude = h.fSigmaPeakAmplitude;
-        *fROISummedADC = h.fROISummedADC;
-        *fHitSummedADC = h.fHitSummedADC;
-        *fIntegral = h.fIntegral;
-        *fSigmaIntegral = h.fSigmaIntegral;
-        *fMultiplicity = h.fMultiplicity;
-        *fLocalIndex = h.fLocalIndex;
-        *fGoodnessOfFit = h.fGoodnessOfFit;
-        *fNDF = h.fNDF;
-        *fSignalType = h.fSignalType;
-        *fWireID_Cryostat = h.fWireID_Cryostat;
-        *fWireID_TPC = h.fWireID_TPC;
-        *fWireID_Plane = h.fWireID_Plane;
-        *fWireID_Wire = h.fWireID_Wire;
-        hitWriter->Fill();
+    for (int i = 0; i < eventCount; ++i) {
+        for (int j = 0; j < fieldSize; ++j) {
+            HitAoS h = generateRandomHitAoS(i);
+            *eventID_hit = h.EventID;
+            *fChannel = h.fChannel;
+            *fView = h.fView;
+            *fStartTick = h.fStartTick;
+            *fEndTick = h.fEndTick;
+            *fPeakTime = h.fPeakTime;
+            *fSigmaPeakTime = h.fSigmaPeakTime;
+            *fRMS = h.fRMS;
+            *fPeakAmplitude = h.fPeakAmplitude;
+            *fSigmaPeakAmplitude = h.fSigmaPeakAmplitude;
+            *fROISummedADC = h.fROISummedADC;
+            *fHitSummedADC = h.fHitSummedADC;
+            *fIntegral = h.fIntegral;
+            *fSigmaIntegral = h.fSigmaIntegral;
+            *fMultiplicity = h.fMultiplicity;
+            *fLocalIndex = h.fLocalIndex;
+            *fGoodnessOfFit = h.fGoodnessOfFit;
+            *fNDF = h.fNDF;
+            *fSignalType = h.fSignalType;
+            *fWireID_Cryostat = h.fWireID_Cryostat;
+            *fWireID_TPC = h.fWireID_TPC;
+            *fWireID_Plane = h.fWireID_Plane;
+            *fWireID_Wire = h.fWireID_Wire;
+            hitWriter->Fill();
+        }
     }
     hitWriter->CommitCluster();
     hitWriter->CommitDataset();
+    
     // Write wires
-    for (const auto& w : wires) {
-        *eventID_wire = w.EventID;
-        *fWire_Channel = w.fWire_Channel;
-        *fWire_View = w.fWire_View;
-        *fSignalROI_nROIs = w.fSignalROI_nROIs;
-        *fSignalROI_offsets = w.fSignalROI_offsets;
-        *fSignalROI_data = w.fSignalROI_data;
-        wireWriter->Fill();
+    for (int i = 0; i < eventCount; ++i) {
+        for (int j = 0; j < fieldSize; ++j) {
+            WireAoS w = generateRandomWireAoS(i);
+            *eventID_wire = w.EventID;
+            *fWire_Channel = w.fWire_Channel;
+            *fWire_View = w.fWire_View;
+            *fSignalROI_nROIs = w.fSignalROI_nROIs;
+            *fSignalROI_offsets = w.fSignalROI_offsets;
+            *fSignalROI_data = w.fSignalROI_data;
+            wireWriter->Fill();
+        }
     }
     wireWriter->CommitCluster();
     wireWriter->CommitDataset();
@@ -460,30 +451,16 @@ void generateAndWriteSplitHitAndWireDataAoS(int eventCount, int fieldSize) {
 
 void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fieldSize) {
     int adjustedFieldSize = fieldSize / spilCount;
-    struct HitAoSWithSpil : public HitAoS { int SpilID; };
-    struct WireAoSWithSpil : public WireAoS { int SpilID; };
-    std::vector<HitAoSWithSpil> hits;
-    std::vector<WireAoSWithSpil> wires;
-    hits.reserve(eventCount * spilCount * adjustedFieldSize);
-    wires.reserve(eventCount * spilCount * adjustedFieldSize);
-    for (int eventID = 0; eventID < eventCount; ++eventID) {
-        for (int spilID = 0; spilID < spilCount; ++spilID) {
-            for (int i = 0; i < adjustedFieldSize; ++i) {
-                HitAoS baseHit = generateRandomHitAoS(static_cast<long long>(eventID) * 10000 + spilID);
-                HitAoSWithSpil h;
-                static_cast<HitAoS&>(h) = baseHit;
-                h.SpilID = spilID;
-                hits.push_back(h);
-                WireAoS baseWire = generateRandomWireAoS(static_cast<long long>(eventID) * 10000 + spilID);
-                WireAoSWithSpil w;
-                static_cast<WireAoS&>(w) = baseWire;
-                w.SpilID = spilID;
-                wires.push_back(w);
-            }
-        }
-    }
-    // Write hits
+    
+    // Create directories if they do not exist using std::filesystem
+    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./hitwire/hitspils");
+    std::filesystem::create_directories("./hitwire/wirespils");
+
+    // Open shared files and writers for all hits and wires
     auto hitFile = TFile::Open("./hitwire/hitspils/hits_spil_all_AoS.root", "RECREATE");
+    auto wireFile = TFile::Open("./hitwire/wirespils/wires_spil_all_AoS.root", "RECREATE");
+
     auto hitModel = ROOT::RNTupleModel::Create();
     auto eventID_f = hitModel->MakeField<long long>("EventID");
     auto spilID_f = hitModel->MakeField<int>("SpilID");
@@ -510,39 +487,7 @@ void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fi
     auto fWireID_Plane = hitModel->MakeField<int>("WireID_Plane");
     auto fWireID_Wire = hitModel->MakeField<int>("WireID_Wire");
     auto hitWriter = ROOT::RNTupleWriter::Append(std::move(hitModel), "HitSpilAoS", *hitFile);
-    for (const auto& h : hits) {
-        *eventID_f = h.EventID;
-        *spilID_f = h.SpilID;
-        *fChannel = h.fChannel;
-        *fView = h.fView;
-        *fStartTick = h.fStartTick;
-        *fEndTick = h.fEndTick;
-        *fPeakTime = h.fPeakTime;
-        *fSigmaPeakTime = h.fSigmaPeakTime;
-        *fRMS = h.fRMS;
-        *fPeakAmplitude = h.fPeakAmplitude;
-        *fSigmaPeakAmplitude = h.fSigmaPeakAmplitude;
-        *fROISummedADC = h.fROISummedADC;
-        *fHitSummedADC = h.fHitSummedADC;
-        *fIntegral = h.fIntegral;
-        *fSigmaIntegral = h.fSigmaIntegral;
-        *fMultiplicity = h.fMultiplicity;
-        *fLocalIndex = h.fLocalIndex;
-        *fGoodnessOfFit = h.fGoodnessOfFit;
-        *fNDF = h.fNDF;
-        *fSignalType = h.fSignalType;
-        *fWireID_Cryostat = h.fWireID_Cryostat;
-        *fWireID_TPC = h.fWireID_TPC;
-        *fWireID_Plane = h.fWireID_Plane;
-        *fWireID_Wire = h.fWireID_Wire;
-        hitWriter->Fill();
-    }
-    hitWriter->CommitCluster();
-    hitWriter->CommitDataset();
-    hitFile->Close();
-    delete hitFile;
-    // Write wires
-    auto wireFile = TFile::Open("./hitwire/wirespils/wires_spil_all_AoS.root", "RECREATE");
+
     auto wireModel = ROOT::RNTupleModel::Create();
     auto eventID_w = wireModel->MakeField<long long>("EventID");
     auto spilID_w = wireModel->MakeField<int>("SpilID");
@@ -552,16 +497,55 @@ void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fi
     auto fSignalROI_offsets = wireModel->MakeField<std::size_t>("SignalROI_offsets");
     auto fSignalROI_data = wireModel->MakeField<float>("SignalROI_data");
     auto wireWriter = ROOT::RNTupleWriter::Append(std::move(wireModel), "WireSpilAoS", *wireFile);
-    for (const auto& w : wires) {
-        *eventID_w = w.EventID;
-        *spilID_w = w.SpilID;
-        *fWire_Channel = w.fWire_Channel;
-        *fWire_View = w.fWire_View;
-        *fSignalROI_nROIs = w.fSignalROI_nROIs;
-        *fSignalROI_offsets = w.fSignalROI_offsets;
-        *fSignalROI_data = w.fSignalROI_data;
-        wireWriter->Fill();
+
+    for (int eventID = 0; eventID < eventCount; ++eventID) {
+        for (int spilID = 0; spilID < spilCount; ++spilID) {
+            for (int i = 0; i < adjustedFieldSize; ++i) {
+                long long uniqueEventID = static_cast<long long>(eventID) * 10000 + spilID;
+                HitAoS hit = generateRandomHitAoS(uniqueEventID);
+                WireAoS wire = generateRandomWireAoS(uniqueEventID);
+
+                *eventID_f = hit.EventID;
+                *spilID_f = spilID;
+                *fChannel = hit.fChannel;
+                *fView = hit.fView;
+                *fStartTick = hit.fStartTick;
+                *fEndTick = hit.fEndTick;
+                *fPeakTime = hit.fPeakTime;
+                *fSigmaPeakTime = hit.fSigmaPeakTime;
+                *fRMS = hit.fRMS;
+                *fPeakAmplitude = hit.fPeakAmplitude;
+                *fSigmaPeakAmplitude = hit.fSigmaPeakAmplitude;
+                *fROISummedADC = hit.fROISummedADC;
+                *fHitSummedADC = hit.fHitSummedADC;
+                *fIntegral = hit.fIntegral;
+                *fSigmaIntegral = hit.fSigmaIntegral;
+                *fMultiplicity = hit.fMultiplicity;
+                *fLocalIndex = hit.fLocalIndex;
+                *fGoodnessOfFit = hit.fGoodnessOfFit;
+                *fNDF = hit.fNDF;
+                *fSignalType = hit.fSignalType;
+                *fWireID_Cryostat = hit.fWireID_Cryostat;
+                *fWireID_TPC = hit.fWireID_TPC;
+                *fWireID_Plane = hit.fWireID_Plane;
+                *fWireID_Wire = hit.fWireID_Wire;
+                hitWriter->Fill();
+
+                *eventID_w = wire.EventID;
+                *spilID_w = spilID;
+                *fWire_Channel = wire.fWire_Channel;
+                *fWire_View = wire.fWire_View;
+                *fSignalROI_nROIs = wire.fSignalROI_nROIs;
+                *fSignalROI_offsets = wire.fSignalROI_offsets;
+                *fSignalROI_data = wire.fSignalROI_data;
+                wireWriter->Fill();
+            }
+        }
     }
+    hitWriter->CommitCluster();
+    hitWriter->CommitDataset();
+    hitFile->Close();
+    delete hitFile;
     wireWriter->CommitCluster();
     wireWriter->CommitDataset();
     wireFile->Close();
