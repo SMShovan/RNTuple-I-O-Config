@@ -1,0 +1,22 @@
+# Build directories
+build/
+bin/
+
+# Generated files
+hitwire/
+*.root
+
+# OS files
+.DS_Store
+*.swp
+*~
+
+# IDE files
+.vscode/
+.idea/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
