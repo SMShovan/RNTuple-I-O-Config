@@ -5,12 +5,12 @@ int main() {
     int FieldSize = 6;
     int SpilCount = 3;
 
-    generateAndWriteHitWireDataSoA(EventCount, FieldSize);
-    generateAndWriteSplitHitAndWireDataSoA(EventCount, FieldSize);
-    generateAndWriteSpilHitAndWireDataSoA(EventCount, SpilCount, FieldSize);
-    generateAndWriteHitWireDataAoS(EventCount, FieldSize);
-    generateAndWriteSplitHitAndWireDataAoS(EventCount, FieldSize);
-    generateAndWriteSpilHitAndWireDataAoS(EventCount, SpilCount, FieldSize);
+    generateAndWriteHitWireDataSoA(EventCount, FieldSize, "./hitwire/HitWireSoA.root");
+    generateAndWriteSplitHitAndWireDataSoA(EventCount, FieldSize, "./hitwire/split_hitwire.root");
+    generateAndWriteSpilHitAndWireDataSoA(EventCount, SpilCount, FieldSize, "./hitwire/hitspils/hits_spil_all_SoA.root");
+    generateAndWriteHitWireDataAoS(EventCount, FieldSize, "./hitwire/HitWireAoS.root");
+    generateAndWriteSplitHitAndWireDataAoS(EventCount, FieldSize, "./hitwire/split_hitwireAoS.root");
+    generateAndWriteSpilHitAndWireDataAoS(EventCount, SpilCount, FieldSize, "./hitwire/hitspils/hits_spil_all_AoS.root");
     return 0;
 } 
 
