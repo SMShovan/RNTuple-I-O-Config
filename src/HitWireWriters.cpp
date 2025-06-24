@@ -11,282 +11,88 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
+#include <random>
 
 void generateAndWriteHitWireDataSoA(int eventCount, int fieldSize, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
-    
     // --- HIT NTUPLE ---
     auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID = hitModel->MakeField<long long>("EventID");
-    auto fChannel = hitModel->MakeField<std::vector<unsigned int>>("Channel");
-    auto fView = hitModel->MakeField<std::vector<int>>("View");
-    auto fStartTick = hitModel->MakeField<std::vector<int>>("StartTick");
-    auto fEndTick = hitModel->MakeField<std::vector<int>>("EndTick");
-    auto fPeakTime = hitModel->MakeField<std::vector<float>>("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<std::vector<float>>("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<std::vector<float>>("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<std::vector<float>>("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<std::vector<float>>("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<std::vector<float>>("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<std::vector<float>>("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<std::vector<short int>>("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<std::vector<short int>>("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<std::vector<int>>("NDF");
-    auto fSignalType = hitModel->MakeField<std::vector<int>>("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<std::vector<int>>("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<std::vector<int>>("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<std::vector<int>>("WireID_Wire");
+    hitModel->MakeField<long long>("EventID");
+    hitModel->MakeField<std::vector<unsigned int>>("Channel");
+    hitModel->MakeField<std::vector<int>>("View");
+    hitModel->MakeField<std::vector<int>>("StartTick");
+    hitModel->MakeField<std::vector<int>>("EndTick");
+    hitModel->MakeField<std::vector<float>>("PeakTime");
+    hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
+    hitModel->MakeField<std::vector<float>>("RMS");
+    hitModel->MakeField<std::vector<float>>("PeakAmplitude");
+    hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
+    hitModel->MakeField<std::vector<float>>("ROISummedADC");
+    hitModel->MakeField<std::vector<float>>("HitSummedADC");
+    hitModel->MakeField<std::vector<float>>("Integral");
+    hitModel->MakeField<std::vector<float>>("SigmaIntegral");
+    hitModel->MakeField<std::vector<short int>>("Multiplicity");
+    hitModel->MakeField<std::vector<short int>>("LocalIndex");
+    hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
+    hitModel->MakeField<std::vector<int>>("NDF");
+    hitModel->MakeField<std::vector<int>>("SignalType");
+    hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
+    hitModel->MakeField<std::vector<int>>("WireID_TPC");
+    hitModel->MakeField<std::vector<int>>("WireID_Plane");
+    hitModel->MakeField<std::vector<int>>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireSoA", file);
-    
     // --- WIRE NTUPLE ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    auto eventID_w = wireModel->MakeField<long long>("EventID");
-    auto fWire_Channel = wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
-    auto fWire_View = wireModel->MakeField<std::vector<int>>("Wire_View");
-    auto fSignalROI_nROIs = wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
-    auto fSignalROI_offsets = wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
-    auto fSignalROI_data = wireModel->MakeField<std::vector<float>>("SignalROI_data");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
+    wireModel->MakeField<std::vector<int>>("Wire_View");
+    wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
+    wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
+    wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireWireSoA", file);
-    
-    // --- Single-threaded approach to avoid race conditions ---
-    auto chrono_start = std::chrono::high_resolution_clock::now();
-    
-    // Create fill contexts and entries
-    auto hitFillContext = hitWriter->CreateFillContext();
-    auto hitEntry = hitFillContext->CreateEntry();
-    auto wireFillContext = wireWriter->CreateFillContext();
-    auto wireEntry = wireFillContext->CreateEntry();
-    
-    for (int i = 0; i < eventCount; ++i) {
-        HitSoA hit = generateRandomHitSoA(i, fieldSize);
-        WireSoA wire = generateRandomWireSoA(i, fieldSize);
-        
-        *eventID = hit.EventID;
-        *fChannel = hit.getChannel();
-        *fView = hit.getView();
-        *fStartTick = hit.getStartTick();
-        *fEndTick = hit.getEndTick();
-        *fPeakTime = hit.getPeakTime();
-        *fSigmaPeakTime = hit.getSigmaPeakTime();
-        *fRMS = hit.getRMS();
-        *fPeakAmplitude = hit.getPeakAmplitude();
-        *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
-        *fROISummedADC = hit.getROISummedADC();
-        *fHitSummedADC = hit.getHitSummedADC();
-        *fIntegral = hit.getIntegral();
-        *fSigmaIntegral = hit.getSigmaIntegral();
-        *fMultiplicity = hit.getMultiplicity();
-        *fLocalIndex = hit.getLocalIndex();
-        *fGoodnessOfFit = hit.getGoodnessOfFit();
-        *fNDF = hit.getNDF();
-        *fSignalType = hit.getSignalType();
-        *fWireID_Cryostat = hit.getWireID_Cryostat();
-        *fWireID_TPC = hit.getWireID_TPC();
-        *fWireID_Plane = hit.getWireID_Plane();
-        *fWireID_Wire = hit.getWireID_Wire();
-        hitFillContext->Fill(*hitEntry);
-        
-        *eventID_w = wire.EventID;
-        *fWire_Channel = wire.getWire_Channel();
-        *fWire_View = wire.getWire_View();
-        *fSignalROI_nROIs = wire.getSignalROI_nROIs();
-        *fSignalROI_offsets = wire.getSignalROI_offsets();
-        *fSignalROI_data = wire.getSignalROI_data();
-        wireFillContext->Fill(*wireEntry);
-    }
-    
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteHitWireDataSoA took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
-    // Writers go out of scope and flush/close automatically
-}
-
-void generateAndWriteSplitHitAndWireDataSoA(int eventCount, int fieldSize, const std::string& fileName) {
-    namespace EXP = ROOT::Experimental;
-
-    // Ensure output directory exists
-    std::filesystem::create_directories("./hitwire");
-
-    // Open the existing file in UPDATE mode
-    TFile file(fileName.c_str(), "UPDATE");
-
-    // --- HIT NTUPLE ---
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID_hit = hitModel->MakeField<long long>("EventID");
-    auto fChannel = hitModel->MakeField<std::vector<unsigned int>>("Channel");
-    auto fView = hitModel->MakeField<std::vector<int>>("View");
-    auto fStartTick = hitModel->MakeField<std::vector<int>>("StartTick");
-    auto fEndTick = hitModel->MakeField<std::vector<int>>("EndTick");
-    auto fPeakTime = hitModel->MakeField<std::vector<float>>("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<std::vector<float>>("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<std::vector<float>>("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<std::vector<float>>("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<std::vector<float>>("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<std::vector<float>>("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<std::vector<float>>("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<std::vector<short int>>("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<std::vector<short int>>("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<std::vector<int>>("NDF");
-    auto fSignalType = hitModel->MakeField<std::vector<int>>("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<std::vector<int>>("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<std::vector<int>>("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<std::vector<int>>("WireID_Wire");
-    auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitNTuple", file);
-
-    // --- WIRE NTUPLE ---
-    auto wireModel = ROOT::RNTupleModel::Create();
-    auto eventID_wire = wireModel->MakeField<long long>("EventID");
-    auto fWire_Channel = wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
-    auto fWire_View = wireModel->MakeField<std::vector<int>>("Wire_View");
-    auto fSignalROI_nROIs = wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
-    auto fSignalROI_offsets = wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
-    auto fSignalROI_data = wireModel->MakeField<std::vector<float>>("SignalROI_data");
-    auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireNTuple", file);
-
     // --- Parallel Fill Function ---
     auto fillFunc = [&](int start, int end) {
-        // Each thread gets its own fill context and entry for both ntuples
+        std::mt19937 rng(std::random_device{}());
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
-
+        // Per-thread, per-entry field pointers
+        auto eventID = hitEntry->GetPtr<long long>("EventID");
+        auto fChannel = hitEntry->GetPtr<std::vector<unsigned int>>("Channel");
+        auto fView = hitEntry->GetPtr<std::vector<int>>("View");
+        auto fStartTick = hitEntry->GetPtr<std::vector<int>>("StartTick");
+        auto fEndTick = hitEntry->GetPtr<std::vector<int>>("EndTick");
+        auto fPeakTime = hitEntry->GetPtr<std::vector<float>>("PeakTime");
+        auto fSigmaPeakTime = hitEntry->GetPtr<std::vector<float>>("SigmaPeakTime");
+        auto fRMS = hitEntry->GetPtr<std::vector<float>>("RMS");
+        auto fPeakAmplitude = hitEntry->GetPtr<std::vector<float>>("PeakAmplitude");
+        auto fSigmaPeakAmplitude = hitEntry->GetPtr<std::vector<float>>("SigmaPeakAmplitude");
+        auto fROISummedADC = hitEntry->GetPtr<std::vector<float>>("ROISummedADC");
+        auto fHitSummedADC = hitEntry->GetPtr<std::vector<float>>("HitSummedADC");
+        auto fIntegral = hitEntry->GetPtr<std::vector<float>>("Integral");
+        auto fSigmaIntegral = hitEntry->GetPtr<std::vector<float>>("SigmaIntegral");
+        auto fMultiplicity = hitEntry->GetPtr<std::vector<short int>>("Multiplicity");
+        auto fLocalIndex = hitEntry->GetPtr<std::vector<short int>>("LocalIndex");
+        auto fGoodnessOfFit = hitEntry->GetPtr<std::vector<float>>("GoodnessOfFit");
+        auto fNDF = hitEntry->GetPtr<std::vector<int>>("NDF");
+        auto fSignalType = hitEntry->GetPtr<std::vector<int>>("SignalType");
+        auto fWireID_Cryostat = hitEntry->GetPtr<std::vector<int>>("WireID_Cryostat");
+        auto fWireID_TPC = hitEntry->GetPtr<std::vector<int>>("WireID_TPC");
+        auto fWireID_Plane = hitEntry->GetPtr<std::vector<int>>("WireID_Plane");
+        auto fWireID_Wire = hitEntry->GetPtr<std::vector<int>>("WireID_Wire");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel = wireEntry->GetPtr<std::vector<unsigned int>>("Wire_Channel");
+        auto fWire_View = wireEntry->GetPtr<std::vector<int>>("Wire_View");
+        auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
+        auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
+        auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
         for (int i = start; i < end; ++i) {
-            // Generate data
-            HitSoA h = generateRandomHitSoA(i, fieldSize);
-            WireSoA w = generateRandomWireSoA(i, fieldSize);
-
-            // Set hit fields
-            *eventID_hit = h.EventID;
-            *fChannel = h.getChannel();
-            *fView = h.getView();
-            *fStartTick = h.getStartTick();
-            *fEndTick = h.getEndTick();
-            *fPeakTime = h.getPeakTime();
-            *fSigmaPeakTime = h.getSigmaPeakTime();
-            *fRMS = h.getRMS();
-            *fPeakAmplitude = h.getPeakAmplitude();
-            *fSigmaPeakAmplitude = h.getSigmaPeakAmplitude();
-            *fROISummedADC = h.getROISummedADC();
-            *fHitSummedADC = h.getHitSummedADC();
-            *fIntegral = h.getIntegral();
-            *fSigmaIntegral = h.getSigmaIntegral();
-            *fMultiplicity = h.getMultiplicity();
-            *fLocalIndex = h.getLocalIndex();
-            *fGoodnessOfFit = h.getGoodnessOfFit();
-            *fNDF = h.getNDF();
-            *fSignalType = h.getSignalType();
-            *fWireID_Cryostat = h.getWireID_Cryostat();
-            *fWireID_TPC = h.getWireID_TPC();
-            *fWireID_Plane = h.getWireID_Plane();
-            *fWireID_Wire = h.getWireID_Wire();
-            hitFillContext->Fill(*hitEntry);
-
-            // Set wire fields
-            *eventID_wire = w.EventID;
-            *fWire_Channel = w.getWire_Channel();
-            *fWire_View = w.getWire_View();
-            *fSignalROI_nROIs = w.getSignalROI_nROIs();
-            *fSignalROI_offsets = w.getSignalROI_offsets();
-            *fSignalROI_data = w.getSignalROI_data();
-            wireFillContext->Fill(*wireEntry);
-        }
-    };
-
-    // --- Thread Management ---
-    int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
-    }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteSplitHitAndWireDataSoA took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
-    // Writers go out of scope and flush/close automatically
-}
-
-void generateAndWriteSpilHitAndWireDataSoA(int eventCount, int spilCount, int fieldSize, const std::string& fileName) {
-    namespace EXP = ROOT::Experimental;
-
-    int adjustedFieldSize = fieldSize / spilCount;
-    std::filesystem::create_directories("./hitwire");
-    std::filesystem::create_directories("./hitwire/hitspils");
-    std::filesystem::create_directories("./hitwire/wirespils");
-
-    // Open the existing file in UPDATE mode
-    TFile file(fileName.c_str(), "UPDATE");
-
-    // --- HIT NTUPLE ---
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID_f = hitModel->MakeField<long long>("EventID");
-    auto spilID_f = hitModel->MakeField<int>("SpilID");
-    auto fChannel = hitModel->MakeField<std::vector<unsigned int>>("Channel");
-    auto fView = hitModel->MakeField<std::vector<int>>("View");
-    auto fStartTick = hitModel->MakeField<std::vector<int>>("StartTick");
-    auto fEndTick = hitModel->MakeField<std::vector<int>>("EndTick");
-    auto fPeakTime = hitModel->MakeField<std::vector<float>>("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<std::vector<float>>("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<std::vector<float>>("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<std::vector<float>>("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<std::vector<float>>("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<std::vector<float>>("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<std::vector<float>>("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<std::vector<short int>>("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<std::vector<short int>>("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<std::vector<int>>("NDF");
-    auto fSignalType = hitModel->MakeField<std::vector<int>>("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<std::vector<int>>("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<std::vector<int>>("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<std::vector<int>>("WireID_Wire");
-    auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilSoA", file);
-
-    // --- WIRE NTUPLE ---
-    auto wireModel = ROOT::RNTupleModel::Create();
-    auto eventID_w = wireModel->MakeField<long long>("EventID");
-    auto spilID_w = wireModel->MakeField<int>("SpilID");
-    auto fWire_Channel = wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
-    auto fWire_View = wireModel->MakeField<std::vector<int>>("Wire_View");
-    auto fSignalROI_nROIs = wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
-    auto fSignalROI_offsets = wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
-    auto fSignalROI_data = wireModel->MakeField<std::vector<float>>("SignalROI_data");
-    auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilSoA", file);
-
-    // --- Parallel Fill Function ---
-    int total = eventCount * spilCount;
-    auto fillFunc = [&](int start, int end) {
-        auto hitFillContext = hitWriter->CreateFillContext();
-        auto hitEntry = hitFillContext->CreateEntry();
-        auto wireFillContext = wireWriter->CreateFillContext();
-        auto wireEntry = wireFillContext->CreateEntry();
-        for (int idx = start; idx < end; ++idx) {
-            int eventID = idx / spilCount;
-            int spilID = idx % spilCount;
-            long long uniqueEventID = static_cast<long long>(eventID) * 10000 + spilID;
-            HitSoA hit = generateRandomHitSoA(uniqueEventID, adjustedFieldSize);
-            WireSoA wire = generateRandomWireSoA(uniqueEventID, adjustedFieldSize);
-            *eventID_f = hit.EventID;
-            *spilID_f = spilID;
+            HitSoA hit = generateRandomHitSoA(i, fieldSize, rng);
+            WireSoA wire = generateRandomWireSoA(i, fieldSize, rng);
+            *eventID = hit.EventID;
             *fChannel = hit.getChannel();
             *fView = hit.getView();
             *fStartTick = hit.getStartTick();
@@ -311,7 +117,6 @@ void generateAndWriteSpilHitAndWireDataSoA(int eventCount, int spilCount, int fi
             *fWireID_Wire = hit.getWireID_Wire();
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
-            *spilID_w = spilID;
             *fWire_Channel = wire.getWire_Channel();
             *fWire_View = wire.getWire_View();
             *fSignalROI_nROIs = wire.getSignalROI_nROIs();
@@ -320,7 +125,276 @@ void generateAndWriteSpilHitAndWireDataSoA(int eventCount, int spilCount, int fi
             wireFillContext->Fill(*wireEntry);
         }
     };
-    // --- Thread Management ---
+    int nThreads = std::thread::hardware_concurrency();
+    int chunk = eventCount / nThreads;
+    std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
+    for (int t = 0; t < nThreads; ++t) {
+        int start = t * chunk;
+        int end = (t == nThreads - 1) ? eventCount : start + chunk;
+        threads.emplace_back(fillFunc, start, end);
+    }
+    for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteHitWireDataSoA took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
+    // Writers go out of scope and flush/close automatically
+}
+
+void generateAndWriteSplitHitAndWireDataSoA(int eventCount, int fieldSize, const std::string& fileName) {
+    namespace EXP = ROOT::Experimental;
+    std::filesystem::create_directories("./hitwire");
+    TFile file(fileName.c_str(), "UPDATE");
+    // --- HIT NTUPLE ---
+    auto hitModel = ROOT::RNTupleModel::Create();
+    hitModel->MakeField<long long>("EventID");
+    hitModel->MakeField<std::vector<unsigned int>>("Channel");
+    hitModel->MakeField<std::vector<int>>("View");
+    hitModel->MakeField<std::vector<int>>("StartTick");
+    hitModel->MakeField<std::vector<int>>("EndTick");
+    hitModel->MakeField<std::vector<float>>("PeakTime");
+    hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
+    hitModel->MakeField<std::vector<float>>("RMS");
+    hitModel->MakeField<std::vector<float>>("PeakAmplitude");
+    hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
+    hitModel->MakeField<std::vector<float>>("ROISummedADC");
+    hitModel->MakeField<std::vector<float>>("HitSummedADC");
+    hitModel->MakeField<std::vector<float>>("Integral");
+    hitModel->MakeField<std::vector<float>>("SigmaIntegral");
+    hitModel->MakeField<std::vector<short int>>("Multiplicity");
+    hitModel->MakeField<std::vector<short int>>("LocalIndex");
+    hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
+    hitModel->MakeField<std::vector<int>>("NDF");
+    hitModel->MakeField<std::vector<int>>("SignalType");
+    hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
+    hitModel->MakeField<std::vector<int>>("WireID_TPC");
+    hitModel->MakeField<std::vector<int>>("WireID_Plane");
+    hitModel->MakeField<std::vector<int>>("WireID_Wire");
+    auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitNTuple", file);
+    // --- WIRE NTUPLE ---
+    auto wireModel = ROOT::RNTupleModel::Create();
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
+    wireModel->MakeField<std::vector<int>>("Wire_View");
+    wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
+    wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
+    wireModel->MakeField<std::vector<float>>("SignalROI_data");
+    auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireNTuple", file);
+    // --- Parallel Fill Function ---
+    auto fillFunc = [&](int start, int end) {
+        std::mt19937 rng(std::random_device{}());
+        auto hitFillContext = hitWriter->CreateFillContext();
+        auto hitEntry = hitFillContext->CreateEntry();
+        auto wireFillContext = wireWriter->CreateFillContext();
+        auto wireEntry = wireFillContext->CreateEntry();
+        // Per-thread, per-entry field pointers
+        auto eventID = hitEntry->GetPtr<long long>("EventID");
+        auto fChannel = hitEntry->GetPtr<std::vector<unsigned int>>("Channel");
+        auto fView = hitEntry->GetPtr<std::vector<int>>("View");
+        auto fStartTick = hitEntry->GetPtr<std::vector<int>>("StartTick");
+        auto fEndTick = hitEntry->GetPtr<std::vector<int>>("EndTick");
+        auto fPeakTime = hitEntry->GetPtr<std::vector<float>>("PeakTime");
+        auto fSigmaPeakTime = hitEntry->GetPtr<std::vector<float>>("SigmaPeakTime");
+        auto fRMS = hitEntry->GetPtr<std::vector<float>>("RMS");
+        auto fPeakAmplitude = hitEntry->GetPtr<std::vector<float>>("PeakAmplitude");
+        auto fSigmaPeakAmplitude = hitEntry->GetPtr<std::vector<float>>("SigmaPeakAmplitude");
+        auto fROISummedADC = hitEntry->GetPtr<std::vector<float>>("ROISummedADC");
+        auto fHitSummedADC = hitEntry->GetPtr<std::vector<float>>("HitSummedADC");
+        auto fIntegral = hitEntry->GetPtr<std::vector<float>>("Integral");
+        auto fSigmaIntegral = hitEntry->GetPtr<std::vector<float>>("SigmaIntegral");
+        auto fMultiplicity = hitEntry->GetPtr<std::vector<short int>>("Multiplicity");
+        auto fLocalIndex = hitEntry->GetPtr<std::vector<short int>>("LocalIndex");
+        auto fGoodnessOfFit = hitEntry->GetPtr<std::vector<float>>("GoodnessOfFit");
+        auto fNDF = hitEntry->GetPtr<std::vector<int>>("NDF");
+        auto fSignalType = hitEntry->GetPtr<std::vector<int>>("SignalType");
+        auto fWireID_Cryostat = hitEntry->GetPtr<std::vector<int>>("WireID_Cryostat");
+        auto fWireID_TPC = hitEntry->GetPtr<std::vector<int>>("WireID_TPC");
+        auto fWireID_Plane = hitEntry->GetPtr<std::vector<int>>("WireID_Plane");
+        auto fWireID_Wire = hitEntry->GetPtr<std::vector<int>>("WireID_Wire");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel = wireEntry->GetPtr<std::vector<unsigned int>>("Wire_Channel");
+        auto fWire_View = wireEntry->GetPtr<std::vector<int>>("Wire_View");
+        auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
+        auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
+        auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        for (int i = start; i < end; ++i) {
+            HitSoA hit = generateRandomHitSoA(i, fieldSize, rng);
+            WireSoA wire = generateRandomWireSoA(i, fieldSize, rng);
+            *eventID = hit.EventID;
+            *fChannel = hit.getChannel();
+            *fView = hit.getView();
+            *fStartTick = hit.getStartTick();
+            *fEndTick = hit.getEndTick();
+            *fPeakTime = hit.getPeakTime();
+            *fSigmaPeakTime = hit.getSigmaPeakTime();
+            *fRMS = hit.getRMS();
+            *fPeakAmplitude = hit.getPeakAmplitude();
+            *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
+            *fROISummedADC = hit.getROISummedADC();
+            *fHitSummedADC = hit.getHitSummedADC();
+            *fIntegral = hit.getIntegral();
+            *fSigmaIntegral = hit.getSigmaIntegral();
+            *fMultiplicity = hit.getMultiplicity();
+            *fLocalIndex = hit.getLocalIndex();
+            *fGoodnessOfFit = hit.getGoodnessOfFit();
+            *fNDF = hit.getNDF();
+            *fSignalType = hit.getSignalType();
+            *fWireID_Cryostat = hit.getWireID_Cryostat();
+            *fWireID_TPC = hit.getWireID_TPC();
+            *fWireID_Plane = hit.getWireID_Plane();
+            *fWireID_Wire = hit.getWireID_Wire();
+            hitFillContext->Fill(*hitEntry);
+            *eventID_w = wire.EventID;
+            *fWire_Channel = wire.getWire_Channel();
+            *fWire_View = wire.getWire_View();
+            *fSignalROI_nROIs = wire.getSignalROI_nROIs();
+            *fSignalROI_offsets = wire.getSignalROI_offsets();
+            *fSignalROI_data = wire.getSignalROI_data();
+            wireFillContext->Fill(*wireEntry);
+        }
+    };
+    int nThreads = std::thread::hardware_concurrency();
+    int chunk = eventCount / nThreads;
+    std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
+    for (int t = 0; t < nThreads; ++t) {
+        int start = t * chunk;
+        int end = (t == nThreads - 1) ? eventCount : start + chunk;
+        threads.emplace_back(fillFunc, start, end);
+    }
+    for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteSplitHitAndWireDataSoA took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
+    // Writers go out of scope and flush/close automatically
+}
+
+void generateAndWriteSpilHitAndWireDataSoA(int eventCount, int spilCount, int fieldSize, const std::string& fileName) {
+    namespace EXP = ROOT::Experimental;
+    int adjustedFieldSize = fieldSize / spilCount;
+    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./hitwire/hitspils");
+    std::filesystem::create_directories("./hitwire/wirespils");
+    TFile file(fileName.c_str(), "UPDATE");
+    // --- HIT NTUPLE ---
+    auto hitModel = ROOT::RNTupleModel::Create();
+    hitModel->MakeField<long long>("EventID");
+    hitModel->MakeField<int>("SpilID");
+    hitModel->MakeField<std::vector<unsigned int>>("Channel");
+    hitModel->MakeField<std::vector<int>>("View");
+    hitModel->MakeField<std::vector<int>>("StartTick");
+    hitModel->MakeField<std::vector<int>>("EndTick");
+    hitModel->MakeField<std::vector<float>>("PeakTime");
+    hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
+    hitModel->MakeField<std::vector<float>>("RMS");
+    hitModel->MakeField<std::vector<float>>("PeakAmplitude");
+    hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
+    hitModel->MakeField<std::vector<float>>("ROISummedADC");
+    hitModel->MakeField<std::vector<float>>("HitSummedADC");
+    hitModel->MakeField<std::vector<float>>("Integral");
+    hitModel->MakeField<std::vector<float>>("SigmaIntegral");
+    hitModel->MakeField<std::vector<short int>>("Multiplicity");
+    hitModel->MakeField<std::vector<short int>>("LocalIndex");
+    hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
+    hitModel->MakeField<std::vector<int>>("NDF");
+    hitModel->MakeField<std::vector<int>>("SignalType");
+    hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
+    hitModel->MakeField<std::vector<int>>("WireID_TPC");
+    hitModel->MakeField<std::vector<int>>("WireID_Plane");
+    hitModel->MakeField<std::vector<int>>("WireID_Wire");
+    auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilSoA", file);
+    // --- WIRE NTUPLE ---
+    auto wireModel = ROOT::RNTupleModel::Create();
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<int>("SpilID");
+    wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
+    wireModel->MakeField<std::vector<int>>("Wire_View");
+    wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
+    wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
+    wireModel->MakeField<std::vector<float>>("SignalROI_data");
+    auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilSoA", file);
+    int total = eventCount * spilCount;
+    auto fillFunc = [&](int start, int end) {
+        std::mt19937 rng(std::random_device{}());
+        auto hitFillContext = hitWriter->CreateFillContext();
+        auto hitEntry = hitFillContext->CreateEntry();
+        auto wireFillContext = wireWriter->CreateFillContext();
+        auto wireEntry = wireFillContext->CreateEntry();
+        // Per-thread, per-entry field pointers
+        auto eventID = hitEntry->GetPtr<long long>("EventID");
+        auto spilID = hitEntry->GetPtr<int>("SpilID");
+        auto fChannel = hitEntry->GetPtr<std::vector<unsigned int>>("Channel");
+        auto fView = hitEntry->GetPtr<std::vector<int>>("View");
+        auto fStartTick = hitEntry->GetPtr<std::vector<int>>("StartTick");
+        auto fEndTick = hitEntry->GetPtr<std::vector<int>>("EndTick");
+        auto fPeakTime = hitEntry->GetPtr<std::vector<float>>("PeakTime");
+        auto fSigmaPeakTime = hitEntry->GetPtr<std::vector<float>>("SigmaPeakTime");
+        auto fRMS = hitEntry->GetPtr<std::vector<float>>("RMS");
+        auto fPeakAmplitude = hitEntry->GetPtr<std::vector<float>>("PeakAmplitude");
+        auto fSigmaPeakAmplitude = hitEntry->GetPtr<std::vector<float>>("SigmaPeakAmplitude");
+        auto fROISummedADC = hitEntry->GetPtr<std::vector<float>>("ROISummedADC");
+        auto fHitSummedADC = hitEntry->GetPtr<std::vector<float>>("HitSummedADC");
+        auto fIntegral = hitEntry->GetPtr<std::vector<float>>("Integral");
+        auto fSigmaIntegral = hitEntry->GetPtr<std::vector<float>>("SigmaIntegral");
+        auto fMultiplicity = hitEntry->GetPtr<std::vector<short int>>("Multiplicity");
+        auto fLocalIndex = hitEntry->GetPtr<std::vector<short int>>("LocalIndex");
+        auto fGoodnessOfFit = hitEntry->GetPtr<std::vector<float>>("GoodnessOfFit");
+        auto fNDF = hitEntry->GetPtr<std::vector<int>>("NDF");
+        auto fSignalType = hitEntry->GetPtr<std::vector<int>>("SignalType");
+        auto fWireID_Cryostat = hitEntry->GetPtr<std::vector<int>>("WireID_Cryostat");
+        auto fWireID_TPC = hitEntry->GetPtr<std::vector<int>>("WireID_TPC");
+        auto fWireID_Plane = hitEntry->GetPtr<std::vector<int>>("WireID_Plane");
+        auto fWireID_Wire = hitEntry->GetPtr<std::vector<int>>("WireID_Wire");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto spilID_w = wireEntry->GetPtr<int>("SpilID");
+        auto fWire_Channel = wireEntry->GetPtr<std::vector<unsigned int>>("Wire_Channel");
+        auto fWire_View = wireEntry->GetPtr<std::vector<int>>("Wire_View");
+        auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
+        auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
+        auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        for (int idx = start; idx < end; ++idx) {
+            int eventID_val = idx / spilCount;
+            int spilID_val = idx % spilCount;
+            long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
+            HitSoA hit = generateRandomHitSoA(uniqueEventID, adjustedFieldSize, rng);
+            WireSoA wire = generateRandomWireSoA(uniqueEventID, adjustedFieldSize, rng);
+            *eventID = hit.EventID;
+            *spilID = spilID_val;
+            *fChannel = hit.getChannel();
+            *fView = hit.getView();
+            *fStartTick = hit.getStartTick();
+            *fEndTick = hit.getEndTick();
+            *fPeakTime = hit.getPeakTime();
+            *fSigmaPeakTime = hit.getSigmaPeakTime();
+            *fRMS = hit.getRMS();
+            *fPeakAmplitude = hit.getPeakAmplitude();
+            *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
+            *fROISummedADC = hit.getROISummedADC();
+            *fHitSummedADC = hit.getHitSummedADC();
+            *fIntegral = hit.getIntegral();
+            *fSigmaIntegral = hit.getSigmaIntegral();
+            *fMultiplicity = hit.getMultiplicity();
+            *fLocalIndex = hit.getLocalIndex();
+            *fGoodnessOfFit = hit.getGoodnessOfFit();
+            *fNDF = hit.getNDF();
+            *fSignalType = hit.getSignalType();
+            *fWireID_Cryostat = hit.getWireID_Cryostat();
+            *fWireID_TPC = hit.getWireID_TPC();
+            *fWireID_Plane = hit.getWireID_Plane();
+            *fWireID_Wire = hit.getWireID_Wire();
+            hitFillContext->Fill(*hitEntry);
+            *eventID_w = wire.EventID;
+            *spilID_w = spilID_val;
+            *fWire_Channel = wire.getWire_Channel();
+            *fWire_View = wire.getWire_View();
+            *fSignalROI_nROIs = wire.getSignalROI_nROIs();
+            *fSignalROI_offsets = wire.getSignalROI_offsets();
+            *fSignalROI_data = wire.getSignalROI_data();
+            wireFillContext->Fill(*wireEntry);
+        }
+    };
     int nThreads = std::thread::hardware_concurrency();
     int chunk = total / nThreads;
     std::vector<std::thread> threads;
@@ -344,48 +418,78 @@ void generateAndWriteHitWireDataAoS(int eventCount, int fieldSize, const std::st
     TFile file(fileName.c_str(), "UPDATE");
     // --- HIT NTUPLE ---
     auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID = hitModel->MakeField<long long>("EventID");
-    auto fChannel = hitModel->MakeField<unsigned int>("Channel");
-    auto fView = hitModel->MakeField<int>("View");
-    auto fStartTick = hitModel->MakeField<int>("StartTick");
-    auto fEndTick = hitModel->MakeField<int>("EndTick");
-    auto fPeakTime = hitModel->MakeField<float>("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<float>("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<float>("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<float>("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<float>("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<float>("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<float>("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<float>("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<float>("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<short int>("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<short int>("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<float>("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<int>("NDF");
-    auto fSignalType = hitModel->MakeField<int>("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<int>("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<int>("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<int>("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<int>("WireID_Wire");
+    hitModel->MakeField<long long>("EventID");
+    hitModel->MakeField<unsigned int>("Channel");
+    hitModel->MakeField<int>("View");
+    hitModel->MakeField<int>("StartTick");
+    hitModel->MakeField<int>("EndTick");
+    hitModel->MakeField<float>("PeakTime");
+    hitModel->MakeField<float>("SigmaPeakTime");
+    hitModel->MakeField<float>("RMS");
+    hitModel->MakeField<float>("PeakAmplitude");
+    hitModel->MakeField<float>("SigmaPeakAmplitude");
+    hitModel->MakeField<float>("ROISummedADC");
+    hitModel->MakeField<float>("HitSummedADC");
+    hitModel->MakeField<float>("Integral");
+    hitModel->MakeField<float>("SigmaIntegral");
+    hitModel->MakeField<short int>("Multiplicity");
+    hitModel->MakeField<short int>("LocalIndex");
+    hitModel->MakeField<float>("GoodnessOfFit");
+    hitModel->MakeField<int>("NDF");
+    hitModel->MakeField<int>("SignalType");
+    hitModel->MakeField<int>("WireID_Cryostat");
+    hitModel->MakeField<int>("WireID_TPC");
+    hitModel->MakeField<int>("WireID_Plane");
+    hitModel->MakeField<int>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireAoS", file);
     // --- WIRE NTUPLE ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    auto eventID_w = wireModel->MakeField<long long>("EventID");
-    auto fWire_Channel = wireModel->MakeField<unsigned int>("Wire_Channel");
-    auto fWire_View = wireModel->MakeField<int>("Wire_View");
-    auto fSignalROI_nROIs = wireModel->MakeField<unsigned int>("SignalROI_nROIs");
-    auto fSignalROI_offsets = wireModel->MakeField<std::size_t>("SignalROI_offsets");
-    auto fSignalROI_data = wireModel->MakeField<float>("SignalROI_data");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<unsigned int>("Wire_Channel");
+    wireModel->MakeField<int>("Wire_View");
+    wireModel->MakeField<unsigned int>("SignalROI_nROIs");
+    wireModel->MakeField<std::size_t>("SignalROI_offsets");
+    wireModel->MakeField<float>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireAoS", file);
-    // --- Parallel Fill Function ---
     auto fillFunc = [&](int start, int end) {
+        std::mt19937 rng(std::random_device{}());
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
+        // Per-thread, per-entry field pointers
+        auto eventID = hitEntry->GetPtr<long long>("EventID");
+        auto fChannel = hitEntry->GetPtr<unsigned int>("Channel");
+        auto fView = hitEntry->GetPtr<int>("View");
+        auto fStartTick = hitEntry->GetPtr<int>("StartTick");
+        auto fEndTick = hitEntry->GetPtr<int>("EndTick");
+        auto fPeakTime = hitEntry->GetPtr<float>("PeakTime");
+        auto fSigmaPeakTime = hitEntry->GetPtr<float>("SigmaPeakTime");
+        auto fRMS = hitEntry->GetPtr<float>("RMS");
+        auto fPeakAmplitude = hitEntry->GetPtr<float>("PeakAmplitude");
+        auto fSigmaPeakAmplitude = hitEntry->GetPtr<float>("SigmaPeakAmplitude");
+        auto fROISummedADC = hitEntry->GetPtr<float>("ROISummedADC");
+        auto fHitSummedADC = hitEntry->GetPtr<float>("HitSummedADC");
+        auto fIntegral = hitEntry->GetPtr<float>("Integral");
+        auto fSigmaIntegral = hitEntry->GetPtr<float>("SigmaIntegral");
+        auto fMultiplicity = hitEntry->GetPtr<short int>("Multiplicity");
+        auto fLocalIndex = hitEntry->GetPtr<short int>("LocalIndex");
+        auto fGoodnessOfFit = hitEntry->GetPtr<float>("GoodnessOfFit");
+        auto fNDF = hitEntry->GetPtr<int>("NDF");
+        auto fSignalType = hitEntry->GetPtr<int>("SignalType");
+        auto fWireID_Cryostat = hitEntry->GetPtr<int>("WireID_Cryostat");
+        auto fWireID_TPC = hitEntry->GetPtr<int>("WireID_TPC");
+        auto fWireID_Plane = hitEntry->GetPtr<int>("WireID_Plane");
+        auto fWireID_Wire = hitEntry->GetPtr<int>("WireID_Wire");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel = wireEntry->GetPtr<unsigned int>("Wire_Channel");
+        auto fWire_View = wireEntry->GetPtr<int>("Wire_View");
+        auto fSignalROI_nROIs = wireEntry->GetPtr<unsigned int>("SignalROI_nROIs");
+        auto fSignalROI_offsets = wireEntry->GetPtr<std::size_t>("SignalROI_offsets");
+        auto fSignalROI_data = wireEntry->GetPtr<float>("SignalROI_data");
         for (int i = start; i < end; ++i) {
-            HitAoS hit = generateRandomHitAoS(i);
-            WireAoS wire = generateRandomWireAoS(i);
+            HitAoS hit = generateRandomHitAoS(i, rng);
+            WireAoS wire = generateRandomWireAoS(i, rng);
             *eventID = hit.EventID;
             *fChannel = hit.fChannel;
             *fView = hit.fView;
@@ -438,95 +542,115 @@ void generateAndWriteHitWireDataAoS(int eventCount, int fieldSize, const std::st
 
 void generateAndWriteSplitHitAndWireDataAoS(int eventCount, int fieldSize, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-
-    // Ensure output directory exists
     std::filesystem::create_directories("./hitwire");
-
-    // Open the existing file in UPDATE mode
     TFile file(fileName.c_str(), "UPDATE");
-
     // --- HIT NTUPLE ---
     auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID_hit = hitModel->MakeField<long long>("EventID");
-    auto fChannel = hitModel->MakeField<unsigned int>("Channel");
-    auto fView = hitModel->MakeField<int>("View");
-    auto fStartTick = hitModel->MakeField<int>("StartTick");
-    auto fEndTick = hitModel->MakeField<int>("EndTick");
-    auto fPeakTime = hitModel->MakeField<float>("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<float>("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<float>("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<float>("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<float>("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<float>("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<float>("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<float>("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<float>("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<short int>("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<short int>("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<float>("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<int>("NDF");
-    auto fSignalType = hitModel->MakeField<int>("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<int>("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<int>("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<int>("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<int>("WireID_Wire");
+    hitModel->MakeField<long long>("EventID");
+    hitModel->MakeField<unsigned int>("Channel");
+    hitModel->MakeField<int>("View");
+    hitModel->MakeField<int>("StartTick");
+    hitModel->MakeField<int>("EndTick");
+    hitModel->MakeField<float>("PeakTime");
+    hitModel->MakeField<float>("SigmaPeakTime");
+    hitModel->MakeField<float>("RMS");
+    hitModel->MakeField<float>("PeakAmplitude");
+    hitModel->MakeField<float>("SigmaPeakAmplitude");
+    hitModel->MakeField<float>("ROISummedADC");
+    hitModel->MakeField<float>("HitSummedADC");
+    hitModel->MakeField<float>("Integral");
+    hitModel->MakeField<float>("SigmaIntegral");
+    hitModel->MakeField<short int>("Multiplicity");
+    hitModel->MakeField<short int>("LocalIndex");
+    hitModel->MakeField<float>("GoodnessOfFit");
+    hitModel->MakeField<int>("NDF");
+    hitModel->MakeField<int>("SignalType");
+    hitModel->MakeField<int>("WireID_Cryostat");
+    hitModel->MakeField<int>("WireID_TPC");
+    hitModel->MakeField<int>("WireID_Plane");
+    hitModel->MakeField<int>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitAoS", file);
-
     // --- WIRE NTUPLE ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    auto eventID_wire = wireModel->MakeField<long long>("EventID");
-    auto fWire_Channel = wireModel->MakeField<unsigned int>("Wire_Channel");
-    auto fWire_View = wireModel->MakeField<int>("Wire_View");
-    auto fSignalROI_nROIs = wireModel->MakeField<unsigned int>("SignalROI_nROIs");
-    auto fSignalROI_offsets = wireModel->MakeField<std::size_t>("SignalROI_offsets");
-    auto fSignalROI_data = wireModel->MakeField<float>("SignalROI_data");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<unsigned int>("Wire_Channel");
+    wireModel->MakeField<int>("Wire_View");
+    wireModel->MakeField<unsigned int>("SignalROI_nROIs");
+    wireModel->MakeField<std::size_t>("SignalROI_offsets");
+    wireModel->MakeField<float>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireAoS", file);
-
-    // --- Parallel Fill Function ---
     auto fillFunc = [&](int start, int end) {
+        std::mt19937 rng(std::random_device{}());
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
+        // Per-thread, per-entry field pointers
+        auto eventID = hitEntry->GetPtr<long long>("EventID");
+        auto fChannel = hitEntry->GetPtr<unsigned int>("Channel");
+        auto fView = hitEntry->GetPtr<int>("View");
+        auto fStartTick = hitEntry->GetPtr<int>("StartTick");
+        auto fEndTick = hitEntry->GetPtr<int>("EndTick");
+        auto fPeakTime = hitEntry->GetPtr<float>("PeakTime");
+        auto fSigmaPeakTime = hitEntry->GetPtr<float>("SigmaPeakTime");
+        auto fRMS = hitEntry->GetPtr<float>("RMS");
+        auto fPeakAmplitude = hitEntry->GetPtr<float>("PeakAmplitude");
+        auto fSigmaPeakAmplitude = hitEntry->GetPtr<float>("SigmaPeakAmplitude");
+        auto fROISummedADC = hitEntry->GetPtr<float>("ROISummedADC");
+        auto fHitSummedADC = hitEntry->GetPtr<float>("HitSummedADC");
+        auto fIntegral = hitEntry->GetPtr<float>("Integral");
+        auto fSigmaIntegral = hitEntry->GetPtr<float>("SigmaIntegral");
+        auto fMultiplicity = hitEntry->GetPtr<short int>("Multiplicity");
+        auto fLocalIndex = hitEntry->GetPtr<short int>("LocalIndex");
+        auto fGoodnessOfFit = hitEntry->GetPtr<float>("GoodnessOfFit");
+        auto fNDF = hitEntry->GetPtr<int>("NDF");
+        auto fSignalType = hitEntry->GetPtr<int>("SignalType");
+        auto fWireID_Cryostat = hitEntry->GetPtr<int>("WireID_Cryostat");
+        auto fWireID_TPC = hitEntry->GetPtr<int>("WireID_TPC");
+        auto fWireID_Plane = hitEntry->GetPtr<int>("WireID_Plane");
+        auto fWireID_Wire = hitEntry->GetPtr<int>("WireID_Wire");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel = wireEntry->GetPtr<unsigned int>("Wire_Channel");
+        auto fWire_View = wireEntry->GetPtr<int>("Wire_View");
+        auto fSignalROI_nROIs = wireEntry->GetPtr<unsigned int>("SignalROI_nROIs");
+        auto fSignalROI_offsets = wireEntry->GetPtr<std::size_t>("SignalROI_offsets");
+        auto fSignalROI_data = wireEntry->GetPtr<float>("SignalROI_data");
         for (int i = start; i < end; ++i) {
-            HitAoS h = generateRandomHitAoS(i);
-            WireAoS w = generateRandomWireAoS(i);
-            // Set hit fields
-            *eventID_hit = h.EventID;
-            *fChannel = h.fChannel;
-            *fView = h.fView;
-            *fStartTick = h.fStartTick;
-            *fEndTick = h.fEndTick;
-            *fPeakTime = h.fPeakTime;
-            *fSigmaPeakTime = h.fSigmaPeakTime;
-            *fRMS = h.fRMS;
-            *fPeakAmplitude = h.fPeakAmplitude;
-            *fSigmaPeakAmplitude = h.fSigmaPeakAmplitude;
-            *fROISummedADC = h.fROISummedADC;
-            *fHitSummedADC = h.fHitSummedADC;
-            *fIntegral = h.fIntegral;
-            *fSigmaIntegral = h.fSigmaIntegral;
-            *fMultiplicity = h.fMultiplicity;
-            *fLocalIndex = h.fLocalIndex;
-            *fGoodnessOfFit = h.fGoodnessOfFit;
-            *fNDF = h.fNDF;
-            *fSignalType = h.fSignalType;
-            *fWireID_Cryostat = h.fWireID_Cryostat;
-            *fWireID_TPC = h.fWireID_TPC;
-            *fWireID_Plane = h.fWireID_Plane;
-            *fWireID_Wire = h.fWireID_Wire;
+            HitAoS hit = generateRandomHitAoS(i, rng);
+            WireAoS wire = generateRandomWireAoS(i, rng);
+            *eventID = hit.EventID;
+            *fChannel = hit.fChannel;
+            *fView = hit.fView;
+            *fStartTick = hit.fStartTick;
+            *fEndTick = hit.fEndTick;
+            *fPeakTime = hit.fPeakTime;
+            *fSigmaPeakTime = hit.fSigmaPeakTime;
+            *fRMS = hit.fRMS;
+            *fPeakAmplitude = hit.fPeakAmplitude;
+            *fSigmaPeakAmplitude = hit.fSigmaPeakAmplitude;
+            *fROISummedADC = hit.fROISummedADC;
+            *fHitSummedADC = hit.fHitSummedADC;
+            *fIntegral = hit.fIntegral;
+            *fSigmaIntegral = hit.fSigmaIntegral;
+            *fMultiplicity = hit.fMultiplicity;
+            *fLocalIndex = hit.fLocalIndex;
+            *fGoodnessOfFit = hit.fGoodnessOfFit;
+            *fNDF = hit.fNDF;
+            *fSignalType = hit.fSignalType;
+            *fWireID_Cryostat = hit.fWireID_Cryostat;
+            *fWireID_TPC = hit.fWireID_TPC;
+            *fWireID_Plane = hit.fWireID_Plane;
+            *fWireID_Wire = hit.fWireID_Wire;
             hitFillContext->Fill(*hitEntry);
-            // Set wire fields
-            *eventID_wire = w.EventID;
-            *fWire_Channel = w.fWire_Channel;
-            *fWire_View = w.fWire_View;
-            *fSignalROI_nROIs = w.fSignalROI_nROIs;
-            *fSignalROI_offsets = w.fSignalROI_offsets;
-            *fSignalROI_data = w.fSignalROI_data;
+            *eventID_w = wire.EventID;
+            *fWire_Channel = wire.fWire_Channel;
+            *fWire_View = wire.fWire_View;
+            *fSignalROI_nROIs = wire.fSignalROI_nROIs;
+            *fSignalROI_offsets = wire.fSignalROI_offsets;
+            *fSignalROI_data = wire.fSignalROI_data;
             wireFillContext->Fill(*wireEntry);
         }
     };
-    // --- Thread Management ---
     int nThreads = std::thread::hardware_concurrency();
     int chunk = eventCount / nThreads;
     std::vector<std::thread> threads;
@@ -546,70 +670,96 @@ void generateAndWriteSplitHitAndWireDataAoS(int eventCount, int fieldSize, const
 
 void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fieldSize, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-
     int adjustedFieldSize = fieldSize / spilCount;
     std::filesystem::create_directories("./hitwire");
     std::filesystem::create_directories("./hitwire/hitspils");
     std::filesystem::create_directories("./hitwire/wirespils");
-
-    // Open the existing file in UPDATE mode
     TFile file(fileName.c_str(), "UPDATE");
-
     // --- HIT NTUPLE ---
     auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID_f = hitModel->MakeField<long long>("EventID");
-    auto spilID_f = hitModel->MakeField<int>("SpilID");
-    auto fChannel = hitModel->MakeField<unsigned int>("Channel");
-    auto fView = hitModel->MakeField<int>("View");
-    auto fStartTick = hitModel->MakeField<int>("StartTick");
-    auto fEndTick = hitModel->MakeField<int>("EndTick");
-    auto fPeakTime = hitModel->MakeField<float>("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<float>("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<float>("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<float>("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<float>("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<float>("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<float>("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<float>("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<float>("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<short int>("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<short int>("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<float>("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<int>("NDF");
-    auto fSignalType = hitModel->MakeField<int>("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<int>("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<int>("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<int>("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<int>("WireID_Wire");
+    hitModel->MakeField<long long>("EventID");
+    hitModel->MakeField<int>("SpilID");
+    hitModel->MakeField<unsigned int>("Channel");
+    hitModel->MakeField<int>("View");
+    hitModel->MakeField<int>("StartTick");
+    hitModel->MakeField<int>("EndTick");
+    hitModel->MakeField<float>("PeakTime");
+    hitModel->MakeField<float>("SigmaPeakTime");
+    hitModel->MakeField<float>("RMS");
+    hitModel->MakeField<float>("PeakAmplitude");
+    hitModel->MakeField<float>("SigmaPeakAmplitude");
+    hitModel->MakeField<float>("ROISummedADC");
+    hitModel->MakeField<float>("HitSummedADC");
+    hitModel->MakeField<float>("Integral");
+    hitModel->MakeField<float>("SigmaIntegral");
+    hitModel->MakeField<short int>("Multiplicity");
+    hitModel->MakeField<short int>("LocalIndex");
+    hitModel->MakeField<float>("GoodnessOfFit");
+    hitModel->MakeField<int>("NDF");
+    hitModel->MakeField<int>("SignalType");
+    hitModel->MakeField<int>("WireID_Cryostat");
+    hitModel->MakeField<int>("WireID_TPC");
+    hitModel->MakeField<int>("WireID_Plane");
+    hitModel->MakeField<int>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilAoS", file);
-
     // --- WIRE NTUPLE ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    auto eventID_w = wireModel->MakeField<long long>("EventID");
-    auto spilID_w = wireModel->MakeField<int>("SpilID");
-    auto fWire_Channel = wireModel->MakeField<unsigned int>("Wire_Channel");
-    auto fWire_View = wireModel->MakeField<int>("Wire_View");
-    auto fSignalROI_nROIs = wireModel->MakeField<unsigned int>("SignalROI_nROIs");
-    auto fSignalROI_offsets = wireModel->MakeField<std::size_t>("SignalROI_offsets");
-    auto fSignalROI_data = wireModel->MakeField<float>("SignalROI_data");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<int>("SpilID");
+    wireModel->MakeField<unsigned int>("Wire_Channel");
+    wireModel->MakeField<int>("Wire_View");
+    wireModel->MakeField<unsigned int>("SignalROI_nROIs");
+    wireModel->MakeField<std::size_t>("SignalROI_offsets");
+    wireModel->MakeField<float>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilAoS", file);
-
-    // --- Parallel Fill Function ---
     int total = eventCount * spilCount;
     auto fillFunc = [&](int start, int end) {
+        std::mt19937 rng(std::random_device{}());
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
+        // Per-thread, per-entry field pointers
+        auto eventID = hitEntry->GetPtr<long long>("EventID");
+        auto spilID = hitEntry->GetPtr<int>("SpilID");
+        auto fChannel = hitEntry->GetPtr<unsigned int>("Channel");
+        auto fView = hitEntry->GetPtr<int>("View");
+        auto fStartTick = hitEntry->GetPtr<int>("StartTick");
+        auto fEndTick = hitEntry->GetPtr<int>("EndTick");
+        auto fPeakTime = hitEntry->GetPtr<float>("PeakTime");
+        auto fSigmaPeakTime = hitEntry->GetPtr<float>("SigmaPeakTime");
+        auto fRMS = hitEntry->GetPtr<float>("RMS");
+        auto fPeakAmplitude = hitEntry->GetPtr<float>("PeakAmplitude");
+        auto fSigmaPeakAmplitude = hitEntry->GetPtr<float>("SigmaPeakAmplitude");
+        auto fROISummedADC = hitEntry->GetPtr<float>("ROISummedADC");
+        auto fHitSummedADC = hitEntry->GetPtr<float>("HitSummedADC");
+        auto fIntegral = hitEntry->GetPtr<float>("Integral");
+        auto fSigmaIntegral = hitEntry->GetPtr<float>("SigmaIntegral");
+        auto fMultiplicity = hitEntry->GetPtr<short int>("Multiplicity");
+        auto fLocalIndex = hitEntry->GetPtr<short int>("LocalIndex");
+        auto fGoodnessOfFit = hitEntry->GetPtr<float>("GoodnessOfFit");
+        auto fNDF = hitEntry->GetPtr<int>("NDF");
+        auto fSignalType = hitEntry->GetPtr<int>("SignalType");
+        auto fWireID_Cryostat = hitEntry->GetPtr<int>("WireID_Cryostat");
+        auto fWireID_TPC = hitEntry->GetPtr<int>("WireID_TPC");
+        auto fWireID_Plane = hitEntry->GetPtr<int>("WireID_Plane");
+        auto fWireID_Wire = hitEntry->GetPtr<int>("WireID_Wire");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto spilID_w = wireEntry->GetPtr<int>("SpilID");
+        auto fWire_Channel = wireEntry->GetPtr<unsigned int>("Wire_Channel");
+        auto fWire_View = wireEntry->GetPtr<int>("Wire_View");
+        auto fSignalROI_nROIs = wireEntry->GetPtr<unsigned int>("SignalROI_nROIs");
+        auto fSignalROI_offsets = wireEntry->GetPtr<std::size_t>("SignalROI_offsets");
+        auto fSignalROI_data = wireEntry->GetPtr<float>("SignalROI_data");
         for (int idx = start; idx < end; ++idx) {
-            int eventID = idx / spilCount;
-            int spilID = idx % spilCount;
-            long long uniqueEventID = static_cast<long long>(eventID) * 10000 + spilID;
+            int eventID_val = idx / spilCount;
+            int spilID_val = idx % spilCount;
+            long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
             for (int i = 0; i < adjustedFieldSize; ++i) {
-                HitAoS hit = generateRandomHitAoS(uniqueEventID);
-                WireAoS wire = generateRandomWireAoS(uniqueEventID);
-                *eventID_f = hit.EventID;
-                *spilID_f = spilID;
+                HitAoS hit = generateRandomHitAoS(uniqueEventID, rng);
+                WireAoS wire = generateRandomWireAoS(uniqueEventID, rng);
+                *eventID = hit.EventID;
+                *spilID = spilID_val;
                 *fChannel = hit.fChannel;
                 *fView = hit.fView;
                 *fStartTick = hit.fStartTick;
@@ -634,7 +784,7 @@ void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fi
                 *fWireID_Wire = hit.fWireID_Wire;
                 hitFillContext->Fill(*hitEntry);
                 *eventID_w = wire.EventID;
-                *spilID_w = spilID;
+                *spilID_w = spilID_val;
                 *fWire_Channel = wire.fWire_Channel;
                 *fWire_View = wire.fWire_View;
                 *fSignalROI_nROIs = wire.fSignalROI_nROIs;
@@ -644,7 +794,6 @@ void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fi
             }
         }
     };
-    // --- Thread Management ---
     int nThreads = std::thread::hardware_concurrency();
     int chunk = total / nThreads;
     std::vector<std::thread> threads;
