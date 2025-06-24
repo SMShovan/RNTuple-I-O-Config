@@ -6,15 +6,17 @@
 #include <ROOT/RNTupleWriter.hxx>
 #include <ROOT/RNTupleParallelWriter.hxx>
 #include <TFile.h>
-#include <iostream>
 #include <filesystem>
 #include <thread>
 #include <vector>
+#include <chrono>
+#include <iostream>
 
 void generateAndWriteHitWireDataSoA(int eventCount, int fieldSize, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
+    
     // --- HIT NTUPLE ---
     auto hitModel = ROOT::RNTupleModel::Create();
     auto eventID = hitModel->MakeField<long long>("EventID");
@@ -41,6 +43,7 @@ void generateAndWriteHitWireDataSoA(int eventCount, int fieldSize, const std::st
     auto fWireID_Plane = hitModel->MakeField<std::vector<int>>("WireID_Plane");
     auto fWireID_Wire = hitModel->MakeField<std::vector<int>>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireSoA", file);
+    
     // --- WIRE NTUPLE ---
     auto wireModel = ROOT::RNTupleModel::Create();
     auto eventID_w = wireModel->MakeField<long long>("EventID");
@@ -50,57 +53,58 @@ void generateAndWriteHitWireDataSoA(int eventCount, int fieldSize, const std::st
     auto fSignalROI_offsets = wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
     auto fSignalROI_data = wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireWireSoA", file);
-    // --- Parallel Fill Function ---
-    auto fillFunc = [&](int start, int end) {
-        auto hitFillContext = hitWriter->CreateFillContext();
-        auto hitEntry = hitFillContext->CreateEntry();
-        auto wireFillContext = wireWriter->CreateFillContext();
-        auto wireEntry = wireFillContext->CreateEntry();
-        for (int i = start; i < end; ++i) {
-            HitSoA hit = generateRandomHitSoA(i, fieldSize);
-            WireSoA wire = generateRandomWireSoA(i, fieldSize);
-            *eventID = hit.EventID;
-            *fChannel = hit.getChannel();
-            *fView = hit.getView();
-            *fStartTick = hit.getStartTick();
-            *fEndTick = hit.getEndTick();
-            *fPeakTime = hit.getPeakTime();
-            *fSigmaPeakTime = hit.getSigmaPeakTime();
-            *fRMS = hit.getRMS();
-            *fPeakAmplitude = hit.getPeakAmplitude();
-            *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
-            *fROISummedADC = hit.getROISummedADC();
-            *fHitSummedADC = hit.getHitSummedADC();
-            *fIntegral = hit.getIntegral();
-            *fSigmaIntegral = hit.getSigmaIntegral();
-            *fMultiplicity = hit.getMultiplicity();
-            *fLocalIndex = hit.getLocalIndex();
-            *fGoodnessOfFit = hit.getGoodnessOfFit();
-            *fNDF = hit.getNDF();
-            *fSignalType = hit.getSignalType();
-            *fWireID_Cryostat = hit.getWireID_Cryostat();
-            *fWireID_TPC = hit.getWireID_TPC();
-            *fWireID_Plane = hit.getWireID_Plane();
-            *fWireID_Wire = hit.getWireID_Wire();
-            hitFillContext->Fill(*hitEntry);
-            *eventID_w = wire.EventID;
-            *fWire_Channel = wire.getWire_Channel();
-            *fWire_View = wire.getWire_View();
-            *fSignalROI_nROIs = wire.getSignalROI_nROIs();
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
-            wireFillContext->Fill(*wireEntry);
-        }
-    };
-    int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount / nThreads;
-    std::vector<std::thread> threads;
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+    
+    // --- Single-threaded approach to avoid race conditions ---
+    auto chrono_start = std::chrono::high_resolution_clock::now();
+    
+    // Create fill contexts and entries
+    auto hitFillContext = hitWriter->CreateFillContext();
+    auto hitEntry = hitFillContext->CreateEntry();
+    auto wireFillContext = wireWriter->CreateFillContext();
+    auto wireEntry = wireFillContext->CreateEntry();
+    
+    for (int i = 0; i < eventCount; ++i) {
+        HitSoA hit = generateRandomHitSoA(i, fieldSize);
+        WireSoA wire = generateRandomWireSoA(i, fieldSize);
+        
+        *eventID = hit.EventID;
+        *fChannel = hit.getChannel();
+        *fView = hit.getView();
+        *fStartTick = hit.getStartTick();
+        *fEndTick = hit.getEndTick();
+        *fPeakTime = hit.getPeakTime();
+        *fSigmaPeakTime = hit.getSigmaPeakTime();
+        *fRMS = hit.getRMS();
+        *fPeakAmplitude = hit.getPeakAmplitude();
+        *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
+        *fROISummedADC = hit.getROISummedADC();
+        *fHitSummedADC = hit.getHitSummedADC();
+        *fIntegral = hit.getIntegral();
+        *fSigmaIntegral = hit.getSigmaIntegral();
+        *fMultiplicity = hit.getMultiplicity();
+        *fLocalIndex = hit.getLocalIndex();
+        *fGoodnessOfFit = hit.getGoodnessOfFit();
+        *fNDF = hit.getNDF();
+        *fSignalType = hit.getSignalType();
+        *fWireID_Cryostat = hit.getWireID_Cryostat();
+        *fWireID_TPC = hit.getWireID_TPC();
+        *fWireID_Plane = hit.getWireID_Plane();
+        *fWireID_Wire = hit.getWireID_Wire();
+        hitFillContext->Fill(*hitEntry);
+        
+        *eventID_w = wire.EventID;
+        *fWire_Channel = wire.getWire_Channel();
+        *fWire_View = wire.getWire_View();
+        *fSignalROI_nROIs = wire.getSignalROI_nROIs();
+        *fSignalROI_offsets = wire.getSignalROI_offsets();
+        *fSignalROI_data = wire.getSignalROI_data();
+        wireFillContext->Fill(*wireEntry);
     }
-    for (auto& th : threads) th.join();
+    
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteHitWireDataSoA took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
     // Writers go out of scope and flush/close automatically
 }
 
@@ -204,12 +208,17 @@ void generateAndWriteSplitHitAndWireDataSoA(int eventCount, int fieldSize, const
     int nThreads = std::thread::hardware_concurrency();
     int chunk = eventCount / nThreads;
     std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int t = 0; t < nThreads; ++t) {
         int start = t * chunk;
         int end = (t == nThreads - 1) ? eventCount : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteSplitHitAndWireDataSoA took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
     // Writers go out of scope and flush/close automatically
 }
 
@@ -315,12 +324,17 @@ void generateAndWriteSpilHitAndWireDataSoA(int eventCount, int spilCount, int fi
     int nThreads = std::thread::hardware_concurrency();
     int chunk = total / nThreads;
     std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int t = 0; t < nThreads; ++t) {
         int start = t * chunk;
         int end = (t == nThreads - 1) ? total : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteSpilHitAndWireDataSoA took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
     // Writers go out of scope and flush/close automatically
 }
 
@@ -408,12 +422,17 @@ void generateAndWriteHitWireDataAoS(int eventCount, int fieldSize, const std::st
     int nThreads = std::thread::hardware_concurrency();
     int chunk = eventCount / nThreads;
     std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int t = 0; t < nThreads; ++t) {
         int start = t * chunk;
         int end = (t == nThreads - 1) ? eventCount : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteHitWireDataAoS took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
     // Writers go out of scope and flush/close automatically
 }
 
@@ -511,12 +530,17 @@ void generateAndWriteSplitHitAndWireDataAoS(int eventCount, int fieldSize, const
     int nThreads = std::thread::hardware_concurrency();
     int chunk = eventCount / nThreads;
     std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int t = 0; t < nThreads; ++t) {
         int start = t * chunk;
         int end = (t == nThreads - 1) ? eventCount : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteSplitHitAndWireDataAoS took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
     // Writers go out of scope and flush/close automatically
 }
 
@@ -624,11 +648,16 @@ void generateAndWriteSpilHitAndWireDataAoS(int eventCount, int spilCount, int fi
     int nThreads = std::thread::hardware_concurrency();
     int chunk = total / nThreads;
     std::vector<std::thread> threads;
+    auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int t = 0; t < nThreads; ++t) {
         int start = t * chunk;
         int end = (t == nThreads - 1) ? total : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
+    auto chrono_end = std::chrono::high_resolution_clock::now();
+    std::cout << "generateAndWriteSpilHitAndWireDataAoS took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
+              << " ms\n";
     // Writers go out of scope and flush/close automatically
 } 
