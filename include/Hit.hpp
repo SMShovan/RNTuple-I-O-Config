@@ -27,6 +27,32 @@ public:
     std::vector<int> fWireID_Plane;
     std::vector<int> fWireID_Wire;
 
+    // Pre-allocate all vectors to avoid dynamic resizing
+    void reserve(size_t size) {
+        fChannel.reserve(size);
+        fView.reserve(size);
+        fStartTick.reserve(size);
+        fEndTick.reserve(size);
+        fPeakTime.reserve(size);
+        fSigmaPeakTime.reserve(size);
+        fRMS.reserve(size);
+        fPeakAmplitude.reserve(size);
+        fSigmaPeakAmplitude.reserve(size);
+        fROISummedADC.reserve(size);
+        fHitSummedADC.reserve(size);
+        fIntegral.reserve(size);
+        fSigmaIntegral.reserve(size);
+        fMultiplicity.reserve(size);
+        fLocalIndex.reserve(size);
+        fGoodnessOfFit.reserve(size);
+        fNDF.reserve(size);
+        fSignalType.reserve(size);
+        fWireID_Cryostat.reserve(size);
+        fWireID_TPC.reserve(size);
+        fWireID_Plane.reserve(size);
+        fWireID_Wire.reserve(size);
+    }
+
     std::vector<unsigned int>& getChannel() { return fChannel; }
     std::vector<int>& getView() { return fView; }
     std::vector<int>& getStartTick() { return fStartTick; }

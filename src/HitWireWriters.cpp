@@ -2,6 +2,7 @@
 #include "Hit.hpp"
 #include "Wire.hpp"
 #include "HitWireGenerators.hpp"
+#include "Utils.hpp"
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleWriter.hxx>
 #include <ROOT/RNTupleParallelWriter.hxx>
@@ -52,10 +53,14 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
     wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
     wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
-    auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireWireVector", file);
+    auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVector", file);
+    
+    int nThreads = std::thread::hardware_concurrency();
+    auto seeds = Utils::generateSeeds(nThreads);
+    
     // --- Parallel Fill Function ---
-    auto fillFunc = [&](int start, int end) {
-        std::mt19937 rng(std::random_device{}());
+    auto fillFunc = [&](int start, int end, unsigned int seed) {
+        std::mt19937 rng(seed);
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
@@ -91,49 +96,48 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
-            HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
-            WireVector wire = generateRandomWireVector(eventIndex, hitsPerEvent, rng);
+            HitVector hit = std::move(generateRandomHitVector(eventIndex, hitsPerEvent, rng));
+            WireVector wire = std::move(generateRandomWireVector(eventIndex, hitsPerEvent, rng));
             *eventID = hit.EventID;
-            *fChannel = hit.getChannel();
-            *fView = hit.getView();
-            *fStartTick = hit.getStartTick();
-            *fEndTick = hit.getEndTick();
-            *fPeakTime = hit.getPeakTime();
-            *fSigmaPeakTime = hit.getSigmaPeakTime();
-            *fRMS = hit.getRMS();
-            *fPeakAmplitude = hit.getPeakAmplitude();
-            *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
-            *fROISummedADC = hit.getROISummedADC();
-            *fHitSummedADC = hit.getHitSummedADC();
-            *fIntegral = hit.getIntegral();
-            *fSigmaIntegral = hit.getSigmaIntegral();
-            *fMultiplicity = hit.getMultiplicity();
-            *fLocalIndex = hit.getLocalIndex();
-            *fGoodnessOfFit = hit.getGoodnessOfFit();
-            *fNDF = hit.getNDF();
-            *fSignalType = hit.getSignalType();
-            *fWireID_Cryostat = hit.getWireID_Cryostat();
-            *fWireID_TPC = hit.getWireID_TPC();
-            *fWireID_Plane = hit.getWireID_Plane();
-            *fWireID_Wire = hit.getWireID_Wire();
+            *fChannel = std::move(hit.getChannel());
+            *fView = std::move(hit.getView());
+            *fStartTick = std::move(hit.getStartTick());
+            *fEndTick = std::move(hit.getEndTick());
+            *fPeakTime = std::move(hit.getPeakTime());
+            *fSigmaPeakTime = std::move(hit.getSigmaPeakTime());
+            *fRMS = std::move(hit.getRMS());
+            *fPeakAmplitude = std::move(hit.getPeakAmplitude());
+            *fSigmaPeakAmplitude = std::move(hit.getSigmaPeakAmplitude());
+            *fROISummedADC = std::move(hit.getROISummedADC());
+            *fHitSummedADC = std::move(hit.getHitSummedADC());
+            *fIntegral = std::move(hit.getIntegral());
+            *fSigmaIntegral = std::move(hit.getSigmaIntegral());
+            *fMultiplicity = std::move(hit.getMultiplicity());
+            *fLocalIndex = std::move(hit.getLocalIndex());
+            *fGoodnessOfFit = std::move(hit.getGoodnessOfFit());
+            *fNDF = std::move(hit.getNDF());
+            *fSignalType = std::move(hit.getSignalType());
+            *fWireID_Cryostat = std::move(hit.getWireID_Cryostat());
+            *fWireID_TPC = std::move(hit.getWireID_TPC());
+            *fWireID_Plane = std::move(hit.getWireID_Plane());
+            *fWireID_Wire = std::move(hit.getWireID_Wire());
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
-            *fWire_Channel = wire.getWire_Channel();
-            *fWire_View = wire.getWire_View();
-            *fSignalROI_nROIs = wire.getSignalROI_nROIs();
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
+            *fWire_Channel = std::move(wire.getWire_Channel());
+            *fWire_View = std::move(wire.getWire_View());
+            *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
+            *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
+            *fSignalROI_data = std::move(wire.getSignalROI_data());
             wireFillContext->Fill(*wireEntry);
         }
     };
-    int nThreads = std::thread::hardware_concurrency();
     int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
     }
     for (auto& th : threads) th.join();
     auto chrono_end = std::chrono::high_resolution_clock::now();
@@ -182,9 +186,13 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
     wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVector", file);
+    
+    int nThreads = std::thread::hardware_concurrency();
+    auto seeds = Utils::generateSeeds(nThreads);
+    
     // --- Parallel Fill Function ---
-    auto fillFunc = [&](int start, int end) {
-        std::mt19937 rng(std::random_device{}());
+    auto fillFunc = [&](int start, int end, unsigned int seed) {
+        std::mt19937 rng(seed);
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
@@ -220,49 +228,48 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
-            HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
-            WireVector wire = generateRandomWireVector(eventIndex, hitsPerEvent, rng);
+            HitVector hit = std::move(generateRandomHitVector(eventIndex, hitsPerEvent, rng));
+            WireVector wire = std::move(generateRandomWireVector(eventIndex, hitsPerEvent, rng));
             *eventID = hit.EventID;
-            *fChannel = hit.getChannel();
-            *fView = hit.getView();
-            *fStartTick = hit.getStartTick();
-            *fEndTick = hit.getEndTick();
-            *fPeakTime = hit.getPeakTime();
-            *fSigmaPeakTime = hit.getSigmaPeakTime();
-            *fRMS = hit.getRMS();
-            *fPeakAmplitude = hit.getPeakAmplitude();
-            *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
-            *fROISummedADC = hit.getROISummedADC();
-            *fHitSummedADC = hit.getHitSummedADC();
-            *fIntegral = hit.getIntegral();
-            *fSigmaIntegral = hit.getSigmaIntegral();
-            *fMultiplicity = hit.getMultiplicity();
-            *fLocalIndex = hit.getLocalIndex();
-            *fGoodnessOfFit = hit.getGoodnessOfFit();
-            *fNDF = hit.getNDF();
-            *fSignalType = hit.getSignalType();
-            *fWireID_Cryostat = hit.getWireID_Cryostat();
-            *fWireID_TPC = hit.getWireID_TPC();
-            *fWireID_Plane = hit.getWireID_Plane();
-            *fWireID_Wire = hit.getWireID_Wire();
+            *fChannel = std::move(hit.getChannel());
+            *fView = std::move(hit.getView());
+            *fStartTick = std::move(hit.getStartTick());
+            *fEndTick = std::move(hit.getEndTick());
+            *fPeakTime = std::move(hit.getPeakTime());
+            *fSigmaPeakTime = std::move(hit.getSigmaPeakTime());
+            *fRMS = std::move(hit.getRMS());
+            *fPeakAmplitude = std::move(hit.getPeakAmplitude());
+            *fSigmaPeakAmplitude = std::move(hit.getSigmaPeakAmplitude());
+            *fROISummedADC = std::move(hit.getROISummedADC());
+            *fHitSummedADC = std::move(hit.getHitSummedADC());
+            *fIntegral = std::move(hit.getIntegral());
+            *fSigmaIntegral = std::move(hit.getSigmaIntegral());
+            *fMultiplicity = std::move(hit.getMultiplicity());
+            *fLocalIndex = std::move(hit.getLocalIndex());
+            *fGoodnessOfFit = std::move(hit.getGoodnessOfFit());
+            *fNDF = std::move(hit.getNDF());
+            *fSignalType = std::move(hit.getSignalType());
+            *fWireID_Cryostat = std::move(hit.getWireID_Cryostat());
+            *fWireID_TPC = std::move(hit.getWireID_TPC());
+            *fWireID_Plane = std::move(hit.getWireID_Plane());
+            *fWireID_Wire = std::move(hit.getWireID_Wire());
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
-            *fWire_Channel = wire.getWire_Channel();
-            *fWire_View = wire.getWire_View();
-            *fSignalROI_nROIs = wire.getSignalROI_nROIs();
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
+            *fWire_Channel = std::move(wire.getWire_Channel());
+            *fWire_View = std::move(wire.getWire_View());
+            *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
+            *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
+            *fSignalROI_data = std::move(wire.getSignalROI_data());
             wireFillContext->Fill(*wireEntry);
         }
     };
-    int nThreads = std::thread::hardware_concurrency();
     int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
     }
     for (auto& th : threads) th.join();
     auto chrono_end = std::chrono::high_resolution_clock::now();
@@ -317,8 +324,12 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilVector", file);
     int total = numEvents * numSpils;
-    auto fillFunc = [&](int start, int end) {
-        std::mt19937 rng(std::random_device{}());
+    
+    int nThreads = std::thread::hardware_concurrency();
+    auto seeds = Utils::generateSeeds(nThreads);
+    
+    auto fillFunc = [&](int start, int end, unsigned int seed) {
+        std::mt19937 rng(seed);
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
@@ -359,51 +370,50 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             int eventID_val = idx / numSpils;
             int spilID_val = idx % numSpils;
             long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
-            HitVector hit = generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng);
-            WireVector wire = generateRandomWireVector(uniqueEventID, adjustedHitsPerEvent, rng);
+            HitVector hit = std::move(generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng));
+            WireVector wire = std::move(generateRandomWireVector(uniqueEventID, adjustedHitsPerEvent, rng));
             *eventID = hit.EventID;
             *spilID = spilID_val;
-            *fChannel = hit.getChannel();
-            *fView = hit.getView();
-            *fStartTick = hit.getStartTick();
-            *fEndTick = hit.getEndTick();
-            *fPeakTime = hit.getPeakTime();
-            *fSigmaPeakTime = hit.getSigmaPeakTime();
-            *fRMS = hit.getRMS();
-            *fPeakAmplitude = hit.getPeakAmplitude();
-            *fSigmaPeakAmplitude = hit.getSigmaPeakAmplitude();
-            *fROISummedADC = hit.getROISummedADC();
-            *fHitSummedADC = hit.getHitSummedADC();
-            *fIntegral = hit.getIntegral();
-            *fSigmaIntegral = hit.getSigmaIntegral();
-            *fMultiplicity = hit.getMultiplicity();
-            *fLocalIndex = hit.getLocalIndex();
-            *fGoodnessOfFit = hit.getGoodnessOfFit();
-            *fNDF = hit.getNDF();
-            *fSignalType = hit.getSignalType();
-            *fWireID_Cryostat = hit.getWireID_Cryostat();
-            *fWireID_TPC = hit.getWireID_TPC();
-            *fWireID_Plane = hit.getWireID_Plane();
-            *fWireID_Wire = hit.getWireID_Wire();
+            *fChannel = std::move(hit.getChannel());
+            *fView = std::move(hit.getView());
+            *fStartTick = std::move(hit.getStartTick());
+            *fEndTick = std::move(hit.getEndTick());
+            *fPeakTime = std::move(hit.getPeakTime());
+            *fSigmaPeakTime = std::move(hit.getSigmaPeakTime());
+            *fRMS = std::move(hit.getRMS());
+            *fPeakAmplitude = std::move(hit.getPeakAmplitude());
+            *fSigmaPeakAmplitude = std::move(hit.getSigmaPeakAmplitude());
+            *fROISummedADC = std::move(hit.getROISummedADC());
+            *fHitSummedADC = std::move(hit.getHitSummedADC());
+            *fIntegral = std::move(hit.getIntegral());
+            *fSigmaIntegral = std::move(hit.getSigmaIntegral());
+            *fMultiplicity = std::move(hit.getMultiplicity());
+            *fLocalIndex = std::move(hit.getLocalIndex());
+            *fGoodnessOfFit = std::move(hit.getGoodnessOfFit());
+            *fNDF = std::move(hit.getNDF());
+            *fSignalType = std::move(hit.getSignalType());
+            *fWireID_Cryostat = std::move(hit.getWireID_Cryostat());
+            *fWireID_TPC = std::move(hit.getWireID_TPC());
+            *fWireID_Plane = std::move(hit.getWireID_Plane());
+            *fWireID_Wire = std::move(hit.getWireID_Wire());
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
             *spilID_w = spilID_val;
-            *fWire_Channel = wire.getWire_Channel();
-            *fWire_View = wire.getWire_View();
-            *fSignalROI_nROIs = wire.getSignalROI_nROIs();
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
+            *fWire_Channel = std::move(wire.getWire_Channel());
+            *fWire_View = std::move(wire.getWire_View());
+            *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
+            *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
+            *fSignalROI_data = std::move(wire.getSignalROI_data());
             wireFillContext->Fill(*wireEntry);
         }
     };
-    int nThreads = std::thread::hardware_concurrency();
     int chunk = total / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? total : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
     }
     for (auto& th : threads) th.join();
     auto chrono_end = std::chrono::high_resolution_clock::now();
@@ -452,8 +462,11 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividual", file);
     
-    auto fillFunc = [&](int start, int end) {
-        std::mt19937 rng(std::random_device{}());
+    int nThreads = std::thread::hardware_concurrency();
+    auto seeds = Utils::generateSeeds(nThreads);
+    
+    auto fillFunc = [&](int start, int end, unsigned int seed) {
+        std::mt19937 rng(seed);
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
@@ -522,8 +535,8 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
                 *eventID_w = wire.EventID;
                 *fWire_Channel_w = wire.fWire_Channel;
                 *fWire_View_w = wire.fWire_View;
-                *fSignalROI_offsets = wire.fSignalROI_offsets;
-                *fSignalROI_data = wire.fSignalROI_data;
+                *fSignalROI_offsets = std::move(wire.fSignalROI_offsets);
+                *fSignalROI_data = std::move(wire.fSignalROI_data);
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -531,14 +544,13 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
         }
     };
 
-    int nThreads = std::thread::hardware_concurrency();
     int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
     }
     for (auto& th : threads) th.join();
     auto chrono_end = std::chrono::high_resolution_clock::now();
@@ -586,8 +598,11 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividual", file);
     
-    auto fillFunc = [&](int start, int end) {
-        std::mt19937 rng(std::random_device{}());
+    int nThreads = std::thread::hardware_concurrency();
+    auto seeds = Utils::generateSeeds(nThreads);
+    
+    auto fillFunc = [&](int start, int end, unsigned int seed) {
+        std::mt19937 rng(seed);
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
@@ -656,8 +671,8 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
                 *eventID_w = wire.EventID;
                 *fWire_Channel_w = wire.fWire_Channel;
                 *fWire_View_w = wire.fWire_View;
-                *fSignalROI_offsets = wire.fSignalROI_offsets;
-                *fSignalROI_data = wire.fSignalROI_data;
+                *fSignalROI_offsets = std::move(wire.fSignalROI_offsets);
+                *fSignalROI_data = std::move(wire.fSignalROI_data);
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -665,14 +680,13 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         }
     };
 
-    int nThreads = std::thread::hardware_concurrency();
     int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
     }
     for (auto& th : threads) th.join();
     auto chrono_end = std::chrono::high_resolution_clock::now();
@@ -726,10 +740,11 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilIndividual", file);
 
-    std::vector<std::thread> threads;
+    int nThreads = std::thread::hardware_concurrency();
+    auto seeds = Utils::generateSeeds(nThreads);
 
-    auto fillFunc = [&](int start, int end) {
-        std::mt19937 rng(std::random_device{}());
+    auto fillFunc = [&](int start, int end, unsigned int seed) {
+        std::mt19937 rng(seed);
         auto hitFillContext = hitWriter->CreateFillContext();
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
@@ -806,8 +821,8 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
                 *spilID_w = spilID_val;
                 *fWire_Channel_w = wire.fWire_Channel;
                 *fWire_View_w = wire.fWire_View;
-                *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
-                *fSignalROI_data = std::move(wire.getSignalROI_data());
+                *fSignalROI_offsets = std::move(wire.fSignalROI_offsets);
+                *fSignalROI_data = std::move(wire.fSignalROI_data);
 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -815,14 +830,13 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         }
     };
     
-    int nThreads = std::thread::hardware_concurrency();
     int chunk = numEvents * numSpils / nThreads;
-    threads.reserve(nThreads);
+    std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents * numSpils : start + chunk;
-        threads.emplace_back(fillFunc, start, end);
+        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
     }
     for (auto& th : threads) th.join();
     auto chrono_end = std::chrono::high_resolution_clock::now();

@@ -12,6 +12,9 @@ HitVector generateRandomHitVector(long long eventID, int hitsPerEvent, std::mt19
 
     HitVector hit;
     hit.EventID = eventID;
+    // Pre-allocate vectors to avoid dynamic resizing
+    hit.reserve(hitsPerEvent);
+    
     for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
         unsigned int channel = distChannel(rng);
         int start_tick = distTick(rng);
@@ -72,6 +75,9 @@ WireVector generateRandomWireVector(long long eventID, int hitsPerEvent, std::mt
 
     WireVector wire;
     wire.EventID = eventID;
+    // Pre-allocate vectors to avoid dynamic resizing
+    wire.reserve(hitsPerEvent);
+    
     for (int wireIndex = 0; wireIndex < hitsPerEvent; ++wireIndex) {
         unsigned int wire_channel = distWireChannel(rng);
         int wire_view = distWireEnum(rng);
@@ -140,6 +146,9 @@ WireIndividual generateRandomWireIndividual(long long eventID, int numROIs, std:
     wire.EventID = eventID;
     wire.fWire_Channel = distWireChannel(rng);
     wire.fWire_View = distWireEnum(rng);
+    
+    // Pre-allocate vectors for individual wire
+    wire.reserve(numROIs);
 
     for (int roiIndex = 0; roiIndex < numROIs; ++roiIndex) {
         std::size_t offset = distOffset(rng);
