@@ -3,7 +3,7 @@
 #include <vector>
 #include <random>
 
-class WireSoA {
+class WireVector {
 public:
     long long EventID;
     std::vector<unsigned int> fWire_Channel;
@@ -20,13 +20,13 @@ public:
 };
 
 // Forward-declare the struct and its generator function to handle the friend relationship
-struct WireAoS;
-WireAoS generateRandomWireAoS(long long eventID, int nROIs, std::mt19937& rng);
+struct WireIndividual;
+WireIndividual generateRandomWireIndividual(long long eventID, int nROIs, std::mt19937& rng);
 
-// AoS version for a single wire
-struct WireAoS {
+// Individual version for a single wire
+struct WireIndividual {
     // The generator needs to be a friend to access private members.
-    friend WireAoS generateRandomWireAoS(long long eventID, int nROIs, std::mt19937& rng);
+    friend WireIndividual generateRandomWireIndividual(long long eventID, int nROIs, std::mt19937& rng);
 
     long long EventID;
     unsigned int fWire_Channel;

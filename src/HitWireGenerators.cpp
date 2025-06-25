@@ -1,7 +1,7 @@
 #include "HitWireGenerators.hpp"
 #include <random>
 
-HitSoA generateRandomHitSoA(long long eventID, int fieldSize, std::mt19937& rng) {
+HitVector generateRandomHitVector(long long eventID, int fieldSize, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distChannel(0, 999);
     std::uniform_int_distribution<int> distTick(0, 5000);
     std::uniform_real_distribution<float> distFloat(0.0f, 100.0f);
@@ -10,7 +10,7 @@ HitSoA generateRandomHitSoA(long long eventID, int fieldSize, std::mt19937& rng)
     std::uniform_int_distribution<int> distEnum(0, 6);
     std::uniform_int_distribution<int> distSigEnum(0, 2);
 
-    HitSoA hit;
+    HitVector hit;
     hit.EventID = eventID;
     for (int i = 0; i < fieldSize; ++i) {
         unsigned int channel = distChannel(rng);
@@ -62,7 +62,7 @@ HitSoA generateRandomHitSoA(long long eventID, int fieldSize, std::mt19937& rng)
     return hit;
 }
 
-WireSoA generateRandomWireSoA(long long eventID, int fieldSize, std::mt19937& rng) {
+WireVector generateRandomWireVector(long long eventID, int fieldSize, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
@@ -70,7 +70,7 @@ WireSoA generateRandomWireSoA(long long eventID, int fieldSize, std::mt19937& rn
     std::uniform_int_distribution<int> distNROIs(1, 3);
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
 
-    WireSoA wire;
+    WireVector wire;
     wire.EventID = eventID;
     for (int i = 0; i < fieldSize; ++i) {
         unsigned int wire_channel = distWireChannel(rng);
@@ -93,7 +93,7 @@ WireSoA generateRandomWireSoA(long long eventID, int fieldSize, std::mt19937& rn
     return wire;
 }
 
-HitAoS generateRandomHitAoS(long long eventID, std::mt19937& rng) {
+HitIndividual generateRandomHitIndividual(long long eventID, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distChannel(0, 999);
     std::uniform_int_distribution<int> distTick(0, 5000);
     std::uniform_real_distribution<float> distFloat(0.0f, 100.0f);
@@ -102,7 +102,7 @@ HitAoS generateRandomHitAoS(long long eventID, std::mt19937& rng) {
     std::uniform_int_distribution<int> distEnum(0, 6);
     std::uniform_int_distribution<int> distSigEnum(0, 2);
 
-    HitAoS hit;
+    HitIndividual hit;
     hit.EventID = eventID;
     hit.fChannel = distChannel(rng);
     hit.fView = distEnum(rng);
@@ -129,14 +129,14 @@ HitAoS generateRandomHitAoS(long long eventID, std::mt19937& rng) {
     return hit;
 }
 
-WireAoS generateRandomWireAoS(long long eventID, int nROIs, std::mt19937& rng) {
+WireIndividual generateRandomWireIndividual(long long eventID, int nROIs, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
     std::uniform_int_distribution<int> distSize(1, 10);
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
 
-    WireAoS wire;
+    WireIndividual wire;
     wire.EventID = eventID;
     wire.fWire_Channel = distWireChannel(rng);
     wire.fWire_View = distWireEnum(rng);

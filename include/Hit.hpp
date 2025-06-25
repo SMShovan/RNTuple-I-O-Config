@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-class HitSoA {
+class HitVector {
 public:
     long long EventID;
     std::vector<unsigned int> fChannel;
@@ -51,8 +51,8 @@ public:
     std::vector<int>& getWireID_Wire() { return fWireID_Wire; }
 };
 
-// AoS version for a single hit
-struct HitAoS {
+// Individual version for a single hit
+struct HitIndividual {
     long long EventID;
     unsigned int fChannel;
     int fView;
@@ -78,5 +78,5 @@ struct HitAoS {
     int fWireID_Wire;
 };
 
-// AoS generator declaration
-HitAoS generateRandomHitAoS(long long eventID); 
+// Individual generator declaration
+HitIndividual generateRandomHitIndividual(long long eventID); 
