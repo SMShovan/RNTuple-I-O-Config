@@ -137,8 +137,8 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
             *fWire_Channel = std::move(wire.getWire_Channel());
             *fWire_View = std::move(wire.getWire_View());
             *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
-            *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
-            *fSignalROI_data = std::move(wire.getSignalROI_data());
+            *fSignalROI_offsets = wire.getSignalROI_offsets();
+            *fSignalROI_data = wire.getSignalROI_data();
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
         }
@@ -289,8 +289,8 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
             *fWire_Channel = std::move(wire.getWire_Channel());
             *fWire_View = std::move(wire.getWire_View());
             *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
-            *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
-            *fSignalROI_data = std::move(wire.getSignalROI_data());
+            *fSignalROI_offsets = wire.getSignalROI_offsets();
+            *fSignalROI_data = wire.getSignalROI_data();
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
         }
@@ -454,8 +454,8 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             *fWire_Channel = std::move(wire.getWire_Channel());
             *fWire_View = std::move(wire.getWire_View());
             *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
-            *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
-            *fSignalROI_data = std::move(wire.getSignalROI_data());
+            *fSignalROI_offsets = wire.getSignalROI_offsets();
+            *fSignalROI_data = wire.getSignalROI_data();
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
         }
@@ -604,8 +604,8 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
                 *eventID_w = wire.EventID;
                 *fWire_Channel_w = wire.fWire_Channel;
                 *fWire_View_w = wire.fWire_View;
-                *fSignalROI_offsets = std::move(wire.fSignalROI_offsets);
-                *fSignalROI_data = std::move(wire.fSignalROI_data);
+                *fSignalROI_offsets = wire.getSignalROI_offsets();
+                *fSignalROI_data = wire.getSignalROI_data();
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -757,8 +757,8 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
                 *eventID_w = wire.EventID;
                 *fWire_Channel_w = wire.fWire_Channel;
                 *fWire_View_w = wire.fWire_View;
-                *fSignalROI_offsets = std::move(wire.fSignalROI_offsets);
-                *fSignalROI_data = std::move(wire.fSignalROI_data);
+                *fSignalROI_offsets = wire.getSignalROI_offsets();
+                *fSignalROI_data = wire.getSignalROI_data();
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -924,8 +924,8 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
                 *spilID_w = spilID_val;
                 *fWire_Channel_w = wire.fWire_Channel;
                 *fWire_View_w = wire.fWire_View;
-                *fSignalROI_offsets = std::move(wire.fSignalROI_offsets);
-                *fSignalROI_data = std::move(wire.fSignalROI_data);
+                *fSignalROI_offsets = wire.getSignalROI_offsets();
+                *fSignalROI_data = wire.getSignalROI_data();
 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);

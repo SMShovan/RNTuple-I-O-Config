@@ -1,4 +1,5 @@
 #include "HitWireGenerators.hpp"
+#include "Wire.hpp"
 #include <random>
 
 HitVector generateRandomHitVector(long long eventID, int hitsPerEvent, std::mt19937& rng) {
@@ -12,8 +13,6 @@ HitVector generateRandomHitVector(long long eventID, int hitsPerEvent, std::mt19
 
     HitVector hit;
     hit.EventID = eventID;
-    // Pre-allocate vectors to avoid dynamic resizing
-    hit.reserve(hitsPerEvent);
     
     for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
         unsigned int channel = distChannel(rng);
@@ -75,8 +74,6 @@ WireVector generateRandomWireVector(long long eventID, int hitsPerEvent, std::mt
 
     WireVector wire;
     wire.EventID = eventID;
-    // Pre-allocate vectors to avoid dynamic resizing
-    wire.reserve(hitsPerEvent);
     
     for (int wireIndex = 0; wireIndex < hitsPerEvent; ++wireIndex) {
         unsigned int wire_channel = distWireChannel(rng);
@@ -146,18 +143,18 @@ WireIndividual generateRandomWireIndividual(long long eventID, int numROIs, std:
     wire.EventID = eventID;
     wire.fWire_Channel = distWireChannel(rng);
     wire.fWire_View = distWireEnum(rng);
-    
-    // Pre-allocate vectors for individual wire
-    wire.reserve(numROIs);
 
     for (int roiIndex = 0; roiIndex < numROIs; ++roiIndex) {
-        std::size_t offset = distOffset(rng);
+        RegionOfInterest roi;
+        roi.offset = distOffset(rng);
         int size = distSize(rng);
-        wire.fSignalROI_offsets.push_back(offset);
+        
         for (int dataIndex = 0; dataIndex < size; ++dataIndex) {
             float val = distADC(rng);
-            wire.fSignalROI_data.push_back(val);
+            roi.data.push_back(val);
         }
+        
+        wire.fSignalROI.push_back(std::move(roi));
     }
     return wire;
 }
