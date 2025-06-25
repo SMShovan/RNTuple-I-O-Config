@@ -7,10 +7,11 @@
 #include <ROOT/RNTupleWriter.hxx>
 #include <ROOT/RNTupleParallelWriter.hxx>
 #include <TFile.h>
+#include <TStopwatch.h>
 #include <filesystem>
 #include <thread>
+#include <future>
 #include <vector>
-#include <chrono>
 #include <iostream>
 #include <random>
 #include <utility>
@@ -65,6 +66,11 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
+        
+        // Per-thread timer for RNTuple storage only
+        TStopwatch storageTimer;
+        storageTimer.Reset();
+        
         // Per-thread, per-entry field pointers
         auto eventID = hitEntry->GetPtr<long long>("EventID");
         auto fChannel = hitEntry->GetPtr<std::vector<unsigned int>>("Channel");
@@ -95,9 +101,14 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
         auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
+            // Generate data (not timed)
             HitVector hit = std::move(generateRandomHitVector(eventIndex, hitsPerEvent, rng));
             WireVector wire = std::move(generateRandomWireVector(eventIndex, hitsPerEvent, rng));
+            
+            // TIMING: RNTuple Storage Operations only
+            storageTimer.Start();
             *eventID = hit.EventID;
             *fChannel = std::move(hit.getChannel());
             *fView = std::move(hit.getView());
@@ -129,21 +140,31 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
             *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
             *fSignalROI_data = std::move(wire.getSignalROI_data());
             wireFillContext->Fill(*wireEntry);
+            storageTimer.Stop();
         }
+        
+        // Return only storage timing
+        return storageTimer.RealTime();
     };
+    
     int chunk = numEvents / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
+    std::vector<std::future<double>> futures;
+    
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
+        futures.push_back(std::async(std::launch::async, fillFunc, start, end, seeds[threadIndex]));
     }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteHitWireDataVector took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
+    
+    // Collect storage timing results from all threads
+    double totalStorageTime = 0.0;
+    for (auto& future : futures) {
+        totalStorageTime += future.get();
+    }
+    
+    std::cout << "generateAndWriteHitWireDataVector:" << std::endl;
+    std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
+    
     // Writers go out of scope and flush/close automatically
 }
 
@@ -197,6 +218,11 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
+        
+        // Per-thread timer for RNTuple storage only
+        TStopwatch storageTimer;
+        storageTimer.Reset();
+        
         // Per-thread, per-entry field pointers
         auto eventID = hitEntry->GetPtr<long long>("EventID");
         auto fChannel = hitEntry->GetPtr<std::vector<unsigned int>>("Channel");
@@ -227,9 +253,14 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
+            // Generate data (not timed)
             HitVector hit = std::move(generateRandomHitVector(eventIndex, hitsPerEvent, rng));
             WireVector wire = std::move(generateRandomWireVector(eventIndex, hitsPerEvent, rng));
+            
+            // TIMING: RNTuple Storage Operations only
+            storageTimer.Start();
             *eventID = hit.EventID;
             *fChannel = std::move(hit.getChannel());
             *fView = std::move(hit.getView());
@@ -261,21 +292,31 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
             *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
             *fSignalROI_data = std::move(wire.getSignalROI_data());
             wireFillContext->Fill(*wireEntry);
+            storageTimer.Stop();
         }
+        
+        // Return only storage timing
+        return storageTimer.RealTime();
     };
+    
     int chunk = numEvents / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
+    std::vector<std::future<double>> futures;
+    
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
+        futures.push_back(std::async(std::launch::async, fillFunc, start, end, seeds[threadIndex]));
     }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteSplitHitAndWireDataVector took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
+    
+    // Collect storage timing results from all threads
+    double totalStorageTime = 0.0;
+    for (auto& future : futures) {
+        totalStorageTime += future.get();
+    }
+    
+    std::cout << "generateAndWriteSplitHitAndWireDataVector:" << std::endl;
+    std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
+    
     // Writers go out of scope and flush/close automatically
 }
 
@@ -334,6 +375,11 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         auto hitEntry = hitFillContext->CreateEntry();
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
+        
+        // Per-thread timer for RNTuple storage only
+        TStopwatch storageTimer;
+        storageTimer.Reset();
+        
         // Per-thread, per-entry field pointers
         auto eventID = hitEntry->GetPtr<long long>("EventID");
         auto spilID = hitEntry->GetPtr<int>("SpilID");
@@ -366,12 +412,18 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        
         for (int idx = start; idx < end; ++idx) {
             int eventID_val = idx / numSpils;
             int spilID_val = idx % numSpils;
             long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
+            
+            // Generate data (not timed)
             HitVector hit = std::move(generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng));
             WireVector wire = std::move(generateRandomWireVector(uniqueEventID, adjustedHitsPerEvent, rng));
+            
+            // TIMING: RNTuple Storage Operations only
+            storageTimer.Start();
             *eventID = hit.EventID;
             *spilID = spilID_val;
             *fChannel = std::move(hit.getChannel());
@@ -405,21 +457,31 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             *fSignalROI_offsets = std::move(wire.getSignalROI_offsets());
             *fSignalROI_data = std::move(wire.getSignalROI_data());
             wireFillContext->Fill(*wireEntry);
+            storageTimer.Stop();
         }
+        
+        // Return only storage timing
+        return storageTimer.RealTime();
     };
+    
     int chunk = total / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
+    std::vector<std::future<double>> futures;
+    
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? total : start + chunk;
-        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
+        futures.push_back(std::async(std::launch::async, fillFunc, start, end, seeds[threadIndex]));
     }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteSpilHitAndWireDataVector took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
+    
+    // Collect storage timing results from all threads
+    double totalStorageTime = 0.0;
+    for (auto& future : futures) {
+        totalStorageTime += future.get();
+    }
+    
+    std::cout << "generateAndWriteSpilHitAndWireDataVector:" << std::endl;
+    std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
+    
     // Writers go out of scope and flush/close automatically
 }
 
@@ -472,6 +534,10 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
         
+        // Per-thread timer for RNTuple storage only
+        TStopwatch storageTimer;
+        storageTimer.Reset();
+        
         auto eventID = hitEntry->GetPtr<long long>("EventID");
         auto fChannel = hitEntry->GetPtr<unsigned int>("Channel");
         auto fView = hitEntry->GetPtr<int>("View");
@@ -505,9 +571,12 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate multiple hits and wires for this event to match Vector data volume
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
+                // Generate data (not timed)
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
                 WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
                 
+                // TIMING: RNTuple Storage Operations only
+                storageTimer.Start();
                 *eventID = hit.EventID;
                 *fChannel = hit.fChannel;
                 *fView = hit.fView;
@@ -540,23 +609,33 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
+                storageTimer.Stop();
             }
         }
+        
+        // Return only storage timing
+        return storageTimer.RealTime();
     };
 
     int chunk = numEvents / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
+    std::vector<std::future<double>> futures;
+    
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
+        futures.push_back(std::async(std::launch::async, fillFunc, start, end, seeds[threadIndex]));
     }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteHitWireDataIndividual took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
+    
+    // Collect storage timing results from all threads
+    double totalStorageTime = 0.0;
+    for (auto& future : futures) {
+        totalStorageTime += future.get();
+    }
+    
+    std::cout << "generateAndWriteHitWireDataIndividual:" << std::endl;
+    std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
+    
+    // Writers go out of scope and flush/close automatically
 }
 
 void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName) {
@@ -608,6 +687,10 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
         
+        // Per-thread timer for RNTuple storage only
+        TStopwatch storageTimer;
+        storageTimer.Reset();
+        
         auto eventID = hitEntry->GetPtr<long long>("EventID");
         auto fChannel = hitEntry->GetPtr<unsigned int>("Channel");
         auto fView = hitEntry->GetPtr<int>("View");
@@ -641,9 +724,12 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate multiple hits and wires for this event to match Vector data volume
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
+                // Generate data (not timed)
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
                 WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
                 
+                // TIMING: RNTuple Storage Operations only
+                storageTimer.Start();
                 *eventID = hit.EventID;
                 *fChannel = hit.fChannel;
                 *fView = hit.fView;
@@ -676,23 +762,33 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
+                storageTimer.Stop();
             }
         }
+        
+        // Return only storage timing
+        return storageTimer.RealTime();
     };
 
     int chunk = numEvents / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
+    std::vector<std::future<double>> futures;
+    
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
-        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
+        futures.push_back(std::async(std::launch::async, fillFunc, start, end, seeds[threadIndex]));
     }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteSplitHitAndWireDataIndividual took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
+    
+    // Collect storage timing results from all threads
+    double totalStorageTime = 0.0;
+    for (auto& future : futures) {
+        totalStorageTime += future.get();
+    }
+    
+    std::cout << "generateAndWriteSplitHitAndWireDataIndividual:" << std::endl;
+    std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
+    
+    // Writers go out of scope and flush/close automatically
 }
 
 void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
@@ -750,6 +846,10 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         auto wireFillContext = wireWriter->CreateFillContext();
         auto wireEntry = wireFillContext->CreateEntry();
 
+        // Per-thread timer for RNTuple storage only
+        TStopwatch storageTimer;
+        storageTimer.Reset();
+
         auto eventID_f = hitEntry->GetPtr<long long>("EventID");
         auto spilID_f = hitEntry->GetPtr<int>("SpilID");
         auto fChannel = hitEntry->GetPtr<unsigned int>("Channel");
@@ -789,9 +889,12 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
             
             // Generate multiple hits and wires for this event to match Vector data volume
             for (int hitIndex = 0; hitIndex < adjustedHitsPerEvent; ++hitIndex) {
+                // Generate data (not timed)
                 HitIndividual hit = generateRandomHitIndividual(uniqueEventID, rng);
                 WireIndividual wire = generateRandomWireIndividual(uniqueEventID, adjustedHitsPerEvent, rng);
-
+                
+                // TIMING: RNTuple Storage Operations only
+                storageTimer.Start();
                 *eventID_f = hit.EventID;
                 *spilID_f = spilID_val;
                 *fChannel = hit.fChannel;
@@ -826,21 +929,31 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
+                storageTimer.Stop();
             }
         }
+        
+        // Return only storage timing
+        return storageTimer.RealTime();
     };
     
     int chunk = numEvents * numSpils / nThreads;
-    std::vector<std::thread> threads;
-    auto chrono_start = std::chrono::high_resolution_clock::now();
+    std::vector<std::future<double>> futures;
+    
     for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
         int start = threadIndex * chunk;
         int end = (threadIndex == nThreads - 1) ? numEvents * numSpils : start + chunk;
-        threads.emplace_back(fillFunc, start, end, seeds[threadIndex]);
+        futures.push_back(std::async(std::launch::async, fillFunc, start, end, seeds[threadIndex]));
     }
-    for (auto& th : threads) th.join();
-    auto chrono_end = std::chrono::high_resolution_clock::now();
-    std::cout << "generateAndWriteSpilHitAndWireDataIndividual took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(chrono_end - chrono_start).count()
-              << " ms\n";
+    
+    // Collect storage timing results from all threads
+    double totalStorageTime = 0.0;
+    for (auto& future : futures) {
+        totalStorageTime += future.get();
+    }
+    
+    std::cout << "generateAndWriteSpilHitAndWireDataIndividual:" << std::endl;
+    std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
+    
+    // Writers go out of scope and flush/close automatically
 } 
