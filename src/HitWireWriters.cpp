@@ -12,10 +12,9 @@
 #include <chrono>
 #include <iostream>
 #include <random>
-#include <mutex>
 #include <utility>
 
-void generateAndWriteHitWireDataVector(int eventCount, int fieldSize, const std::string& fileName) {
+void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
@@ -91,9 +90,9 @@ void generateAndWriteHitWireDataVector(int eventCount, int fieldSize, const std:
         auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
-        for (int i = start; i < end; ++i) {
-            HitVector hit = generateRandomHitVector(i, fieldSize, rng);
-            WireVector wire = generateRandomWireVector(i, fieldSize, rng);
+        for (int eventIndex = start; eventIndex < end; ++eventIndex) {
+            HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
+            WireVector wire = generateRandomWireVector(eventIndex, hitsPerEvent, rng);
             *eventID = hit.EventID;
             *fChannel = hit.getChannel();
             *fView = hit.getView();
@@ -128,12 +127,12 @@ void generateAndWriteHitWireDataVector(int eventCount, int fieldSize, const std:
         }
     };
     int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount / nThreads;
+    int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount : start + chunk;
+    for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
+        int start = threadIndex * chunk;
+        int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
@@ -144,7 +143,7 @@ void generateAndWriteHitWireDataVector(int eventCount, int fieldSize, const std:
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteSplitHitAndWireDataVector(int eventCount, int fieldSize, const std::string& fileName) {
+void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
@@ -220,9 +219,9 @@ void generateAndWriteSplitHitAndWireDataVector(int eventCount, int fieldSize, co
         auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
-        for (int i = start; i < end; ++i) {
-            HitVector hit = generateRandomHitVector(i, fieldSize, rng);
-            WireVector wire = generateRandomWireVector(i, fieldSize, rng);
+        for (int eventIndex = start; eventIndex < end; ++eventIndex) {
+            HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
+            WireVector wire = generateRandomWireVector(eventIndex, hitsPerEvent, rng);
             *eventID = hit.EventID;
             *fChannel = hit.getChannel();
             *fView = hit.getView();
@@ -257,12 +256,12 @@ void generateAndWriteSplitHitAndWireDataVector(int eventCount, int fieldSize, co
         }
     };
     int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount / nThreads;
+    int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount : start + chunk;
+    for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
+        int start = threadIndex * chunk;
+        int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
@@ -273,9 +272,9 @@ void generateAndWriteSplitHitAndWireDataVector(int eventCount, int fieldSize, co
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteSpilHitAndWireDataVector(int eventCount, int spilCount, int fieldSize, const std::string& fileName) {
+void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    int adjustedFieldSize = fieldSize / spilCount;
+    int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     std::filesystem::create_directories("./hitwire");
     std::filesystem::create_directories("./hitwire/hitspils");
     std::filesystem::create_directories("./hitwire/wirespils");
@@ -317,7 +316,7 @@ void generateAndWriteSpilHitAndWireDataVector(int eventCount, int spilCount, int
     wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
     wireModel->MakeField<std::vector<float>>("SignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilVector", file);
-    int total = eventCount * spilCount;
+    int total = numEvents * numSpils;
     auto fillFunc = [&](int start, int end) {
         std::mt19937 rng(std::random_device{}());
         auto hitFillContext = hitWriter->CreateFillContext();
@@ -357,11 +356,11 @@ void generateAndWriteSpilHitAndWireDataVector(int eventCount, int spilCount, int
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
         for (int idx = start; idx < end; ++idx) {
-            int eventID_val = idx / spilCount;
-            int spilID_val = idx % spilCount;
+            int eventID_val = idx / numSpils;
+            int spilID_val = idx % numSpils;
             long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
-            HitVector hit = generateRandomHitVector(uniqueEventID, adjustedFieldSize, rng);
-            WireVector wire = generateRandomWireVector(uniqueEventID, adjustedFieldSize, rng);
+            HitVector hit = generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng);
+            WireVector wire = generateRandomWireVector(uniqueEventID, adjustedHitsPerEvent, rng);
             *eventID = hit.EventID;
             *spilID = spilID_val;
             *fChannel = hit.getChannel();
@@ -401,9 +400,9 @@ void generateAndWriteSpilHitAndWireDataVector(int eventCount, int spilCount, int
     int chunk = total / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? total : start + chunk;
+    for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
+        int start = threadIndex * chunk;
+        int end = (threadIndex == nThreads - 1) ? total : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
@@ -414,7 +413,7 @@ void generateAndWriteSpilHitAndWireDataVector(int eventCount, int spilCount, int
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteHitWireDataIndividual(int eventCount, int fieldSize, const std::string& fileName) {
+void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "RECREATE");
@@ -490,11 +489,11 @@ void generateAndWriteHitWireDataIndividual(int eventCount, int fieldSize, const 
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
 
-        for (int i = start; i < end; ++i) {
+        for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate multiple hits and wires for this event to match Vector data volume
-            for (int j = 0; j < fieldSize; ++j) {
-                HitIndividual hit = generateRandomHitIndividual(i, rng);
-                WireIndividual wire = generateRandomWireIndividual(i, fieldSize, rng);
+            for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
+                HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
+                WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
                 
                 *eventID = hit.EventID;
                 *fChannel = hit.fChannel;
@@ -533,12 +532,12 @@ void generateAndWriteHitWireDataIndividual(int eventCount, int fieldSize, const 
     };
 
     int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount / nThreads;
+    int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount : start + chunk;
+    for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
+        int start = threadIndex * chunk;
+        int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
@@ -548,7 +547,7 @@ void generateAndWriteHitWireDataIndividual(int eventCount, int fieldSize, const 
               << " ms\n";
 }
 
-void generateAndWriteSplitHitAndWireDataIndividual(int eventCount, int fieldSize, const std::string& fileName) {
+void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "RECREATE");
@@ -624,11 +623,11 @@ void generateAndWriteSplitHitAndWireDataIndividual(int eventCount, int fieldSize
         auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
 
-        for (int i = start; i < end; ++i) {
+        for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate multiple hits and wires for this event to match Vector data volume
-            for (int j = 0; j < fieldSize; ++j) {
-                HitIndividual hit = generateRandomHitIndividual(i, rng);
-                WireIndividual wire = generateRandomWireIndividual(i, fieldSize, rng);
+            for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
+                HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
+                WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
                 
                 *eventID = hit.EventID;
                 *fChannel = hit.fChannel;
@@ -667,12 +666,12 @@ void generateAndWriteSplitHitAndWireDataIndividual(int eventCount, int fieldSize
     };
 
     int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount / nThreads;
+    int chunk = numEvents / nThreads;
     std::vector<std::thread> threads;
     auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount : start + chunk;
+    for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
+        int start = threadIndex * chunk;
+        int end = (threadIndex == nThreads - 1) ? numEvents : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();
@@ -682,9 +681,9 @@ void generateAndWriteSplitHitAndWireDataIndividual(int eventCount, int fieldSize
               << " ms\n";
 }
 
-void generateAndWriteSpilHitAndWireDataIndividual(int eventCount, int spilCount, int fieldSize, const std::string& fileName) {
+void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    int adjustedFieldSize = fieldSize / spilCount;
+    int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     std::filesystem::create_directories("./hitwire/hitspils");
     std::filesystem::create_directories("./hitwire/wirespils");
     TFile file(fileName.c_str(), "UPDATE");
@@ -769,14 +768,14 @@ void generateAndWriteSpilHitAndWireDataIndividual(int eventCount, int spilCount,
         auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
 
         for (int idx = start; idx < end; ++idx) {
-            int eventID_val = idx / spilCount;
-            int spilID_val = idx % spilCount;
+            int eventID_val = idx / numSpils;
+            int spilID_val = idx % numSpils;
             long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
             
             // Generate multiple hits and wires for this event to match Vector data volume
-            for (int j = 0; j < adjustedFieldSize; ++j) {
+            for (int hitIndex = 0; hitIndex < adjustedHitsPerEvent; ++hitIndex) {
                 HitIndividual hit = generateRandomHitIndividual(uniqueEventID, rng);
-                WireIndividual wire = generateRandomWireIndividual(uniqueEventID, adjustedFieldSize, rng);
+                WireIndividual wire = generateRandomWireIndividual(uniqueEventID, adjustedHitsPerEvent, rng);
 
                 *eventID_f = hit.EventID;
                 *spilID_f = spilID_val;
@@ -817,12 +816,12 @@ void generateAndWriteSpilHitAndWireDataIndividual(int eventCount, int spilCount,
     };
     
     int nThreads = std::thread::hardware_concurrency();
-    int chunk = eventCount * spilCount / nThreads;
+    int chunk = numEvents * numSpils / nThreads;
     threads.reserve(nThreads);
     auto chrono_start = std::chrono::high_resolution_clock::now();
-    for (int t = 0; t < nThreads; ++t) {
-        int start = t * chunk;
-        int end = (t == nThreads - 1) ? eventCount * spilCount : start + chunk;
+    for (int threadIndex = 0; threadIndex < nThreads; ++threadIndex) {
+        int start = threadIndex * chunk;
+        int end = (threadIndex == nThreads - 1) ? numEvents * numSpils : start + chunk;
         threads.emplace_back(fillFunc, start, end);
     }
     for (auto& th : threads) th.join();

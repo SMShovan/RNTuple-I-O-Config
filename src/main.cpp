@@ -2,27 +2,27 @@
 #include <iostream>
 
 int main() {
-    int EventCount = 1000;
-    int FieldSize = 100;
-    int SpilCount = 10;
+    int NumEvents = 1000;
+    int HitsPerEvent = 100;
+    int NumSpils = 10;
 
     std::cout << "Generating HitWire data with Vector format..." << std::endl;
-    generateAndWriteHitWireDataVector(EventCount, FieldSize, "./hitwire/HitWireVector.root");
+    generateAndWriteHitWireDataVector(NumEvents, HitsPerEvent, "./hitwire/HitWireVector.root");
     
     std::cout << "Generating HitWire data with Individual format..." << std::endl;
-    generateAndWriteHitWireDataIndividual(EventCount, FieldSize, "./hitwire/HitWireIndividual.root");
+    generateAndWriteHitWireDataIndividual(NumEvents, HitsPerEvent, "./hitwire/HitWireIndividual.root");
     
     std::cout << "Generating Split HitWire data with Vector format..." << std::endl;
-    generateAndWriteSplitHitAndWireDataVector(EventCount, FieldSize, "./hitwire/split_hitwire_vector.root");
+    generateAndWriteSplitHitAndWireDataVector(NumEvents, HitsPerEvent, "./hitwire/split_hitwire_vector.root");
     
     std::cout << "Generating Split HitWire data with Individual format..." << std::endl;
-    generateAndWriteSplitHitAndWireDataIndividual(EventCount, FieldSize, "./hitwire/split_hitwire_individual.root");
+    generateAndWriteSplitHitAndWireDataIndividual(NumEvents, HitsPerEvent, "./hitwire/split_hitwire_individual.root");
     
     std::cout << "Generating Spil HitWire data with Vector format..." << std::endl;
-    generateAndWriteSpilHitAndWireDataVector(EventCount, SpilCount, FieldSize, "./hitwire/hitspils/hits_spil_all_vector.root");
+    generateAndWriteSpilHitAndWireDataVector(NumEvents, NumSpils, HitsPerEvent, "./hitwire/hitspils/hits_spil_all_vector.root");
     
     std::cout << "Generating Spil HitWire data with Individual format..." << std::endl;
-    generateAndWriteSpilHitAndWireDataIndividual(EventCount, SpilCount, FieldSize, "./hitwire/hitspils/hits_spil_all_individual.root");
+    generateAndWriteSpilHitAndWireDataIndividual(NumEvents, NumSpils, HitsPerEvent, "./hitwire/hitspils/hits_spil_all_individual.root");
 
     return 0;
 } 

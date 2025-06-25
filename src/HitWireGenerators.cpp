@@ -1,7 +1,7 @@
 #include "HitWireGenerators.hpp"
 #include <random>
 
-HitVector generateRandomHitVector(long long eventID, int fieldSize, std::mt19937& rng) {
+HitVector generateRandomHitVector(long long eventID, int hitsPerEvent, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distChannel(0, 999);
     std::uniform_int_distribution<int> distTick(0, 5000);
     std::uniform_real_distribution<float> distFloat(0.0f, 100.0f);
@@ -12,7 +12,7 @@ HitVector generateRandomHitVector(long long eventID, int fieldSize, std::mt19937
 
     HitVector hit;
     hit.EventID = eventID;
-    for (int i = 0; i < fieldSize; ++i) {
+    for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
         unsigned int channel = distChannel(rng);
         int start_tick = distTick(rng);
         int end_tick = start_tick + distTick(rng) % 100;
@@ -62,7 +62,7 @@ HitVector generateRandomHitVector(long long eventID, int fieldSize, std::mt19937
     return hit;
 }
 
-WireVector generateRandomWireVector(long long eventID, int fieldSize, std::mt19937& rng) {
+WireVector generateRandomWireVector(long long eventID, int hitsPerEvent, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
@@ -72,7 +72,7 @@ WireVector generateRandomWireVector(long long eventID, int fieldSize, std::mt199
 
     WireVector wire;
     wire.EventID = eventID;
-    for (int i = 0; i < fieldSize; ++i) {
+    for (int wireIndex = 0; wireIndex < hitsPerEvent; ++wireIndex) {
         unsigned int wire_channel = distWireChannel(rng);
         int wire_view = distWireEnum(rng);
         wire.getWire_Channel().push_back(wire_channel);
@@ -80,11 +80,11 @@ WireVector generateRandomWireVector(long long eventID, int fieldSize, std::mt199
         // ROI flattening
         unsigned int nROIs = distNROIs(rng);
         wire.getSignalROI_nROIs().push_back(nROIs);
-        for (unsigned int j = 0; j < nROIs; ++j) {
+        for (unsigned int roiIndex = 0; roiIndex < nROIs; ++roiIndex) {
             std::size_t offset = distOffset(rng);
             int size = distSize(rng);
             wire.getSignalROI_offsets().push_back(offset);
-            for (int k = 0; k < size; ++k) {
+            for (int dataIndex = 0; dataIndex < size; ++dataIndex) {
                 float val = distADC(rng);
                 wire.getSignalROI_data().push_back(val);
             }
@@ -129,7 +129,7 @@ HitIndividual generateRandomHitIndividual(long long eventID, std::mt19937& rng) 
     return hit;
 }
 
-WireIndividual generateRandomWireIndividual(long long eventID, int nROIs, std::mt19937& rng) {
+WireIndividual generateRandomWireIndividual(long long eventID, int numROIs, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
@@ -141,11 +141,11 @@ WireIndividual generateRandomWireIndividual(long long eventID, int nROIs, std::m
     wire.fWire_Channel = distWireChannel(rng);
     wire.fWire_View = distWireEnum(rng);
 
-    for (int i = 0; i < nROIs; ++i) {
+    for (int roiIndex = 0; roiIndex < numROIs; ++roiIndex) {
         std::size_t offset = distOffset(rng);
         int size = distSize(rng);
         wire.fSignalROI_offsets.push_back(offset);
-        for (int k = 0; k < size; ++k) {
+        for (int dataIndex = 0; dataIndex < size; ++dataIndex) {
             float val = distADC(rng);
             wire.fSignalROI_data.push_back(val);
         }
