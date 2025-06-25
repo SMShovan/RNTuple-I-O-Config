@@ -1,5 +1,7 @@
 #pragma once
+
 #include <vector>
+#include <random>
 
 class WireSoA {
 public:
@@ -17,15 +19,21 @@ public:
     std::vector<float>& getSignalROI_data() { return fSignalROI_data; }
 };
 
+// Forward-declare the struct and its generator function to handle the friend relationship
+struct WireAoS;
+WireAoS generateRandomWireAoS(long long eventID, int nROIs, std::mt19937& rng);
+
 // AoS version for a single wire
 struct WireAoS {
+    // The generator needs to be a friend to access private members.
+    friend WireAoS generateRandomWireAoS(long long eventID, int nROIs, std::mt19937& rng);
+
     long long EventID;
     unsigned int fWire_Channel;
     int fWire_View;
-    unsigned int fSignalROI_nROIs;
-    std::size_t fSignalROI_offsets;
-    float fSignalROI_data;
-};
+    std::vector<std::size_t> fSignalROI_offsets;
+    std::vector<float> fSignalROI_data;
 
-// AoS generator declaration
-WireAoS generateRandomWireAoS(long long eventID); 
+    std::vector<std::size_t>& getSignalROI_offsets() { return fSignalROI_offsets; }
+    std::vector<float>& getSignalROI_data() { return fSignalROI_data; }
+}; 

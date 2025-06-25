@@ -129,20 +129,27 @@ HitAoS generateRandomHitAoS(long long eventID, std::mt19937& rng) {
     return hit;
 }
 
-WireAoS generateRandomWireAoS(long long eventID, std::mt19937& rng) {
+WireAoS generateRandomWireAoS(long long eventID, int nROIs, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
-    std::uniform_int_distribution<int> distNROIs(1, 3);
+    std::uniform_int_distribution<int> distSize(1, 10);
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
 
     WireAoS wire;
     wire.EventID = eventID;
     wire.fWire_Channel = distWireChannel(rng);
     wire.fWire_View = distWireEnum(rng);
-    wire.fSignalROI_nROIs = distNROIs(rng);
-    wire.fSignalROI_offsets = distOffset(rng);
-    wire.fSignalROI_data = distADC(rng);
+
+    for (int i = 0; i < nROIs; ++i) {
+        std::size_t offset = distOffset(rng);
+        int size = distSize(rng);
+        wire.fSignalROI_offsets.push_back(offset);
+        for (int k = 0; k < size; ++k) {
+            float val = distADC(rng);
+            wire.fSignalROI_data.push_back(val);
+        }
+    }
     return wire;
 }
 
