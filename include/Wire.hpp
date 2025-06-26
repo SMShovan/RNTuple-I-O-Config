@@ -36,7 +36,7 @@ struct RegionOfInterest : public TObject {
 };
 using RegionsOfInterest_t = std::vector<RegionOfInterest>;
 
-struct WireIndividual : public TObject {
+struct WireIndividual {
     long long EventID;
     unsigned int fWire_Channel;
     int fWire_View;
@@ -46,7 +46,5 @@ struct WireIndividual : public TObject {
     WireIndividual(const RegionsOfInterest_t& roi, unsigned int channel, int view)
         : fWire_Channel(channel), fWire_View(view), fSignalROI(roi) {}
 
-    // Direct access to the ROI structure (most efficient)
     RegionsOfInterest_t& getSignalROI() { return fSignalROI; }
-    ClassDef(WireIndividual, 1)
 }; 

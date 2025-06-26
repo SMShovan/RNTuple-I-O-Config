@@ -1,5 +1,4 @@
 #include "Wire.hpp"
 #include <TObject.h>
 
-ClassImp(RegionOfInterest)
-ClassImp(WireIndividual) 
+ClassImp(RegionOfInterest) 

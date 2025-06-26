@@ -47,14 +47,14 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
     hitModel->MakeField<std::vector<int>>("WireID_Plane");
     hitModel->MakeField<std::vector<int>>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireVector", file);
-    // --- WIRE NTUPLE ---
+    // --- WIRE NTUPLE MODEL for Vector-based writers ---
     auto wireModel = ROOT::RNTupleModel::Create();
     wireModel->MakeField<long long>("EventID");
-    wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
-    wireModel->MakeField<std::vector<int>>("Wire_View");
-    wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
-    wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
-    wireModel->MakeField<std::vector<float>>("SignalROI_data");
+    wireModel->MakeField<std::vector<unsigned int>>("fWire_Channel");
+    wireModel->MakeField<std::vector<int>>("fWire_View");
+    wireModel->MakeField<std::vector<unsigned int>>("fSignalROI_nROIs");
+    wireModel->MakeField<std::vector<std::size_t>>("fSignalROI_offsets");
+    wireModel->MakeField<std::vector<float>>("fSignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVector", file);
     
     int nThreads = std::thread::hardware_concurrency();
@@ -97,11 +97,11 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
         auto fWireID_Plane = hitEntry->GetPtr<std::vector<int>>("WireID_Plane");
         auto fWireID_Wire = hitEntry->GetPtr<std::vector<int>>("WireID_Wire");
         auto eventID_w = wireEntry->GetPtr<long long>("EventID");
-        auto fWire_Channel = wireEntry->GetPtr<std::vector<unsigned int>>("Wire_Channel");
-        auto fWire_View = wireEntry->GetPtr<std::vector<int>>("Wire_View");
-        auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
-        auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
-        auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        auto fWire_Channel_w = wireEntry->GetPtr<std::vector<unsigned int>>("fWire_Channel");
+        auto fWire_View_w = wireEntry->GetPtr<std::vector<int>>("fWire_View");
+        auto fSignalROI_nROIs_w = wireEntry->GetPtr<std::vector<unsigned int>>("fSignalROI_nROIs");
+        auto fSignalROI_offsets_w = wireEntry->GetPtr<std::vector<std::size_t>>("fSignalROI_offsets");
+        auto fSignalROI_data_w = wireEntry->GetPtr<std::vector<float>>("fSignalROI_data");
         
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate data (not timed)
@@ -135,11 +135,11 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
             *fWireID_Wire = std::move(hit.getWireID_Wire());
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
-            *fWire_Channel = std::move(wire.getWire_Channel());
-            *fWire_View = std::move(wire.getWire_View());
-            *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
+            *fWire_Channel_w = wire.getWire_Channel();
+            *fWire_View_w = wire.getWire_View();
+            *fSignalROI_nROIs_w = wire.getSignalROI_nROIs();
+            *fSignalROI_offsets_w = wire.getSignalROI_offsets();
+            *fSignalROI_data_w = wire.getSignalROI_data();
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
         }
@@ -199,14 +199,14 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
     hitModel->MakeField<std::vector<int>>("WireID_Plane");
     hitModel->MakeField<std::vector<int>>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitVector", file);
-    // --- WIRE NTUPLE ---
+    // --- WIRE NTUPLE MODEL for Vector-based writers ---
     auto wireModel = ROOT::RNTupleModel::Create();
     wireModel->MakeField<long long>("EventID");
-    wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
-    wireModel->MakeField<std::vector<int>>("Wire_View");
-    wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
-    wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
-    wireModel->MakeField<std::vector<float>>("SignalROI_data");
+    wireModel->MakeField<std::vector<unsigned int>>("fWire_Channel");
+    wireModel->MakeField<std::vector<int>>("fWire_View");
+    wireModel->MakeField<std::vector<unsigned int>>("fSignalROI_nROIs");
+    wireModel->MakeField<std::vector<std::size_t>>("fSignalROI_offsets");
+    wireModel->MakeField<std::vector<float>>("fSignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVector", file);
     
     int nThreads = std::thread::hardware_concurrency();
@@ -249,11 +249,11 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         auto fWireID_Plane = hitEntry->GetPtr<std::vector<int>>("WireID_Plane");
         auto fWireID_Wire = hitEntry->GetPtr<std::vector<int>>("WireID_Wire");
         auto eventID_w = wireEntry->GetPtr<long long>("EventID");
-        auto fWire_Channel = wireEntry->GetPtr<std::vector<unsigned int>>("Wire_Channel");
-        auto fWire_View = wireEntry->GetPtr<std::vector<int>>("Wire_View");
-        auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
-        auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
-        auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        auto fWire_Channel_w = wireEntry->GetPtr<std::vector<unsigned int>>("fWire_Channel");
+        auto fWire_View_w = wireEntry->GetPtr<std::vector<int>>("fWire_View");
+        auto fSignalROI_nROIs_w = wireEntry->GetPtr<std::vector<unsigned int>>("fSignalROI_nROIs");
+        auto fSignalROI_offsets_w = wireEntry->GetPtr<std::vector<std::size_t>>("fSignalROI_offsets");
+        auto fSignalROI_data_w = wireEntry->GetPtr<std::vector<float>>("fSignalROI_data");
         
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate data (not timed)
@@ -287,11 +287,11 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
             *fWireID_Wire = std::move(hit.getWireID_Wire());
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
-            *fWire_Channel = std::move(wire.getWire_Channel());
-            *fWire_View = std::move(wire.getWire_View());
-            *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
+            *fWire_Channel_w = wire.getWire_Channel();
+            *fWire_View_w = wire.getWire_View();
+            *fSignalROI_nROIs_w = wire.getSignalROI_nROIs();
+            *fSignalROI_offsets_w = wire.getSignalROI_offsets();
+            *fSignalROI_data_w = wire.getSignalROI_data();
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
         }
@@ -355,15 +355,15 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
     hitModel->MakeField<std::vector<int>>("WireID_Plane");
     hitModel->MakeField<std::vector<int>>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilVector", file);
-    // --- WIRE NTUPLE ---
+    // --- WIRE NTUPLE MODEL for Vector-based writers ---
     auto wireModel = ROOT::RNTupleModel::Create();
     wireModel->MakeField<long long>("EventID");
     wireModel->MakeField<int>("SpilID");
-    wireModel->MakeField<std::vector<unsigned int>>("Wire_Channel");
-    wireModel->MakeField<std::vector<int>>("Wire_View");
-    wireModel->MakeField<std::vector<unsigned int>>("SignalROI_nROIs");
-    wireModel->MakeField<std::vector<std::size_t>>("SignalROI_offsets");
-    wireModel->MakeField<std::vector<float>>("SignalROI_data");
+    wireModel->MakeField<std::vector<unsigned int>>("fWire_Channel");
+    wireModel->MakeField<std::vector<int>>("fWire_View");
+    wireModel->MakeField<std::vector<unsigned int>>("fSignalROI_nROIs");
+    wireModel->MakeField<std::vector<std::size_t>>("fSignalROI_offsets");
+    wireModel->MakeField<std::vector<float>>("fSignalROI_data");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilVector", file);
     int total = numEvents * numSpils;
     
@@ -408,11 +408,11 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         auto fWireID_Wire = hitEntry->GetPtr<std::vector<int>>("WireID_Wire");
         auto eventID_w = wireEntry->GetPtr<long long>("EventID");
         auto spilID_w = wireEntry->GetPtr<int>("SpilID");
-        auto fWire_Channel = wireEntry->GetPtr<std::vector<unsigned int>>("Wire_Channel");
-        auto fWire_View = wireEntry->GetPtr<std::vector<int>>("Wire_View");
-        auto fSignalROI_nROIs = wireEntry->GetPtr<std::vector<unsigned int>>("SignalROI_nROIs");
-        auto fSignalROI_offsets = wireEntry->GetPtr<std::vector<std::size_t>>("SignalROI_offsets");
-        auto fSignalROI_data = wireEntry->GetPtr<std::vector<float>>("SignalROI_data");
+        auto fWire_Channel_w = wireEntry->GetPtr<std::vector<unsigned int>>("fWire_Channel");
+        auto fWire_View_w = wireEntry->GetPtr<std::vector<int>>("fWire_View");
+        auto fSignalROI_nROIs_w = wireEntry->GetPtr<std::vector<unsigned int>>("fSignalROI_nROIs");
+        auto fSignalROI_offsets_w = wireEntry->GetPtr<std::vector<std::size_t>>("fSignalROI_offsets");
+        auto fSignalROI_data_w = wireEntry->GetPtr<std::vector<float>>("fSignalROI_data");
         
         for (int idx = start; idx < end; ++idx) {
             int eventID_val = idx / numSpils;
@@ -452,11 +452,11 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             hitFillContext->Fill(*hitEntry);
             *eventID_w = wire.EventID;
             *spilID_w = spilID_val;
-            *fWire_Channel = std::move(wire.getWire_Channel());
-            *fWire_View = std::move(wire.getWire_View());
-            *fSignalROI_nROIs = std::move(wire.getSignalROI_nROIs());
-            *fSignalROI_offsets = wire.getSignalROI_offsets();
-            *fSignalROI_data = wire.getSignalROI_data();
+            *fWire_Channel_w = wire.getWire_Channel();
+            *fWire_View_w = wire.getWire_View();
+            *fSignalROI_nROIs_w = wire.getSignalROI_nROIs();
+            *fSignalROI_offsets_w = wire.getSignalROI_offsets();
+            *fSignalROI_data_w = wire.getSignalROI_data();
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
         }
@@ -517,8 +517,12 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
     hitModel->MakeField<int>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireIndividual", file);
 
+    // --- WIRE NTUPLE MODEL for Individual-based writers ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireIndividual>("WireIndividual");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<unsigned int>("fWire_Channel");
+    wireModel->MakeField<int>("fWire_View");
+    wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividual", file);
     
     int nThreads = std::thread::hardware_concurrency();
@@ -559,7 +563,10 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
         auto fWireID_Plane = hitEntry->GetPtr<int>("WireID_Plane");
         auto fWireID_Wire = hitEntry->GetPtr<int>("WireID_Wire");
 
-        auto wireObj = wireEntry->GetPtr<WireIndividual>("WireIndividual");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel_w = wireEntry->GetPtr<unsigned int>("fWire_Channel");
+        auto fWire_View_w = wireEntry->GetPtr<int>("fWire_View");
+        auto fSignalROI_w = wireEntry->GetPtr<std::vector<RegionOfInterest>>("fSignalROI");
 
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate multiple hits and wires for this event to match Vector data volume
@@ -594,7 +601,9 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
                 *fWireID_Plane = hit.fWireID_Plane;
                 *fWireID_Wire = hit.fWireID_Wire;
 
-                *wireObj = wire;
+                *fWire_Channel_w = wire.fWire_Channel;
+                *fWire_View_w = wire.fWire_View;
+                *fSignalROI_w = wire.fSignalROI;
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -658,8 +667,12 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
     hitModel->MakeField<int>("WireID_Wire");
     auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitIndividual", file);
 
+    // --- WIRE NTUPLE MODEL for Individual-based writers ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireIndividual>("WireIndividual");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<unsigned int>("fWire_Channel");
+    wireModel->MakeField<int>("fWire_View");
+    wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividual", file);
     
     int nThreads = std::thread::hardware_concurrency();
@@ -700,7 +713,10 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         auto fWireID_Plane = hitEntry->GetPtr<int>("WireID_Plane");
         auto fWireID_Wire = hitEntry->GetPtr<int>("WireID_Wire");
 
-        auto wireObj = wireEntry->GetPtr<WireIndividual>("WireIndividual");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel_w = wireEntry->GetPtr<unsigned int>("fWire_Channel");
+        auto fWire_View_w = wireEntry->GetPtr<int>("fWire_View");
+        auto fSignalROI_w = wireEntry->GetPtr<std::vector<RegionOfInterest>>("fSignalROI");
 
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate multiple hits and wires for this event to match Vector data volume
@@ -735,7 +751,9 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
                 *fWireID_Plane = hit.fWireID_Plane;
                 *fWireID_Wire = hit.fWireID_Wire;
 
-                *wireObj = wire;
+                *fWire_Channel_w = wire.fWire_Channel;
+                *fWire_View_w = wire.fWire_View;
+                *fSignalROI_w = wire.fSignalROI;
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
@@ -805,7 +823,10 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
 
     // --- WIRE NTUPLE MODEL (Individual) ---
     auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireIndividual>("WireIndividual");
+    wireModel->MakeField<long long>("EventID");
+    wireModel->MakeField<unsigned int>("fWire_Channel");
+    wireModel->MakeField<int>("fWire_View");
+    wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
     auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilIndividual", file);
 
     int nThreads = std::thread::hardware_concurrency();
@@ -847,7 +868,10 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         auto fWireID_Plane = hitEntry->GetPtr<int>("WireID_Plane");
         auto fWireID_Wire = hitEntry->GetPtr<int>("WireID_Wire");
 
-        auto wireObj = wireEntry->GetPtr<WireIndividual>("WireIndividual");
+        auto eventID_w = wireEntry->GetPtr<long long>("EventID");
+        auto fWire_Channel_w = wireEntry->GetPtr<unsigned int>("fWire_Channel");
+        auto fWire_View_w = wireEntry->GetPtr<int>("fWire_View");
+        auto fSignalROI_w = wireEntry->GetPtr<std::vector<RegionOfInterest>>("fSignalROI");
 
         for (int idx = start; idx < end; ++idx) {
             int eventID_val = idx / numSpils;
@@ -887,7 +911,9 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
                 *fWireID_Plane = hit.fWireID_Plane;
                 *fWireID_Wire = hit.fWireID_Wire;
 
-                *wireObj = wire;
+                *fWire_Channel_w = wire.fWire_Channel;
+                *fWire_View_w = wire.fWire_View;
+                *fSignalROI_w = wire.fSignalROI;
                 
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
