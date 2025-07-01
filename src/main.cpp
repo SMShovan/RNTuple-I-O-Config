@@ -38,6 +38,8 @@ int main() {
     generateAndWriteSpilHitAndWireDataVectorDict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, "./hitwire/hitspils/hits_spil_all_vector_dict.root");
     std::cout << "Generating Spil HitWire data with Individual format (Dict)..." << std::endl;
     generateAndWriteSpilHitAndWireDataIndividualDict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, "./hitwire/hitspils/hits_spil_all_individual_dict.root");
+    std::cout << "Generating HitWire data with Vector of Individuals format..." << std::endl;
+    generateAndWriteHitWireDataVectorOfIndividuals(numEvents, hitsPerEvent, wiresPerEvent, "./hitwire/HitWireVectorOfIndividuals.root");
 
     return 0;
 } 

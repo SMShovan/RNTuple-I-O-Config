@@ -4,4 +4,6 @@
 #pragma link C++ class WireVector+;
 #pragma link C++ class HitVector+;
 #pragma link C++ class HitIndividual+;
+#pragma link C++ class std::vector<HitIndividual>+;
+#pragma link C++ class std::vector<WireIndividual>+;
 #endif 
