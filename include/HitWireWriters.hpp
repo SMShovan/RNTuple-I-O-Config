@@ -6,4 +6,12 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
 void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName);
 void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName);
 void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName);
-void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName); 
+void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName);
+
+// Dictionary-based experiments
+void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, const std::string& fileName);
+void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, const std::string& fileName);
+void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, const std::string& fileName);
+void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, const std::string& fileName);
+void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName);
+void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName); 

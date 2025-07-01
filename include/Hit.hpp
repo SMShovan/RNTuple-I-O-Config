@@ -1,7 +1,8 @@
 #pragma once
 #include <vector>
+#include <TObject.h>
 
-class HitVector {
+class HitVector : public TObject {
 public:
     long long EventID;
     std::vector<unsigned int> fChannel;
@@ -27,6 +28,8 @@ public:
     std::vector<int> fWireID_Plane;
     std::vector<int> fWireID_Wire;
 
+    HitVector();
+    virtual ~HitVector();
     std::vector<unsigned int>& getChannel() { return fChannel; }
     std::vector<int>& getView() { return fView; }
     std::vector<int>& getStartTick() { return fStartTick; }
@@ -49,10 +52,11 @@ public:
     std::vector<int>& getWireID_TPC() { return fWireID_TPC; }
     std::vector<int>& getWireID_Plane() { return fWireID_Plane; }
     std::vector<int>& getWireID_Wire() { return fWireID_Wire; }
+    ClassDef(HitVector, 1)
 };
 
 // Individual version for a single hit
-struct HitIndividual {
+struct HitIndividual : public TObject {
     long long EventID;
     unsigned int fChannel;
     int fView;
@@ -76,6 +80,9 @@ struct HitIndividual {
     int fWireID_TPC;
     int fWireID_Plane;
     int fWireID_Wire;
+    HitIndividual();
+    virtual ~HitIndividual();
+    ClassDef(HitIndividual, 1)
 };
 
 // Individual generator declaration
