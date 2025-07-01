@@ -973,8 +973,8 @@ void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int 
             HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
             WireVector wire = generateRandomWireVector(eventIndex, wiresPerEvent, rng);
             storageTimer.Start();
-            *hitObj = hit;
-            *wireObj = wire;
+            *hitObj = std::move(hit);
+            *wireObj = std::move(wire);
             hitFillContext->Fill(*hitEntry);
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
@@ -1024,8 +1024,8 @@ void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, 
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
                 WireIndividual wire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 storageTimer.Start();
-                *hitObj = hit;
-                *wireObj = wire;
+                *hitObj = std::move(hit);
+                *wireObj = std::move(wire);
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
                 storageTimer.Stop();
@@ -1075,8 +1075,8 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
             HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
             WireVector wire = generateRandomWireVector(eventIndex, wiresPerEvent, rng);
             storageTimer.Start();
-            *hitObj = hit;
-            *wireObj = wire;
+            *hitObj = std::move(hit);
+            *wireObj = std::move(wire);
             hitFillContext->Fill(*hitEntry);
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
@@ -1126,8 +1126,8 @@ void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPe
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
                 WireIndividual wire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 storageTimer.Start();
-                *hitObj = hit;
-                *wireObj = wire;
+                *hitObj = std::move(hit);
+                *wireObj = std::move(wire);
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
                 storageTimer.Stop();
@@ -1183,8 +1183,8 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
             HitVector hit = generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng);
             WireVector wire = generateRandomWireVector(uniqueEventID, wiresPerEvent, rng);
             storageTimer.Start();
-            *hitObj = hit;
-            *wireObj = wire;
+            *hitObj = std::move(hit);
+            *wireObj = std::move(wire);
             hitFillContext->Fill(*hitEntry);
             wireFillContext->Fill(*wireEntry);
             storageTimer.Stop();
@@ -1240,8 +1240,8 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
                 HitIndividual hit = generateRandomHitIndividual(uniqueEventID, rng);
                 WireIndividual wire = generateRandomWireIndividual(uniqueEventID, wiresPerEvent, rng);
                 storageTimer.Start();
-                *hitObj = hit;
-                *wireObj = wire;
+                *hitObj = std::move(hit);
+                *wireObj = std::move(wire);
                 hitFillContext->Fill(*hitEntry);
                 wireFillContext->Fill(*wireEntry);
                 storageTimer.Stop();
