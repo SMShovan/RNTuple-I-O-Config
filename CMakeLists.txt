@@ -34,7 +34,7 @@ add_custom_command(
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
-set(DICTIONARY_SOURCES ${DICT_OUTPUT} ${CMAKE_SOURCE_DIR}/src/Wire.cpp ${CMAKE_SOURCE_DIR}/src/Hit.cpp)
+set(DICTIONARY_SOURCES ${DICT_OUTPUT})
 add_executable(hitwire ${SOURCES} ${DICTIONARY_SOURCES})
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})

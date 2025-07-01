@@ -2,7 +2,7 @@
 #include <vector>
 #include <TObject.h>
 
-class HitVector : public TObject {
+class HitVector{
 public:
     long long EventID;
     std::vector<unsigned int> fChannel;
@@ -28,8 +28,8 @@ public:
     std::vector<int> fWireID_Plane;
     std::vector<int> fWireID_Wire;
 
-    HitVector();
-    virtual ~HitVector();
+    HitVector() = default;
+    
     std::vector<unsigned int>& getChannel() { return fChannel; }
     std::vector<int>& getView() { return fView; }
     std::vector<int>& getStartTick() { return fStartTick; }
@@ -52,11 +52,11 @@ public:
     std::vector<int>& getWireID_TPC() { return fWireID_TPC; }
     std::vector<int>& getWireID_Plane() { return fWireID_Plane; }
     std::vector<int>& getWireID_Wire() { return fWireID_Wire; }
-    ClassDef(HitVector, 1)
+    ClassDef(HitVector, 3)
 };
 
 // Individual version for a single hit
-struct HitIndividual : public TObject {
+struct HitIndividual {
     long long EventID;
     unsigned int fChannel;
     int fView;
@@ -80,9 +80,9 @@ struct HitIndividual : public TObject {
     int fWireID_TPC;
     int fWireID_Plane;
     int fWireID_Wire;
-    HitIndividual();
-    virtual ~HitIndividual();
-    ClassDef(HitIndividual, 1)
+    HitIndividual() = default;
+    
+    ClassDef(HitIndividual, 3)
 };
 
 // Individual generator declaration

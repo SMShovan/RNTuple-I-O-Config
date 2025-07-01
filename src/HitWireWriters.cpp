@@ -17,7 +17,7 @@
 #include <utility>
 #include <TObject.h>
 
-void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
@@ -106,7 +106,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate data (not timed)
             HitVector hit = std::move(generateRandomHitVector(eventIndex, hitsPerEvent, rng));
-            WireVector wire = std::move(generateRandomWireVector(eventIndex, hitsPerEvent, rng));
+            WireVector wire = std::move(generateRandomWireVector(eventIndex, wiresPerEvent, rng));
             
             // TIMING: RNTuple Storage Operations only
             storageTimer.Start();
@@ -169,7 +169,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, const st
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
@@ -258,7 +258,7 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             // Generate data (not timed)
             HitVector hit = std::move(generateRandomHitVector(eventIndex, hitsPerEvent, rng));
-            WireVector wire = std::move(generateRandomWireVector(eventIndex, hitsPerEvent, rng));
+            WireVector wire = std::move(generateRandomWireVector(eventIndex, wiresPerEvent, rng));
             
             // TIMING: RNTuple Storage Operations only
             storageTimer.Start();
@@ -321,7 +321,7 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     std::filesystem::create_directories("./hitwire");
@@ -421,7 +421,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             
             // Generate data (not timed)
             HitVector hit = std::move(generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng));
-            WireVector wire = std::move(generateRandomWireVector(uniqueEventID, adjustedHitsPerEvent, rng));
+            WireVector wire = std::move(generateRandomWireVector(uniqueEventID, wiresPerEvent, rng));
             
             // TIMING: RNTuple Storage Operations only
             storageTimer.Start();
@@ -486,7 +486,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "RECREATE");
@@ -573,7 +573,7 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
                 // Generate data (not timed)
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
-                WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
+                WireIndividual wire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 
                 // TIMING: RNTuple Storage Operations only
                 storageTimer.Start();
@@ -636,7 +636,7 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, cons
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "RECREATE");
@@ -723,7 +723,7 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
                 // Generate data (not timed)
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
-                WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
+                WireIndividual wire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 
                 // TIMING: RNTuple Storage Operations only
                 storageTimer.Start();
@@ -786,7 +786,7 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
     // Writers go out of scope and flush/close automatically
 }
 
-void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     std::filesystem::create_directories("./hitwire/hitspils");
@@ -882,7 +882,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
             for (int hitIndex = 0; hitIndex < adjustedHitsPerEvent; ++hitIndex) {
                 // Generate data (not timed)
                 HitIndividual hit = generateRandomHitIndividual(uniqueEventID, rng);
-                WireIndividual wire = generateRandomWireIndividual(uniqueEventID, adjustedHitsPerEvent, rng);
+                WireIndividual wire = generateRandomWireIndividual(uniqueEventID, wiresPerEvent, rng);
                 
                 // TIMING: RNTuple Storage Operations only
                 storageTimer.Start();
@@ -947,7 +947,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
 }
 
 // --- New: Store entire HitVector and WireVector as single fields (Vector-based) ---
-void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
@@ -971,7 +971,7 @@ void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, cons
         storageTimer.Reset();
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
-            WireVector wire = generateRandomWireVector(eventIndex, hitsPerEvent, rng);
+            WireVector wire = generateRandomWireVector(eventIndex, wiresPerEvent, rng);
             storageTimer.Start();
             *hitObj = hit;
             *wireObj = wire;
@@ -997,7 +997,7 @@ void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, cons
 }
 
 // --- New: Store entire HitIndividual and WireIndividual as single fields (Individual-based) ---
-void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "RECREATE");
@@ -1022,7 +1022,7 @@ void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, 
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
-                WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
+                WireIndividual wire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 storageTimer.Start();
                 *hitObj = hit;
                 *wireObj = wire;
@@ -1049,7 +1049,7 @@ void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, 
 }
 
 // --- New: Split Vector-based, store as objects ---
-void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "UPDATE");
@@ -1073,7 +1073,7 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
         storageTimer.Reset();
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             HitVector hit = generateRandomHitVector(eventIndex, hitsPerEvent, rng);
-            WireVector wire = generateRandomWireVector(eventIndex, hitsPerEvent, rng);
+            WireVector wire = generateRandomWireVector(eventIndex, wiresPerEvent, rng);
             storageTimer.Start();
             *hitObj = hit;
             *wireObj = wire;
@@ -1099,7 +1099,7 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
 }
 
 // --- New: Split Individual-based, store as objects ---
-void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./hitwire");
     TFile file(fileName.c_str(), "RECREATE");
@@ -1124,7 +1124,7 @@ void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPe
         for (int eventIndex = start; eventIndex < end; ++eventIndex) {
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
                 HitIndividual hit = generateRandomHitIndividual(eventIndex, rng);
-                WireIndividual wire = generateRandomWireIndividual(eventIndex, hitsPerEvent, rng);
+                WireIndividual wire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 storageTimer.Start();
                 *hitObj = hit;
                 *wireObj = wire;
@@ -1151,7 +1151,7 @@ void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPe
 }
 
 // --- New: Spil Vector-based, store as objects ---
-void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     std::filesystem::create_directories("./hitwire/hitspils");
@@ -1181,7 +1181,7 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
             int spilID_val = idx % numSpils;
             long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
             HitVector hit = generateRandomHitVector(uniqueEventID, adjustedHitsPerEvent, rng);
-            WireVector wire = generateRandomWireVector(uniqueEventID, adjustedHitsPerEvent, rng);
+            WireVector wire = generateRandomWireVector(uniqueEventID, wiresPerEvent, rng);
             storageTimer.Start();
             *hitObj = hit;
             *wireObj = wire;
@@ -1207,7 +1207,7 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
 }
 
 // --- New: Spil Individual-based, store as objects ---
-void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpils, int hitsPerEvent, const std::string& fileName) {
+void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     std::filesystem::create_directories("./hitwire/hitspils");
@@ -1238,7 +1238,7 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
             long long uniqueEventID = static_cast<long long>(eventID_val) * 10000 + spilID_val;
             for (int hitIndex = 0; hitIndex < adjustedHitsPerEvent; ++hitIndex) {
                 HitIndividual hit = generateRandomHitIndividual(uniqueEventID, rng);
-                WireIndividual wire = generateRandomWireIndividual(uniqueEventID, adjustedHitsPerEvent, rng);
+                WireIndividual wire = generateRandomWireIndividual(uniqueEventID, wiresPerEvent, rng);
                 storageTimer.Start();
                 *hitObj = hit;
                 *wireObj = wire;
