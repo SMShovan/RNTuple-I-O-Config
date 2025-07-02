@@ -19,7 +19,7 @@
 
 void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
@@ -47,7 +47,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wire
         hitModel->MakeField<std::vector<int>>("WireID_TPC");
         hitModel->MakeField<std::vector<int>>("WireID_Plane");
         hitModel->MakeField<std::vector<int>>("WireID_Wire");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireVector", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         // --- WIRE NTUPLE MODEL for Vector-based writers ---
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<long long>("EventID");
@@ -56,7 +56,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wire
         wireModel->MakeField<std::vector<unsigned int>>("fSignalROI_nROIs");
         wireModel->MakeField<std::vector<std::size_t>>("fSignalROI_offsets");
         wireModel->MakeField<std::vector<float>>("fSignalROI_data");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVector", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -172,7 +172,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wire
 
 void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
@@ -200,7 +200,7 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         hitModel->MakeField<std::vector<int>>("WireID_TPC");
         hitModel->MakeField<std::vector<int>>("WireID_Plane");
         hitModel->MakeField<std::vector<int>>("WireID_Wire");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitVector", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         // --- WIRE NTUPLE MODEL for Vector-based writers ---
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<long long>("EventID");
@@ -209,7 +209,7 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         wireModel->MakeField<std::vector<unsigned int>>("fSignalROI_nROIs");
         wireModel->MakeField<std::vector<std::size_t>>("fSignalROI_offsets");
         wireModel->MakeField<std::vector<float>>("fSignalROI_data");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVector", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -326,7 +326,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     int adjustedWiresPerEvent = wiresPerEvent / numSpils; // keep total wires constant across spils
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     std::filesystem::create_directories("./hitwire/hitspils");
     std::filesystem::create_directories("./hitwire/wirespils");
     TFile file(fileName.c_str(), "RECREATE");
@@ -357,7 +357,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         hitModel->MakeField<std::vector<int>>("WireID_TPC");
         hitModel->MakeField<std::vector<int>>("WireID_Plane");
         hitModel->MakeField<std::vector<int>>("WireID_Wire");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilVector", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         // --- WIRE NTUPLE MODEL for Vector-based writers ---
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<long long>("EventID");
@@ -367,7 +367,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         wireModel->MakeField<std::vector<unsigned int>>("fSignalROI_nROIs");
         wireModel->MakeField<std::vector<std::size_t>>("fSignalROI_offsets");
         wireModel->MakeField<std::vector<float>>("fSignalROI_data");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilVector", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int total = numEvents * numSpils;
         
         int nThreads = std::thread::hardware_concurrency();
@@ -490,7 +490,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
 
 void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
@@ -518,7 +518,7 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int 
         hitModel->MakeField<int>("WireID_TPC");
         hitModel->MakeField<int>("WireID_Plane");
         hitModel->MakeField<int>("WireID_Wire");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireIndividual", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
 
         // --- WIRE NTUPLE MODEL for Individual-based writers ---
         auto wireModel = ROOT::RNTupleModel::Create();
@@ -526,7 +526,7 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int 
         wireModel->MakeField<unsigned int>("fWire_Channel");
         wireModel->MakeField<int>("fWire_View");
         wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividual", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -640,7 +640,7 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int 
 
 void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
@@ -668,7 +668,7 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         hitModel->MakeField<int>("WireID_TPC");
         hitModel->MakeField<int>("WireID_Plane");
         hitModel->MakeField<int>("WireID_Wire");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitIndividual", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
 
         // --- WIRE NTUPLE MODEL for Individual-based writers ---
         auto wireModel = ROOT::RNTupleModel::Create();
@@ -676,7 +676,7 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         wireModel->MakeField<unsigned int>("fWire_Channel");
         wireModel->MakeField<int>("fWire_View");
         wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividual", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -822,7 +822,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         hitModel->MakeField<int>("WireID_TPC");
         hitModel->MakeField<int>("WireID_Plane");
         hitModel->MakeField<int>("WireID_Wire");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilIndividual", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
 
         // --- WIRE NTUPLE MODEL (Individual) ---
         auto wireModel = ROOT::RNTupleModel::Create();
@@ -830,7 +830,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         wireModel->MakeField<unsigned int>("fWire_Channel");
         wireModel->MakeField<int>("fWire_View");
         wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilIndividual", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
 
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -951,16 +951,16 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
 // --- New: Store entire HitVector and WireVector as single fields (Vector-based) ---
 void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<HitVector>("HitVector");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireVectorDict", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireVector>("WireVector");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVectorDict", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -1004,16 +1004,16 @@ void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int 
 // --- New: Store entire HitIndividual and WireIndividual as single fields (Individual-based) ---
 void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<HitIndividual>("HitIndividual");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireIndividualDict", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireIndividual>("WireIndividual");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividualDict", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -1059,16 +1059,16 @@ void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, 
 // --- New: Split Vector-based, store as objects ---
 void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<HitVector>("HitVector");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitVectorDict", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireVector>("WireVector");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVectorDict", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -1112,16 +1112,16 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
 // --- New: Split Individual-based, store as objects ---
 void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<HitIndividual>("HitIndividual");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitIndividualDict", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireIndividual>("WireIndividual");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireIndividualDict", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -1176,10 +1176,10 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
         // --- HIT NTUPLE ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<HitVector>("HitVector");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilVectorDict", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireVector>("WireVector");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilVectorDict", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int total = numEvents * numSpils;
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -1236,10 +1236,10 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
         // --- HIT NTUPLE MODEL (Individual) ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<HitIndividual>("HitIndividual");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitSpilIndividualDict", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireIndividual>("WireIndividual");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireSpilIndividualDict", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int total = numEvents * numSpils;
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
@@ -1288,19 +1288,19 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
 
 void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    std::filesystem::create_directories("./hitwire");
+    std::filesystem::create_directories("./output");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
         auto hitModel = ROOT::RNTupleModel::Create();
         hitModel->MakeField<long long>("EventID");
         hitModel->MakeField<std::vector<HitIndividual>>("Hits");
-        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "HitWireVectorOfIndividuals", file);
+        auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
         // --- WIRE NTUPLE ---
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<long long>("EventID");
         wireModel->MakeField<std::vector<WireIndividual>>("Wires");
-        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "WireVectorOfIndividuals", file);
+        auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
 
         int nThreads = std::thread::hardware_concurrency();
         auto seeds = Utils::generateSeeds(nThreads);
