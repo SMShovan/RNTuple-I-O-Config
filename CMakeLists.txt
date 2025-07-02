@@ -14,11 +14,17 @@ execute_process(
     OUTPUT_VARIABLE ROOT_LIBS
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+execute_process(
+    COMMAND root-config --incdir
+    OUTPUT_VARIABLE ROOT_INCDIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 separate_arguments(ROOT_CFLAGS)
 separate_arguments(ROOT_LIBS)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${ROOT_INCDIR})
 
 file(GLOB SOURCES "src/*.cpp")
 
@@ -39,3 +45,8 @@ add_executable(hitwire ${SOURCES} ${DICTIONARY_SOURCES})
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})
 target_link_libraries(hitwire PRIVATE ${ROOT_LIBS})
+
+# Add this section to build the dictionary as a shared library
+add_library(WireDict SHARED ${DICT_OUTPUT})
+target_include_directories(WireDict PRIVATE ${ROOT_INCDIR})
+target_link_libraries(WireDict PRIVATE ${ROOT_LIBS})

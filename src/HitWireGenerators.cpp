@@ -64,26 +64,24 @@ HitVector generateRandomHitVector(long long eventID, int hitsPerEvent, std::mt19
     return hit;
 }
 
-WireVector generateRandomWireVector(long long eventID, int hitsPerEvent, std::mt19937& rng) {
+WireVector generateRandomWireVector(long long eventID, int wiresPerEvent, int roisPerWire, std::mt19937& rng) {
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
     std::uniform_int_distribution<int> distSize(1, 10);
-    std::uniform_int_distribution<int> distNROIs(1, 3);
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
 
     WireVector wire;
     wire.EventID = eventID;
     
-    for (int wireIndex = 0; wireIndex < hitsPerEvent; ++wireIndex) {
+    for (int wireIndex = 0; wireIndex < wiresPerEvent; ++wireIndex) {
         unsigned int wire_channel = distWireChannel(rng);
         int wire_view = distWireEnum(rng);
         wire.getWire_Channel().push_back(wire_channel);
         wire.getWire_View().push_back(wire_view);
         // ROI flattening
-        unsigned int nROIs = distNROIs(rng);
-        wire.getSignalROI_nROIs().push_back(nROIs);
-        for (unsigned int roiIndex = 0; roiIndex < nROIs; ++roiIndex) {
+        wire.getSignalROI_nROIs().push_back(roisPerWire);
+        for (int roiIndex = 0; roiIndex < roisPerWire; ++roiIndex) {
             std::size_t offset = distOffset(rng);
             int size = distSize(rng);
             wire.getSignalROI_offsets().push_back(offset);
@@ -94,6 +92,11 @@ WireVector generateRandomWireVector(long long eventID, int hitsPerEvent, std::mt
         }
     }
     return wire;
+}
+
+// Overload for backward compatibility – forwards to the 3-parameter version with roisPerWire = wiresPerEvent
+WireVector generateRandomWireVector(long long eventID, int wiresPerEvent, std::mt19937& rng) {
+    return generateRandomWireVector(eventID, wiresPerEvent, wiresPerEvent, rng);
 }
 
 HitIndividual generateRandomHitIndividual(long long eventID, std::mt19937& rng) {
@@ -157,5 +160,10 @@ WireIndividual generateRandomWireIndividual(long long eventID, int numROIs, std:
         wire.fSignalROI.push_back(std::move(roi));
     }
     return wire;
+}
+
+// Overload for backward compatibility – forwards to the 3-parameter version (ignores the second int parameter)
+WireIndividual generateRandomWireIndividual(long long eventID, int /*dummyROIs*/, int numROIs, std::mt19937& rng) {
+    return generateRandomWireIndividual(eventID, numROIs, rng);
 }
 

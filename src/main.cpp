@@ -2,10 +2,10 @@
 #include <iostream>
 
 int main() {
-    int numEvents = 1000;
-    int hitsPerEvent = 100;
-    int wiresPerEvent = 100;
-    int numSpils = 10;
+    int numEvents = 100;
+    int hitsPerEvent = 10;
+    int wiresPerEvent = 10;
+    int numSpils = 5;
 
     std::cout << "Generating HitWire data with Vector format..." << std::endl;
     generateAndWriteHitWireDataVector(numEvents, hitsPerEvent, wiresPerEvent, "./hitwire/HitWireVector.root");
