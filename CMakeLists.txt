@@ -41,10 +41,16 @@ add_custom_command(
 )
 
 set(DICTIONARY_SOURCES ${DICT_OUTPUT})
-add_executable(hitwire ${SOURCES} ${DICTIONARY_SOURCES})
+add_executable(hitwire
+    src/main.cpp
+    src/HitWireWriters.cpp
+    src/HitWireGenerators.cpp
+    src/HitWireReaders.cpp
+    src/Utils.cpp
+)
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})
-target_link_libraries(hitwire PRIVATE ${ROOT_LIBS})
+target_link_libraries(hitwire PRIVATE ${ROOT_LIBS} WireDict)
 
 # Add this section to build the dictionary as a shared library
 add_library(WireDict SHARED ${DICT_OUTPUT})

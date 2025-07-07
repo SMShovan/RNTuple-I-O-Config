@@ -17,6 +17,12 @@
 #include <utility>
 #include <TObject.h>
 
+// Add at the top, after includes:
+static int get_nthreads() {
+    int n = std::thread::hardware_concurrency();
+    return n > 0 ? n : 4;
+}
+
 void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories("./output");
@@ -58,7 +64,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wire
         wireModel->MakeField<std::vector<float>>("fSignalROI_data");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         
         // --- Parallel Fill Function ---
@@ -211,7 +217,7 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
         wireModel->MakeField<std::vector<float>>("fSignalROI_data");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         
         // --- Parallel Fill Function ---
@@ -327,8 +333,6 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     int adjustedWiresPerEvent = wiresPerEvent / numSpils; // keep total wires constant across spils
     std::filesystem::create_directories("./output");
-    std::filesystem::create_directories("./hitwire/hitspils");
-    std::filesystem::create_directories("./hitwire/wirespils");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
@@ -370,7 +374,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int total = numEvents * numSpils;
         
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -528,7 +532,8 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int 
         wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
-        int nThreads = std::thread::hardware_concurrency();
+        // Use only one thread for this experiment
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -678,7 +683,8 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
         wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         
-        int nThreads = std::thread::hardware_concurrency();
+        // Use only one thread for this experiment
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -792,8 +798,6 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     int adjustedWiresPerEvent = wiresPerEvent / numSpils; // keep total wires constant across spils
-    std::filesystem::create_directories("./hitwire/hitspils");
-    std::filesystem::create_directories("./hitwire/wirespils");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE MODEL (Individual) ---
@@ -832,7 +836,8 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         wireModel->MakeField<std::vector<RegionOfInterest>>("fSignalROI");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
 
-        int nThreads = std::thread::hardware_concurrency();
+        // Use only one thread for this experiment
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
 
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -961,7 +966,7 @@ void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int 
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireVector>("WireVector");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
             std::mt19937 rng(seed);
@@ -1014,7 +1019,7 @@ void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, 
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireIndividual>("WireIndividual");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
             std::mt19937 rng(seed);
@@ -1069,7 +1074,7 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireVector>("WireVector");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
             std::mt19937 rng(seed);
@@ -1122,7 +1127,7 @@ void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPe
         auto wireModel = ROOT::RNTupleModel::Create();
         wireModel->MakeField<WireIndividual>("WireIndividual");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
             std::mt19937 rng(seed);
@@ -1169,8 +1174,6 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     int adjustedWiresPerEvent = wiresPerEvent / numSpils; // keep total wires constant across spils
-    std::filesystem::create_directories("./hitwire/hitspils");
-    std::filesystem::create_directories("./hitwire/wirespils");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE ---
@@ -1181,7 +1184,7 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
         wireModel->MakeField<WireVector>("WireVector");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int total = numEvents * numSpils;
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
             std::mt19937 rng(seed);
@@ -1229,8 +1232,6 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
     namespace EXP = ROOT::Experimental;
     int adjustedHitsPerEvent = hitsPerEvent / numSpils;
     int adjustedWiresPerEvent = wiresPerEvent / numSpils; // keep total wires constant across spils
-    std::filesystem::create_directories("./hitwire/hitspils");
-    std::filesystem::create_directories("./hitwire/wirespils");
     TFile file(fileName.c_str(), "RECREATE");
     {
         // --- HIT NTUPLE MODEL (Individual) ---
@@ -1241,7 +1242,7 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
         wireModel->MakeField<WireIndividual>("WireIndividual");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
         int total = numEvents * numSpils;
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
         auto fillFunc = [&](int start, int end, unsigned int seed) {
             std::mt19937 rng(seed);
@@ -1302,7 +1303,7 @@ void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEv
         wireModel->MakeField<std::vector<WireIndividual>>("Wires");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
 
-        int nThreads = std::thread::hardware_concurrency();
+        int nThreads = 1;
         auto seeds = Utils::generateSeeds(nThreads);
 
         auto fillFunc = [&](int start, int end, unsigned int seed) {
@@ -1354,4 +1355,39 @@ void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEv
         std::cout << "generateAndWriteHitWireDataVectorOfIndividuals:" << std::endl;
         std::cout << "  RNTuple Storage Time: " << totalStorageTime * 1000 << " ms" << std::endl;
     }
+}
+
+void out() {
+    int numEvents = 1000;
+    int hitsPerEvent = 100;
+    int wiresPerEvent = 100;
+    int numSpils = 10;
+
+    std::cout << "Generating HitWire data with Vector format..." << std::endl;
+    generateAndWriteHitWireDataVector(numEvents, hitsPerEvent, wiresPerEvent, "./output/vector.root");
+    std::cout << "Generating HitWire data with Individual format..." << std::endl;
+    generateAndWriteHitWireDataIndividual(numEvents, hitsPerEvent, wiresPerEvent, "./output/individual.root");
+    std::cout << "Generating Split HitWire data with Vector format..." << std::endl;
+    generateAndWriteSplitHitAndWireDataVector(numEvents, hitsPerEvent, wiresPerEvent, "./output/split_vector.root");
+    std::cout << "Generating Split HitWire data with Individual format..." << std::endl;
+    generateAndWriteSplitHitAndWireDataIndividual(numEvents, hitsPerEvent, wiresPerEvent, "./output/split_individual.root");
+    std::cout << "Generating Spil HitWire data with Vector format..." << std::endl;
+    generateAndWriteSpilHitAndWireDataVector(numEvents, numSpils, hitsPerEvent, wiresPerEvent, "./output/spil_vector.root");
+    std::cout << "Generating Spil HitWire data with Individual format..." << std::endl;
+    generateAndWriteSpilHitAndWireDataIndividual(numEvents, numSpils, hitsPerEvent, wiresPerEvent, "./output/spil_individual.root");
+    std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
+    std::cout << "Generating HitWire data with Vector format (Dict)..." << std::endl;
+    generateAndWriteHitWireDataVectorDict(numEvents, hitsPerEvent, wiresPerEvent, "./output/vector_dict.root");
+    std::cout << "Generating HitWire data with Individual format (Dict)..." << std::endl;
+    generateAndWriteHitWireDataIndividualDict(numEvents, hitsPerEvent, wiresPerEvent, "./output/individual_dict.root");
+    std::cout << "Generating Split HitWire data with Vector format (Dict)..." << std::endl;
+    generateAndWriteSplitHitAndWireDataVectorDict(numEvents, hitsPerEvent, wiresPerEvent, "./output/split_vector_dict.root");
+    std::cout << "Generating Split HitWire data with Individual format (Dict)..." << std::endl;
+    generateAndWriteSplitHitAndWireDataIndividualDict(numEvents, hitsPerEvent, wiresPerEvent, "./output/split_individual_dict.root");
+    std::cout << "Generating Spil HitWire data with Vector format (Dict)..." << std::endl;
+    generateAndWriteSpilHitAndWireDataVectorDict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, "./output/spil_vector_dict.root");
+    std::cout << "Generating Spil HitWire data with Individual format (Dict)..." << std::endl;
+    generateAndWriteSpilHitAndWireDataIndividualDict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, "./output/spil_individual_dict.root");
+    std::cout << "Generating HitWire data with Vector of Individuals format..." << std::endl;
+    generateAndWriteHitWireDataVectorOfIndividuals(numEvents, hitsPerEvent, wiresPerEvent, "./output/vector_of_individuals.root");
 }
