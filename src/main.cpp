@@ -11,7 +11,7 @@ int main() {
     ROOT::EnableImplicitMT(std::thread::hardware_concurrency());
     gSystem->Load("libWireDict");
     out();
-    in();
+    //in();
     return 0;
 }
 

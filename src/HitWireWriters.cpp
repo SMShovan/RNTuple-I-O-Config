@@ -26,7 +26,7 @@ static int get_nthreads() {
 // Central place for output directory
 static const std::string kOutputDir = "./output";
 
-void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -112,7 +112,7 @@ void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wire
     }
 }
 
-void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -220,7 +220,7 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits+=f.get();
-        std::cout << "[Seq] Split-Vector Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] VertiSplit-Vector Hits written in "<<tHits*1000<<" ms\n";
     }
  
     // ------------------------------------------------------------
@@ -258,14 +258,14 @@ void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, 
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires+=f.get();
-        std::cout << "[Seq] Split-Vector Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] VertiSplit-Vector Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
-void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    int adjustedHitsPerEvent = hitsPerEvent / numSpils;
-    int adjustedWiresPerEvent = wiresPerEvent / numSpils; // keep total wires constant across spils
+    int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
+    int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills; // keep total wires constant across spils
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
  
@@ -300,7 +300,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         hitModel->MakeField<std::vector<int>>("WireID_Wire");
         auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
  
-        int total = numEvents * numSpils;
+        int total = numEvents * numHoriSpills;
         int nThreads = get_nthreads();
         auto seeds = Utils::generateSeeds(nThreads);
  
@@ -336,8 +336,8 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
  
             TStopwatch sw; sw.Reset();
             for(int idx=start; idx<end; ++idx){
-                int evt = idx / numSpils;
-                int spil = idx % numSpils;
+                int evt = idx / numHoriSpills;
+                int spil = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 HitVector hv = generateRandomHitVector(uid, adjustedHitsPerEvent, rng);
  
@@ -372,15 +372,15 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             return sw.RealTime();
         };
  
-        int chunk = (numEvents*numSpils) / nThreads;
+        int chunk = (numEvents*numHoriSpills) / nThreads;
         std::vector<std::future<double>> futs;
         for(int th=0; th<nThreads; ++th){
             int begin = th*chunk;
-            int end = (th==nThreads-1)?(numEvents*numSpils):begin+chunk;
+            int end = (th==nThreads-1)?(numEvents*numHoriSpills):begin+chunk;
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits+=f.get();
-        std::cout << "[Seq] Spil-Vector Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] VertiSpil-Vector Hits written in "<<tHits*1000<<" ms\n";
     }
  
     //------------------------------------------------------------------
@@ -391,7 +391,7 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
         wireModel->MakeField<WireVector>("WireVector");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
  
-        int total = numEvents * numSpils;
+        int total = numEvents * numHoriSpills;
         int nThreads = get_nthreads();
         auto seeds = Utils::generateSeeds(nThreads);
  
@@ -402,8 +402,8 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             auto wireObj = entry->GetPtr<WireVector>("WireVector");
             TStopwatch sw; sw.Reset();
             for(int idx=start; idx<end; ++idx){
-                int evt = idx / numSpils;
-                int spil = idx % numSpils;
+                int evt = idx / numHoriSpills;
+                int spil = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 WireVector wv = generateRandomWireVector(uid, adjustedWiresPerEvent, wiresPerEvent, rng);
                 sw.Start();
@@ -422,11 +422,11 @@ void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int h
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires+=f.get();
-        std::cout << "[Seq] Spil-Vector Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] VertiSpil-Vector Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
-void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -569,7 +569,7 @@ void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int 
     }
 }
 
-void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -680,7 +680,7 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits+=f.get();
-        std::cout << "[Seq] Split-Individual Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] HoriSplit-Individual Hits written in "<<tHits*1000<<" ms\n";
     }
 
     //----------------------------------------------------
@@ -720,14 +720,14 @@ void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEve
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires+=f.get();
-        std::cout << "[Seq] Split-Individual Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] HoriSplit-Individual Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
-void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    int adjustedHitsPerEvent   = hitsPerEvent   / numSpils;
-    int adjustedWiresPerEvent  = wiresPerEvent  / numSpils; // keep total wires constant across spils
+    int adjustedHitsPerEvent   = hitsPerEvent   / numHoriSpills;
+    int adjustedWiresPerEvent  = wiresPerEvent  / numHoriSpills; // keep total wires constant across spils
 
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -763,7 +763,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         hitModel->MakeField<int>("WireID_Wire");
         auto hitWriter = EXP::RNTupleParallelWriter::Append(std::move(hitModel), "hits", file);
 
-        int totalEntries = numEvents * numSpils;          // each entry represents one "event,spil" pair
+        int totalEntries = numEvents * numHoriSpills;          // each entry represents one "event,spil" pair
         int nThreads     = get_nthreads();
         auto seeds       = Utils::generateSeeds(nThreads);
 
@@ -800,8 +800,8 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
 
             TStopwatch sw; sw.Reset();
             for(int idx=first; idx<last; ++idx){
-                int evt   = idx / numSpils;
-                int spil  = idx % numSpils;
+                int evt   = idx / numHoriSpills;
+                int spil  = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
 
                 for(int h=0; h<adjustedHitsPerEvent; ++h){
@@ -847,7 +847,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits += f.get();
-        std::cout << "[Seq] Spil-Individual Hits written in " << tHits*1000 << " ms\n";
+        std::cout << "[Seq] VertiSpil-Individual Hits written in " << tHits*1000 << " ms\n";
     }
 
     // ------------------------------------------------------------
@@ -858,7 +858,7 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
         wireModel->MakeField<WireIndividual>("WireIndividual");
         auto wireWriter = EXP::RNTupleParallelWriter::Append(std::move(wireModel), "wires", file);
 
-        int totalEntries = numEvents * numSpils;
+        int totalEntries = numEvents * numHoriSpills;
         int nThreads     = get_nthreads();
         auto seeds       = Utils::generateSeeds(nThreads);
 
@@ -870,8 +870,8 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
 
             TStopwatch sw; sw.Reset();
             for(int idx=first; idx<last; ++idx){
-                int evt   = idx / numSpils;
-                int spil  = idx % numSpils;
+                int evt   = idx / numHoriSpills;
+                int spil  = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 for(int w=0; w<adjustedWiresPerEvent; ++w){
                     WireIndividual wi = generateRandomWireIndividual(uid, wiresPerEvent, rng);
@@ -892,12 +892,12 @@ void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, i
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires += f.get();
-        std::cout << "[Seq] Spil-Individual Wires written in " << tWires*1000 << " ms\n";
+        std::cout << "[Seq] VertiSpil-Individual Wires written in " << tWires*1000 << " ms\n";
     }
 }
 
 // --- New: Store entire HitVector and WireVector as single fields (Vector-based) ---
-void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     // Sequential version: first write HitVector column, then WireVector column
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
@@ -981,7 +981,7 @@ void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int 
 }
 
 // --- New: Store entire HitIndividual and WireIndividual as single fields (Individual-based) ---
-void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -1068,7 +1068,7 @@ void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, 
 }
 
 // --- New: Split Vector-based, store as objects ---
-void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     // This variant stores the entire HitVector & WireVector objects, mirroring the reader expectation.
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
@@ -1107,7 +1107,7 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits += f.get();
-        std::cout << "[Seq] Split-Vector-Dict Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] VertiSplit-Vector-Dict Hits written in "<<tHits*1000<<" ms\n";
     }
 
     // 2) Wires pass – WireVector column
@@ -1143,12 +1143,12 @@ void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEve
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires += f.get();
-        std::cout << "[Seq] Split-Vector-Dict Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] VertiSplit-Vector-Dict Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
 // --- New: Split Individual-based, store as objects ---
-void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -1188,7 +1188,7 @@ void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPe
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits += f.get();
-        std::cout << "[Seq] Split-Individual-Dict Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] HoriSplit-Individual-Dict Hits written in "<<tHits*1000<<" ms\n";
     }
 
     // 2) Wires pass – WireIndividual per entry
@@ -1226,21 +1226,21 @@ void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPe
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires += f.get();
-        std::cout << "[Seq] Split-Individual-Dict Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] HoriSplit-Individual-Dict Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
 // --- New: Spil Vector-based, store as objects ---
-void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     // Spil variant storing full HitVector/WireVector objects.
     namespace EXP = ROOT::Experimental;
-    int adjustedHitsPerEvent  = hitsPerEvent  / numSpils;
-    int adjustedWiresPerEvent = wiresPerEvent / numSpils;
+    int adjustedHitsPerEvent  = hitsPerEvent  / numHoriSpills;
+    int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
 
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
 
-    int totalEntries = numEvents * numSpils;
+    int totalEntries = numEvents * numHoriSpills;
 
     // 1) Hits pass
     {
@@ -1258,8 +1258,8 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
             auto hitObj = entry->GetPtr<HitVector>("HitVector");
             TStopwatch t; t.Reset();
             for(int idx=first; idx<last; ++idx){
-                int evt  = idx / numSpils;
-                int spil = idx % numSpils;
+                int evt  = idx / numHoriSpills;
+                int spil = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 HitVector hv = generateRandomHitVector(uid, adjustedHitsPerEvent, rng);
                 t.Start();
@@ -1278,7 +1278,7 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits += f.get();
-        std::cout << "[Seq] Spil-Vector-Dict Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] VertiSpil-Vector-Dict Hits written in "<<tHits*1000<<" ms\n";
     }
 
     // 2) Wires pass
@@ -1297,8 +1297,8 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
             auto wireObj = entry->GetPtr<WireVector>("WireVector");
             TStopwatch t; t.Reset();
             for(int idx=first; idx<last; ++idx){
-                int evt  = idx / numSpils;
-                int spil = idx % numSpils;
+                int evt  = idx / numHoriSpills;
+                int spil = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 WireVector wv = generateRandomWireVector(uid, adjustedWiresPerEvent, wiresPerEvent, rng);
                 t.Start();
@@ -1317,19 +1317,19 @@ void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, i
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires += f.get();
-        std::cout << "[Seq] Spil-Vector-Dict Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] VertiSpil-Vector-Dict Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
 // --- New: Spil Individual-based, store as objects ---
-void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
-    int adjustedHitsPerEvent  = hitsPerEvent  / numSpils;
-    int adjustedWiresPerEvent = wiresPerEvent / numSpils;
+    int adjustedHitsPerEvent  = hitsPerEvent  / numHoriSpills;
+    int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
 
-    int totalEntries = numEvents * numSpils;
+    int totalEntries = numEvents * numHoriSpills;
 
     // 1) Hits pass – HitIndividual
     {
@@ -1347,8 +1347,8 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
             auto hitObj = entry->GetPtr<HitIndividual>("HitIndividual");
             TStopwatch sw; sw.Reset();
             for(int idx=first; idx<last; ++idx){
-                int evt  = idx / numSpils;
-                int spil = idx % numSpils;
+                int evt  = idx / numHoriSpills;
+                int spil = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 for(int h=0; h<adjustedHitsPerEvent; ++h){
                     HitIndividual hit = generateRandomHitIndividual(uid, rng);
@@ -1369,7 +1369,7 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
             futs.emplace_back(std::async(std::launch::async, fillHits, begin, end, seeds[th]));
         }
         double tHits=0; for(auto &f:futs) tHits += f.get();
-        std::cout << "[Seq] Spil-Individual-Dict Hits written in "<<tHits*1000<<" ms\n";
+        std::cout << "[Seq] VertiSpil-Individual-Dict Hits written in "<<tHits*1000<<" ms\n";
     }
 
     // 2) Wires pass – WireIndividual
@@ -1388,8 +1388,8 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
             auto wireObj = entry->GetPtr<WireIndividual>("WireIndividual");
             TStopwatch sw; sw.Reset();
             for(int idx=first; idx<last; ++idx){
-                int evt  = idx / numSpils;
-                int spil = idx % numSpils;
+                int evt  = idx / numHoriSpills;
+                int spil = idx % numHoriSpills;
                 long long uid = static_cast<long long>(evt)*10000 + spil;
                 for(int w=0; w<adjustedWiresPerEvent; ++w){
                     WireIndividual wi = generateRandomWireIndividual(uid, wiresPerEvent, rng);
@@ -1410,12 +1410,12 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
             futs.emplace_back(std::async(std::launch::async, fillWires, begin, end, seeds[th]));
         }
         double tWires=0; for(auto &f:futs) tWires += f.get();
-        std::cout << "[Seq] Spil-Individual-Dict Wires written in "<<tWires*1000<<" ms\n";
+        std::cout << "[Seq] VertiSpil-Individual-Dict Wires written in "<<tWires*1000<<" ms\n";
     }
 }
 
 // --- Vector-of-Individuals (sequential passes) ---
-void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
     namespace EXP = ROOT::Experimental;
     std::filesystem::create_directories(kOutputDir);
     TFile file(fileName.c_str(), "RECREATE");
@@ -1507,34 +1507,34 @@ void out() {
     int numEvents = 1000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 100;
-    int numSpils = 10;
+    int numHoriSpills = 10;
 
     std::cout << "Generating HitWire data with Vector format..." << std::endl;
-    generateAndWriteHitWireDataVector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root");
+    generateAndWrite_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root");
     std::cout << "Generating HitWire data with Individual format..." << std::endl;
-    generateAndWriteHitWireDataIndividual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root");
-    std::cout << "Generating Split HitWire data with Vector format..." << std::endl;
-    generateAndWriteSplitHitAndWireDataVector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/split_vector.root");
-    std::cout << "Generating Split HitWire data with Individual format..." << std::endl;
-    generateAndWriteSplitHitAndWireDataIndividual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/split_individual.root");
-    std::cout << "Generating Spil HitWire data with Vector format..." << std::endl;
-    generateAndWriteSpilHitAndWireDataVector(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/spil_vector.root");
-    std::cout << "Generating Spil HitWire data with Individual format..." << std::endl;
-    generateAndWriteSpilHitAndWireDataIndividual(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/spil_individual.root");
+    generateAndWrite_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root");
+    std::cout << "Generating VertiSplit HitWire data with Vector format..." << std::endl;
+    generateAndWrite_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector.root");
+    std::cout << "Generating VertiSplit HitWire data with Individual format..." << std::endl;
+    generateAndWrite_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual.root");
+    std::cout << "Generating HoriSpill HitWire data with Vector format..." << std::endl;
+    generateAndWrite_HoriSpill_Hit_Wire_Vector(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector.root");
+    std::cout << "Generating HoriSpill HitWire data with Individual format..." << std::endl;
+    generateAndWrite_HoriSpill_Hit_Wire_Individual(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual.root");
     //--- DICTIONARY-BASED EXPERIMENTS ---
     std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
     std::cout << "Generating HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWriteHitWireDataVectorDict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root");
+    generateAndWrite_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root");
     std::cout << "Generating HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWriteHitWireDataIndividualDict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root");
-    std::cout << "Generating Split HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWriteSplitHitAndWireDataVectorDict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/split_vector_dict.root");
-    std::cout << "Generating Split HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWriteSplitHitAndWireDataIndividualDict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/split_individual_dict.root");
-    std::cout << "Generating Spil HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWriteSpilHitAndWireDataVectorDict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/spil_vector_dict.root");
-    std::cout << "Generating Spil HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWriteSpilHitAndWireDataIndividualDict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/spil_individual_dict.root");
+    generateAndWrite_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root");
+    std::cout << "Generating VertiSplit HitWire data with Vector format (Dict)..." << std::endl;
+    generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector_dict.root");
+    std::cout << "Generating VertiSplit HitWire data with Individual format (Dict)..." << std::endl;
+    generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual_dict.root");
+    std::cout << "Generating HoriSpill HitWire data with Vector format (Dict)..." << std::endl;
+    generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector_dict.root");
+    std::cout << "Generating HoriSpill HitWire data with Individual format (Dict)..." << std::endl;
+    generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual_dict.root");
     std::cout << "Generating HitWire data with Vector of Individuals format..." << std::endl;
-    generateAndWriteHitWireDataVectorOfIndividuals(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root");
+    generateAndWrite_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root");
 }
