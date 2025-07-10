@@ -19,10 +19,15 @@ public:
     WireVector() = default;
     
     std::vector<unsigned int>& getWire_Channel() { return fWire_Channel; }
+    const std::vector<unsigned int>& getWire_Channel() const { return fWire_Channel; }
     std::vector<int>& getWire_View() { return fWire_View; }
+    const std::vector<int>& getWire_View() const { return fWire_View; }
     std::vector<unsigned int>& getSignalROI_nROIs() { return fSignalROI_nROIs; }
+    const std::vector<unsigned int>& getSignalROI_nROIs() const { return fSignalROI_nROIs; }
     std::vector<std::size_t>& getSignalROI_offsets() { return fSignalROI_offsets; }
+    const std::vector<std::size_t>& getSignalROI_offsets() const { return fSignalROI_offsets; }
     std::vector<float>& getSignalROI_data() { return fSignalROI_data; }
+    const std::vector<float>& getSignalROI_data() const { return fSignalROI_data; }
     ClassDef(WireVector, 3)
 };
 
@@ -52,5 +57,6 @@ struct WireIndividual {
         : fWire_Channel(channel), fWire_View(view), fSignalROI(roi) {}
 
     RegionsOfInterest_t& getSignalROI() { return fSignalROI; }
+    const RegionsOfInterest_t& getSignalROI() const { return fSignalROI; }
     ClassDef(WireIndividual, 3)
 }; 
