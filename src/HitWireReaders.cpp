@@ -31,6 +31,31 @@ std::vector<std::pair<std::size_t, std::size_t>> split_range(std::size_t begin, 
     return chunks;
 }
 
+// New function to split by cluster boundaries
+std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::RNTupleReader* reader, int nChunks) {
+    const auto& desc = reader->GetDescriptor();
+    auto nClusters = desc.GetNClusters();
+    if (nClusters == 0) {
+        return {};
+    }
+    int clusters_per_chunk = nClusters / nChunks;
+    int remainder = nClusters % nChunks;
+    std::vector<std::pair<std::size_t, std::size_t>> chunks;
+    std::uint64_t current_cid = 0;
+    for (int i = 0; i < nChunks; ++i) {
+        int num_clusters = clusters_per_chunk + (i < remainder ? 1 : 0);
+        if (num_clusters == 0) continue;
+        auto start_cid = current_cid;
+        current_cid += num_clusters;
+        const auto& start_desc = desc.GetClusterDescriptor(start_cid);
+        const auto& end_desc = desc.GetClusterDescriptor(current_cid - 1);
+        std::size_t start = start_desc.GetFirstEntryIndex();
+        std::size_t end = end_desc.GetFirstEntryIndex() + end_desc.GetNEntries();
+        chunks.emplace_back(start, end);
+    }
+    return chunks;
+}
+
 // 1. Vector format (single HitVector column)
 void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
     TStopwatch timer;
@@ -43,9 +68,8 @@ void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPe
             std::cerr << "Could not open ntuple " << ntupleName << " in " << fileName << std::endl;
             return;
         }
-        auto entryRange = pilot->GetEntryRange();
         int nThreads = get_nthreads();
-        auto chunks = split_range(*entryRange.begin(), *entryRange.end(), nThreads);
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
 
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -88,9 +112,8 @@ void read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, in
     auto processNtuple = [&](const std::string& ntupleName){
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        auto range = pilot->GetEntryRange();
         int nThreads = get_nthreads();
-        auto chunks = split_range(*range.begin(), *range.end(), nThreads);
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futs;
         for(const auto &chunk: chunks){
             futs.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk](){
@@ -131,9 +154,8 @@ void read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*h
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        auto entryRange = pilot->GetEntryRange();
         int nThreads = get_nthreads();
-        auto chunks = split_range(*entryRange.begin(), *entryRange.end(), nThreads);
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
             futures.push_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
@@ -175,9 +197,8 @@ void read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wir
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        auto entryRange = pilot->GetEntryRange();
         int nThreads = get_nthreads();
-        auto chunks = split_range(*entryRange.begin(), *entryRange.end(), nThreads);
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
             futures.push_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
@@ -219,9 +240,8 @@ void read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        auto entryRange = pilot->GetEntryRange();
         int nThreads = get_nthreads();
-        auto chunks = split_range(*entryRange.begin(), *entryRange.end(), nThreads);
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
             futures.push_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
@@ -263,9 +283,8 @@ void read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/
      auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        auto entryRange = pilot->GetEntryRange();
         int nThreads = get_nthreads();
-        auto chunks = split_range(*entryRange.begin(), *entryRange.end(), nThreads);
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
             futures.push_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
@@ -305,30 +324,37 @@ void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wi
     TStopwatch timer;
     timer.Start();
 
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<HitVector>("HitVector");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hit = view(i);
-            volatile const auto* sink = &hit.getPeakTime();
-            (void)sink;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<HitVector>("HitVector");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hit = view(i);
+                        volatile const auto* sink = &hit.getPeakTime();
+                        (void)sink;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<WireVector>("WireVector");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wire = view(i);
+                        volatile const auto* sink = &wire.getWire_Channel();
+                        (void)sink;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
 
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<WireVector>("WireVector");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wire = view(i);
-            volatile const auto* sink = &wire.getWire_Channel();
-            (void)sink;
-        }
-    };
-
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
@@ -341,30 +367,37 @@ void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wi
 void read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
     TStopwatch timer;
     timer.Start();
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<HitIndividual>("HitIndividual");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hit = view(i);
-            volatile auto* ptr = &hit.fPeakTime;
-            (void)ptr;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<HitIndividual>("HitIndividual");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hit = view(i);
+                        volatile auto* ptr = &hit.fPeakTime;
+                        (void)ptr;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<WireIndividual>("WireIndividual");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wire = view(i);
+                        volatile auto* ptr = &wire.fWire_Channel;
+                        (void)ptr;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
 
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<WireIndividual>("WireIndividual");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wire = view(i);
-            volatile auto* ptr = &wire.fWire_Channel;
-            (void)ptr;
-        }
-    };
-    
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
@@ -378,30 +411,37 @@ void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*
     TStopwatch timer;
     timer.Start();
 
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<HitVector>("HitVector");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hit = view(i);
-            volatile const auto* ptr = &hit.getSigmaPeakTime();
-            (void)ptr;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<HitVector>("HitVector");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hit = view(i);
+                        volatile const auto* ptr = &hit.getSigmaPeakTime();
+                        (void)ptr;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<WireVector>("WireVector");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wire = view(i);
+                        volatile const auto* ptr = &wire.getWire_Channel();
+                        (void)ptr;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
 
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<WireVector>("WireVector");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wire = view(i);
-            volatile const auto* ptr = &wire.getWire_Channel();
-            (void)ptr;
-        }
-    };
-
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
@@ -414,30 +454,37 @@ void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*
 void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
     TStopwatch timer;
     timer.Start();
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<HitIndividual>("HitIndividual");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hit = view(i);
-            volatile auto* ptr = &hit.fStartTick;
-            (void)ptr;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<HitIndividual>("HitIndividual");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hit = view(i);
+                        volatile auto* ptr = &hit.fStartTick;
+                        (void)ptr;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<WireIndividual>("WireIndividual");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wire = view(i);
+                        volatile auto* ptr = &wire.fWire_Channel;
+                        (void)ptr;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
 
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<WireIndividual>("WireIndividual");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wire = view(i);
-            volatile auto* ptr = &wire.fWire_Channel;
-            (void)ptr;
-        }
-    };
-
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
@@ -450,28 +497,37 @@ void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEv
 void read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
     TStopwatch timer;
     timer.Start();
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<HitVector>("HitVector");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hit = view(i);
-            volatile const auto* ptr = &hit.EventID;
-            (void)ptr;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<HitVector>("HitVector");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hit = view(i);
+                        volatile const auto* ptr = &hit.EventID;
+                        (void)ptr;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<WireVector>("WireVector");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wire = view(i);
+                        volatile const auto* ptr = &wire.EventID;
+                        (void)ptr;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<WireVector>("WireVector");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wire = view(i);
-            volatile const auto* ptr = &wire.EventID;
-            (void)ptr;
-        }
-    };
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
@@ -485,30 +541,37 @@ void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/
     TStopwatch timer;
     timer.Start();
 
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<HitIndividual>("HitIndividual");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hit = view(i);
-            volatile const auto* ptr = &hit.EventID;
-            (void)ptr;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<HitIndividual>("HitIndividual");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hit = view(i);
+                        volatile const auto* ptr = &hit.EventID;
+                        (void)ptr;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<WireIndividual>("WireIndividual");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wire = view(i);
+                        volatile const auto* ptr = &wire.EventID;
+                        (void)ptr;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
-    
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<WireIndividual>("WireIndividual");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wire = view(i);
-            volatile const auto* ptr = &wire.EventID;
-            (void)ptr;
-        }
-    };
-    
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
@@ -517,59 +580,66 @@ void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/
     std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
 }
 
-void readSpilHitAndWireDataVectorDictAlt(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
-    TStopwatch timer;
-    timer.Start();
+// void readSpilHitAndWireDataVectorDictAlt(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+//     TStopwatch timer;
+//     timer.Start();
 
-    auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-    if (!ntuple) return;
-    auto view_HitVector = ntuple->GetView<HitVector>("HitVector");
-    for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-        const HitVector& hit = view_HitVector(i);
-        volatile const auto* ptr = &hit.EventID;
-        (void)ptr;
-    }
+//     auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
+//     if (!ntuple) return;
+//     auto view_HitVector = ntuple->GetView<HitVector>("HitVector");
+//     for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
+//         const HitVector& hit = view_HitVector(i);
+//         volatile const auto* ptr = &hit.EventID;
+//         (void)ptr;
+//     }
     
-    auto ntuple_wires = ROOT::RNTupleReader::Open("wires", fileName);
-    if (!ntuple_wires) return;
-    auto view_WireVector = ntuple_wires->GetView<WireVector>("WireVector");
-    for (std::size_t i = 0; i < ntuple_wires->GetNEntries(); ++i) {
-        const WireVector& wire = view_WireVector(i);
-        volatile const auto* ptr = &wire.EventID;
-        (void)ptr;
-    }
-    timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
-}
+//     auto ntuple_wires = ROOT::RNTupleReader::Open("wires", fileName);
+//     if (!ntuple_wires) return;
+//     auto view_WireVector = ntuple_wires->GetView<WireVector>("WireVector");
+//     for (std::size_t i = 0; i < ntuple_wires->GetNEntries(); ++i) {
+//         const WireVector& wire = view_WireVector(i);
+//         volatile const auto* ptr = &wire.EventID;
+//         (void)ptr;
+//     }
+//     timer.Stop();
+//     std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+// }
 
 // 13. Vector of Individuals format
 void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
     TStopwatch timer;
     timer.Start();
-    auto readHits = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("hits", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<std::vector<HitIndividual>>("Hits");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& hits = view(i);
-            volatile const auto* sink = &hits;
-            (void)sink;
+    auto processNtuple = [&](const std::string& ntupleName) {
+        auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
+        if (!pilot) return;
+        int nThreads = get_nthreads();
+        auto chunks = split_range_by_clusters(pilot.get(), nThreads);
+        std::vector<std::future<void>> futures;
+        for (const auto& chunk : chunks) {
+            futures.emplace_back(std::async(std::launch::async, [fileName, ntupleName, chunk]() {
+                auto ntuple = ROOT::RNTupleReader::Open(ntupleName, fileName);
+                if (ntupleName == "hits") {
+                    auto view = ntuple->GetView<std::vector<HitIndividual>>("Hits");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& hits = view(i);
+                        volatile const auto* sink = &hits;
+                        (void)sink;
+                    }
+                } else { // wires
+                    auto view = ntuple->GetView<std::vector<WireIndividual>>("Wires");
+                    for (std::size_t i = chunk.first; i < chunk.second; ++i) {
+                        const auto& wires = view(i);
+                        volatile const auto* sink = &wires;
+                        (void)sink;
+                    }
+                }
+            }));
         }
+        for (auto& f : futures) f.get();
     };
 
-    auto readWires = [&]() {
-        auto ntuple = ROOT::RNTupleReader::Open("wires", fileName);
-        if (!ntuple) return;
-        auto view = ntuple->GetView<std::vector<WireIndividual>>("Wires");
-        for (std::size_t i = 0; i < ntuple->GetNEntries(); ++i) {
-            const auto& wires = view(i);
-            volatile const auto* sink = &wires;
-            (void)sink;
-        }
-    };
-    
-    std::future<void> hitsFuture = std::async(std::launch::async, readHits);
-    std::future<void> wiresFuture = std::async(std::launch::async, readWires);
+    std::future<void> hitsFuture = std::async(std::launch::async, processNtuple, "hits");
+    std::future<void> wiresFuture = std::async(std::launch::async, processNtuple, "wires");
 
     hitsFuture.get();
     wiresFuture.get();
