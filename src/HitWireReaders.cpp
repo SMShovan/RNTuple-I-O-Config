@@ -582,7 +582,7 @@ void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/
 void in() {
     int numEvents = 1000;
     int hitsPerEvent = 100;
-    int wiresPerEvent = 100;
+    int wiresPerEvent = 1000;
     int numSpils = 10;
 
     std::cout << "Reading HitWire data with Vector format (single HitVector)..." << std::endl;

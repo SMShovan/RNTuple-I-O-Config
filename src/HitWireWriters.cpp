@@ -58,7 +58,7 @@ static double executeInParallel(int totalEvents, const std::function<double(int,
     return totalTime;
 }
 
-void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -109,7 +109,7 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
         TStopwatch t;
         for (int i = first; i < last; ++i) {
             HitVector localHit = generateRandomHitVector(i, hitsPerEvent, rng);
-            WireVector localWire = generateRandomWireVector(i, wiresPerEvent, wiresPerEvent, rng);
+            WireVector localWire = generateRandomWireVector(i, wiresPerEvent, roisPerWire, rng);
 
             t.Start();
 
@@ -146,7 +146,7 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
     std::cout << "[Concurrent] Hit/Wire Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -241,7 +241,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
         TStopwatch sw;
         for (int evt = first; evt < last; ++evt) {
             HitVector localHit = generateRandomHitVector(evt, hitsPerEvent, rng);
-            WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, wiresPerEvent, rng);
+            WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, roisPerWire, rng);
             sw.Start();
 
             // Declare locals for binding
@@ -318,7 +318,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
     std::cout << "[Concurrent] VertiSplit-Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -421,7 +421,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
             int spil = idx % numHoriSpills;
             long long uid = static_cast<long long>(evt) * 10000 + spil;
             HitVector localHit = generateRandomHitVector(uid, adjustedHitsPerEvent, rng);
-            WireVector localWire = generateRandomWireVector(uid, adjustedWiresPerEvent, wiresPerEvent, rng);
+            WireVector localWire = generateRandomWireVector(uid, adjustedWiresPerEvent, roisPerWire, rng);
             sw.Start();
 
             // Declare locals for binding
@@ -500,7 +500,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
     std::cout << "[Concurrent] HoriSpill-Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -594,12 +594,11 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
 
         TStopwatch storageTimer;
         for (int eventIndex = first; eventIndex < last; ++eventIndex) {
+            // Hits loop
             for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
                 HitIndividual localHit = generateRandomHitIndividual(eventIndex, rng);
-                WireIndividual localWire = generateRandomWireIndividual(eventIndex, wiresPerEvent, rng);
                 storageTimer.Start();
-
-                // Bind hit fields
+                // Bind and fill hit
                 hitEntry.BindRawPtr(tEventID, &localHit.EventID);
                 hitEntry.BindRawPtr(tChannel, &localHit.fChannel);
                 hitEntry.BindRawPtr(tView, &localHit.fView);
@@ -629,8 +628,13 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
                     hitContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
                 }
-
-                // Bind wire
+                storageTimer.Stop();
+            }
+            // Wires loop
+            for (int wireIndex = 0; wireIndex < wiresPerEvent; ++wireIndex) {
+                WireIndividual localWire = generateRandomWireIndividual(eventIndex, roisPerWire, rng);
+                storageTimer.Start();
+                // Bind and fill wire
                 wireEntry.BindRawPtr(tWireIndividual, &localWire);
                 RNTupleFillStatus wireStatus;
                 wireContext.FillNoFlush(wireEntry, wireStatus);
@@ -638,7 +642,6 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
                     wireContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
                 }
-
                 storageTimer.Stop();
             }
         }
@@ -649,7 +652,7 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
     std::cout << "[Concurrent] Individual ntuples written in " << totalTime * 1000 << " ms" << std::endl;
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -736,12 +739,11 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
 
         TStopwatch sw;
         for (int evt = first; evt < last; ++evt) {
+            // Hits loop
             for (int i = 0; i < hitsPerEvent; ++i) {
                 HitIndividual localHit = generateRandomHitIndividual(evt, rng);
-                WireIndividual localWire = generateRandomWireIndividual(evt, wiresPerEvent, rng);
                 sw.Start();
-
-                // Bind hit fields using tokens
+                // Bind and fill hit
                 hitEntry.BindRawPtr(tEventID, &localHit.EventID);
                 hitEntry.BindRawPtr(tChannel, &localHit.fChannel);
                 hitEntry.BindRawPtr(tView, &localHit.fView);
@@ -771,8 +773,13 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
                     hitContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
                 }
-
-                // Bind wire
+                sw.Stop();
+            }
+            // Wires loop
+            for (int i = 0; i < wiresPerEvent; ++i) {
+                WireIndividual localWire = generateRandomWireIndividual(evt, roisPerWire, rng);
+                sw.Start();
+                // Bind and fill wire
                 wireEntry.BindRawPtr(tWireIndividual, &localWire);
                 RNTupleFillStatus wireStatus;
                 wireContext.FillNoFlush(wireEntry, wireStatus);
@@ -780,7 +787,6 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
                     wireContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
                 }
-
                 sw.Stop();
             }
         }
@@ -791,7 +797,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
     std::cout << "[Concurrent] VertiSplit-Individual ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -893,14 +899,12 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
             int evt = idx / numHoriSpills;
             int spil = idx % numHoriSpills;
             long long uid = static_cast<long long>(evt) * 10000 + spil;
+            int localSpilID = spil;
+            // Hits loop
             for (int h = 0; h < adjustedHitsPerEvent; ++h) {
                 HitIndividual localHit = generateRandomHitIndividual(uid, rng);
-                WireIndividual localWire = generateRandomWireIndividual(uid, wiresPerEvent, rng);
                 sw.Start();
-
-                int localSpilID = spil;
-
-                // Bind hit fields
+                // Bind and fill hit including tSpilID
                 hitEntry.BindRawPtr(tEventID, &localHit.EventID);
                 hitEntry.BindRawPtr(tSpilID, &localSpilID);
                 hitEntry.BindRawPtr(tChannel, &localHit.fChannel);
@@ -931,8 +935,13 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
                     hitContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
                 }
-
-                // Bind wire
+                sw.Stop();
+            }
+            // Wires loop
+            for (int w = 0; w < adjustedWiresPerEvent; ++w) {
+                WireIndividual localWire = generateRandomWireIndividual(uid, roisPerWire, rng);
+                sw.Start();
+                // Bind and fill wire
                 wireEntry.BindRawPtr(tWireIndividual, &localWire);
                 RNTupleFillStatus wireStatus;
                 wireContext.FillNoFlush(wireEntry, wireStatus);
@@ -940,7 +949,6 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
                     wireContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
                 }
-
                 sw.Stop();
             }
         }
@@ -951,7 +959,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
     std::cout << "[Concurrent] HoriSpill-Individual ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -1002,7 +1010,7 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
         TStopwatch t;
         for (int evt = first; evt < last; ++evt) {
             HitVector localHit = generateRandomHitVector(evt, hitsPerEvent, rng);
-            WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, rng);
+            WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, roisPerWire, rng);
             t.Start();
 
             // Bind and fill hits
@@ -1038,7 +1046,7 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
     std::cout << "[Concurrent] Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -1088,6 +1096,7 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
 
         TStopwatch t;
         for (int evt = first; evt < last; ++evt) {
+            // Hits loop
             for (int i = 0; i < hitsPerEvent; ++i) {
                 HitIndividual localHit = generateRandomHitIndividual(evt, rng);
                 WireIndividual localWire = generateRandomWireIndividual(evt, wiresPerEvent, rng);
@@ -1102,6 +1111,21 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
                     { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
                 }
 
+                // // Bind and fill wire
+                // wireEntry.BindRawPtr(tWireIndividual, &localWire);
+                // RNTupleFillStatus wireStatus;
+                // wireContext.FillNoFlush(wireEntry, wireStatus);
+                // if (wireStatus.ShouldFlushCluster()) {
+                //     wireContext.FlushColumns();
+                //     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
+                // }
+
+                t.Stop();
+            }
+            // Wires loop
+            for (int i = 0; i < wiresPerEvent; ++i) {
+                WireIndividual localWire = generateRandomWireIndividual(evt, roisPerWire, rng);
+                t.Start();
                 // Bind and fill wire
                 wireEntry.BindRawPtr(tWireIndividual, &localWire);
                 RNTupleFillStatus wireStatus;
@@ -1110,7 +1134,6 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
                     wireContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
                 }
-
                 t.Stop();
             }
         }
@@ -1121,7 +1144,7 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
     std::cout << "[Concurrent] Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -1172,7 +1195,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
         TStopwatch t;
         for (int evt = first; evt < last; ++evt) {
             HitVector localHit = generateRandomHitVector(evt, hitsPerEvent, rng);
-            WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, wiresPerEvent, rng);
+            WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, roisPerWire, rng);
             t.Start();
 
             // Bind and fill hits
@@ -1208,7 +1231,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
     std::cout << "[Concurrent] VertiSplit-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -1258,6 +1281,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
 
         TStopwatch sw;
         for (int evt = first; evt < last; ++evt) {
+            // Hits loop
             for (int h = 0; h < hitsPerEvent; ++h) {
                 HitIndividual localHit = generateRandomHitIndividual(evt, rng);
                 WireIndividual localWire = generateRandomWireIndividual(evt, wiresPerEvent, rng);
@@ -1272,6 +1296,21 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
                     { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
                 }
 
+                // // Bind and fill wire
+                // wireEntry.BindRawPtr(tWireIndividual, &localWire);
+                // RNTupleFillStatus wireStatus;
+                // wireContext.FillNoFlush(wireEntry, wireStatus);
+                // if (wireStatus.ShouldFlushCluster()) {
+                //     wireContext.FlushColumns();
+                //     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
+                // }
+
+                sw.Stop();
+            }
+            // Wires loop
+            for (int w = 0; w < wiresPerEvent; ++w) {
+                WireIndividual localWire = generateRandomWireIndividual(evt, roisPerWire, rng);
+                sw.Start();
                 // Bind and fill wire
                 wireEntry.BindRawPtr(tWireIndividual, &localWire);
                 RNTupleFillStatus wireStatus;
@@ -1280,7 +1319,6 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
                     wireContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
                 }
-
                 sw.Stop();
             }
         }
@@ -1291,7 +1329,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
     std::cout << "[Concurrent] VertiSplit-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -1348,7 +1386,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
             int spil = idx % numHoriSpills;
             long long uid = static_cast<long long>(evt) * 10000 + spil;
             HitVector localHit = generateRandomHitVector(uid, adjustedHitsPerEvent, rng);
-            WireVector localWire = generateRandomWireVector(uid, adjustedWiresPerEvent, wiresPerEvent, rng);
+            WireVector localWire = generateRandomWireVector(uid, adjustedWiresPerEvent, roisPerWire, rng);
             t.Start();
 
             // Bind and fill hits
@@ -1384,7 +1422,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
     std::cout << "[Concurrent] HoriSpill-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -1440,11 +1478,10 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
             int evt = idx / numHoriSpills;
             int spil = idx % numHoriSpills;
             long long uid = static_cast<long long>(evt) * 10000 + spil;
+            // Hits loop
             for (int h = 0; h < adjustedHitsPerEvent; ++h) {
                 HitIndividual localHit = generateRandomHitIndividual(uid, rng);
-                WireIndividual localWire = generateRandomWireIndividual(uid, wiresPerEvent, rng);
                 sw.Start();
-
                 // Bind and fill hit
                 hitEntry.BindRawPtr(tHitIndividual, &localHit);
                 RNTupleFillStatus hitStatus;
@@ -1453,7 +1490,12 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
                     hitContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
                 }
-
+                sw.Stop();
+            }
+            // Wires loop
+            for (int w = 0; w < adjustedWiresPerEvent; ++w) {
+                WireIndividual localWire = generateRandomWireIndividual(uid, roisPerWire, rng);
+                sw.Start();
                 // Bind and fill wire
                 wireEntry.BindRawPtr(tWireIndividual, &localWire);
                 RNTupleFillStatus wireStatus;
@@ -1462,7 +1504,6 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
                     wireContext.FlushColumns();
                     { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
                 }
-
                 sw.Stop();
             }
         }
@@ -1473,7 +1514,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
     std::cout << "[Concurrent] HoriSpill-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -1531,7 +1572,7 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
             for (int i = 0; i < hitsPerEvent; ++i) localHits.push_back(generateRandomHitIndividual(evt, rng));
             std::vector<WireIndividual> localWires;
             localWires.reserve(wiresPerEvent);
-            for (int i = 0; i < wiresPerEvent; ++i) localWires.push_back(generateRandomWireIndividual(evt, wiresPerEvent, rng));
+            for (int i = 0; i < wiresPerEvent; ++i) localWires.push_back(generateRandomWireIndividual(evt, roisPerWire, rng));
             long long localEventID = evt;
             t.Start();
             // Bind and fill hits
@@ -1569,36 +1610,37 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
 
 void out() {
     int numEvents = 1000;
-    int hitsPerEvent = 100;
+    int hitsPerEvent = 1000;
     int wiresPerEvent = 100;
     int numHoriSpills = 10;
+    int roisPerWire = 10;
 
     std::cout << "Generating HitWire data with Vector format..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root");
+    generateAndWrite_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector.root");
     std::cout << "Generating HitWire data with Individual format..." << std::endl;
-    generateAndWrite_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root");
+    generateAndWrite_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual.root");
     std::cout << "Generating VertiSplit HitWire data with Vector format..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector.root");
     std::cout << "Generating VertiSplit HitWire data with Individual format..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual.root");
     std::cout << "Generating HoriSpill HitWire data with Vector format..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Vector(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Vector(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector.root");
     std::cout << "Generating HoriSpill HitWire data with Individual format..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Individual(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Individual(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual.root");
     //--- DICTIONARY-BASED EXPERIMENTS ---
     std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
     std::cout << "Generating HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root");
+    generateAndWrite_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_dict.root");
     std::cout << "Generating HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root");
+    generateAndWrite_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual_dict.root");
     std::cout << "Generating VertiSplit HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector_dict.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector_dict.root");
     std::cout << "Generating VertiSplit HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual_dict.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual_dict.root");
     std::cout << "Generating HoriSpill HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector_dict.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector_dict.root");
     std::cout << "Generating HoriSpill HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual_dict.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual_dict.root");
     std::cout << "Generating HitWire data with Vector of Individuals format..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root");
+    generateAndWrite_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_of_individuals.root");
 }
