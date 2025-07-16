@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(HitWireProject)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Use root-config to get the flags
 execute_process(
@@ -47,6 +49,7 @@ add_executable(hitwire
     src/HitWireGenerators.cpp
     src/HitWireReaders.cpp
     src/Utils.cpp
+    src/HitWireWriterHelpers.cpp
 )
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})
