@@ -1,7 +1,4 @@
 #include "HitWireWriters.hpp"
-#include "Hit.hpp"
-#include "Wire.hpp"
-#include "HitWireGenerators.hpp"
 #include "Utils.hpp"
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleWriter.hxx>
@@ -13,7 +10,6 @@
 #include <future>
 #include <vector>
 #include <iostream>
-#include <random>
 #include <utility>
 #include <TObject.h>
 #include <mutex>
@@ -28,10 +24,9 @@
 
 // Import classes from Experimental namespace
 using ROOT::Experimental::RNTupleFillContext;
-using ROOT::Experimental::RNTupleParallelWriter;
+
 using ROOT::Experimental::Detail::RRawPtrWriteEntry;
-using ROOT::RFieldToken;
-using ROOT::RNTupleFillStatus;
+
 
 // Add include at the top (after existing includes)
 #include "HitWireWriterHelpers.hpp"
@@ -40,9 +35,8 @@ using ROOT::RNTupleFillStatus;
 
 static const std::string kOutputDir = "./output";
 
-// Helper to manage multi-threaded execution
-static double executeInParallel(int totalEvents, const std::function<double(int, int, unsigned)>& workFunc) {
-    int nThreads = std::thread::hardware_concurrency();
+// Refactor executeInParallel to accept nThreads as a parameter
+static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned)>& workFunc) {
     auto seeds = Utils::generateSeeds(nThreads);
     int chunk = totalEvents / nThreads;
     std::vector<std::future<double>> futures;
@@ -105,7 +99,7 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
                                         numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] Hit/Wire Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -156,7 +150,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
                                      numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] VertiSplit-Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -205,7 +199,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
                                     totalEntries, nThreads, numHoriSpills, adjustedHitsPerEvent, adjustedWiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(totalEntries, thinWorkFunc);
+    double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] HoriSpill-Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -254,7 +248,7 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
                                      numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] Individual ntuples written in " << totalTime * 1000 << " ms" << std::endl;
 }
 
@@ -300,7 +294,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
                                                numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] VertiSplit-Individual ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -348,7 +342,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
                                               totalEntries, nThreads, numHoriSpills, adjustedHitsPerEvent, adjustedWiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(totalEntries, thinWorkFunc);
+    double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] HoriSpill-Individual ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -399,7 +393,7 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
                                         numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -449,7 +443,7 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
                                          numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -494,7 +488,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
                                          numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] VertiSplit-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -539,7 +533,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
                                                    numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] VertiSplit-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -587,7 +581,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
                                         totalEntries, nThreads, numHoriSpills, adjustedHitsPerEvent, adjustedWiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(totalEntries, thinWorkFunc);
+    double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] HoriSpill-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -635,7 +629,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
                                                   totalEntries, nThreads, numHoriSpills, adjustedHitsPerEvent, adjustedWiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(totalEntries, thinWorkFunc);
+    double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] HoriSpill-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
@@ -680,7 +674,7 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
                                               numEvents, nThreads, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
 
-    double totalTime = executeInParallel(numEvents, thinWorkFunc);
+    double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
     std::cout << "[Concurrent] Vector-of-Individuals ntuples written in " << totalTime * 1000 << " ms\n";
 }
 

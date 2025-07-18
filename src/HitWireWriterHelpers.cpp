@@ -10,7 +10,7 @@
 #include <ROOT/RNTupleParallelWriter.hxx> // For parallel writer context
 #include <ROOT/RNTupleWriteOptions.hxx> // If needed for options
 
-using namespace ROOT::Experimental::Detail;
+using namespace ROOT::Detail;
 
 // Implement hit model creation
 auto CreateVertiSplitHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
