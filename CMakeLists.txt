@@ -59,3 +59,13 @@ target_link_libraries(hitwire PRIVATE ${ROOT_LIBS} WireDict)
 add_library(WireDict SHARED ${DICT_OUTPUT})
 target_include_directories(WireDict PRIVATE ${ROOT_INCDIR})
 target_link_libraries(WireDict PRIVATE ${ROOT_LIBS})
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+add_subdirectory(tests)

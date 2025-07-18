@@ -2,6 +2,8 @@
 #define UTILS_HPP
 
 #include <vector>
+#include <utility>
+#include <cstddef>
 
 namespace Utils {
 
@@ -15,6 +17,8 @@ namespace Utils {
  * calls in each thread.
  */
 std::vector<unsigned int> generateSeeds(int numThreads);
+
+std::vector<std::pair<std::size_t, std::size_t>> split_range(std::size_t begin, std::size_t end, int nChunks);
 
 } // namespace Utils
 

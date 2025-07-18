@@ -1,5 +1,9 @@
 #pragma once
 #include <string>
+#include <vector>
+#include <utility>
+namespace ROOT { namespace Experimental { class RNTupleReader; } }
+std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::Experimental::RNTupleReader* reader, int nChunks);
 
 void in(int nThreads);
 void readHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
