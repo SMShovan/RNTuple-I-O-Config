@@ -7,11 +7,7 @@
 #include "Hit.hpp"
 #include "Wire.hpp"
 
-// Helper: get number of threads
-static int get_nthreads() {
-    int n = std::thread::hardware_concurrency();
-    return n > 0 ? n : 4;
-}
+
 
 // Match writers: central output folder
 static const std::string kOutputDir = "./output";
@@ -57,7 +53,7 @@ std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::R
 }
 
 // 1. Vector format (single HitVector column)
-void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
@@ -68,7 +64,6 @@ void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPe
             std::cerr << "Could not open ntuple " << ntupleName << " in " << fileName << std::endl;
             return;
         }
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
 
         std::vector<std::future<void>> futures;
@@ -106,13 +101,12 @@ void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPe
 }
 
 // 2. Split Vector format
-void read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer; timer.Start();
 
     auto processNtuple = [&](const std::string& ntupleName){
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futs;
         for(const auto &chunk: chunks){
@@ -148,13 +142,12 @@ void read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, in
 }
 
 // 3. Spil Vector format
-void read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -191,13 +184,12 @@ void read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*h
 }
 
 // 4. Individual format
-void read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -234,13 +226,12 @@ void read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wir
 }
 
 // 5. Split Individual format
-void read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -277,13 +268,12 @@ void read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/
 }
 
 // 6. Spil Individual format
-void read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
      auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -320,14 +310,13 @@ void read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/
 }
 
 // 7. Vector Dict format
-void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -364,13 +353,12 @@ void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wi
 }
 
 // 8. Individual Dict format
-void read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -407,14 +395,13 @@ void read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int 
 }
 
 // 9. Split Vector Dict format
-void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -451,13 +438,12 @@ void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*
 }
 
 // 10. Split Individual Dict format
-void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -494,13 +480,12 @@ void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEv
 }
 
 // 11. Spil Vector Dict format
-void read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -537,14 +522,13 @@ void read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, in
 }
 
 // 12. Spil Individual Dict format
-void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -606,13 +590,12 @@ void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/
 // }
 
 // 13. Vector of Individuals format
-void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
+void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
         auto pilot = ROOT::RNTupleReader::Open(ntupleName, fileName);
         if (!pilot) return;
-        int nThreads = get_nthreads();
         auto chunks = split_range_by_clusters(pilot.get(), nThreads);
         std::vector<std::future<void>> futures;
         for (const auto& chunk : chunks) {
@@ -649,37 +632,37 @@ void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/
 }
 
 
-void in() {
+void in(int nThreads) {
     int numEvents = 1000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 1000;
     int numSpils = 10;
 
     std::cout << "Reading HitWire data with Vector format (single HitVector)..." << std::endl;
-    read_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root");
+    read_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root", nThreads);
     std::cout << "Reading HitWire data with Individual format..." << std::endl;
-    read_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root");
+    read_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root", nThreads);
     std::cout << "Reading VertiSplit HitWire data with Vector format..." << std::endl;
-    read_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector.root");
+    read_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector.root", nThreads);
     std::cout << "Reading VertiSplit HitWire data with Individual format..." << std::endl;
-    read_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual.root");
+    read_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual.root", nThreads);
     std::cout << "Reading HoriSpill HitWire data with Vector format..." << std::endl;
-    read_HoriSpill_Hit_Wire_Vector(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector.root");
+    read_HoriSpill_Hit_Wire_Vector(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector.root", nThreads);
     std::cout << "Reading HoriSpill HitWire data with Individual format..." << std::endl;
-    read_HoriSpill_Hit_Wire_Data_Individual(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual.root");
+    read_HoriSpill_Hit_Wire_Data_Individual(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual.root", nThreads);
     std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
     std::cout << "Reading HitWire data with Vector format (Dict)..." << std::endl;
-    read_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root");
+    read_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root", nThreads);
     std::cout << "Reading HitWire data with Individual format (Dict)..." << std::endl;
-    read_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root");
+    read_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root", nThreads);
     std::cout << "Reading VertiSplit HitWire data with Vector format (Dict)..." << std::endl;
-    read_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector_dict.root");
+    read_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector_dict.root", nThreads);
     std::cout << "Reading VertiSplit HitWire data with Individual format (Dict)..." << std::endl;
-    read_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual_dict.root");
+    read_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual_dict.root", nThreads);
     std::cout << "Reading HoriSpill HitWire data with Vector format (Dict)..." << std::endl;
-    read_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector_dict.root");
+    read_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector_dict.root", nThreads);
     std::cout << "Reading HoriSpill HitWire data with Individual format (Dict)..." << std::endl;
-    read_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual_dict.root");
+    read_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual_dict.root", nThreads);
     std::cout << "Reading HitWire data with Vector of Individuals format..." << std::endl;
-    read_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root");
+    read_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root", nThreads);
 }

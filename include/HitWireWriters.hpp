@@ -18,4 +18,4 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
 
 void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
 
-void out(); 
+void out(int nThreads); 

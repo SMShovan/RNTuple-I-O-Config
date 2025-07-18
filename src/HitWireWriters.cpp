@@ -36,16 +36,13 @@ using ROOT::RNTupleFillStatus;
 // Add include at the top (after existing includes)
 #include "HitWireWriterHelpers.hpp"
 
-static int get_nthreads() {
-    int n = std::thread::hardware_concurrency();
-    return n > 0 ? n : 4;
-}
+// Removed static int get_nthreads() as part of refactor step 1
 
 static const std::string kOutputDir = "./output";
 
 // Helper to manage multi-threaded execution
 static double executeInParallel(int totalEvents, const std::function<double(int, int, unsigned)>& workFunc) {
-    int nThreads = get_nthreads();
+    int nThreads = std::thread::hardware_concurrency();
     auto seeds = Utils::generateSeeds(nThreads);
     int chunk = totalEvents / nThreads;
     std::vector<std::future<double>> futures;
@@ -61,7 +58,7 @@ static double executeInParallel(int totalEvents, const std::function<double(int,
     return totalTime;
 }
 
-void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -85,7 +82,6 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
     // Existing nThreads and contexts/entries init
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -113,7 +109,7 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
     std::cout << "[Concurrent] Hit/Wire Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -137,8 +133,6 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
     // Existing nThreads and vector init
-    int nThreads = get_nthreads();
-
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -166,7 +160,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
     std::cout << "[Concurrent] VertiSplit-Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -188,7 +182,6 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
     // nThreads and contexts/entries
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -216,7 +209,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
     std::cout << "[Concurrent] HoriSpill-Vector ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -240,7 +233,6 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
     // nThreads and contexts/entries
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -266,7 +258,7 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
     std::cout << "[Concurrent] Individual ntuples written in " << totalTime * 1000 << " ms" << std::endl;
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -288,7 +280,6 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -313,7 +304,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
     std::cout << "[Concurrent] VertiSplit-Individual ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -336,7 +327,6 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -362,7 +352,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
     std::cout << "[Concurrent] HoriSpill-Individual ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -386,7 +376,6 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
     // Existing nThreads and contexts/entries init
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -414,7 +403,7 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
     std::cout << "[Concurrent] Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -438,7 +427,6 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
     // nThreads and contexts/entries
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -465,7 +453,7 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
     std::cout << "[Concurrent] Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -485,7 +473,6 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -511,7 +498,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
     std::cout << "[Concurrent] VertiSplit-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -531,7 +518,6 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -557,7 +543,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
     std::cout << "[Concurrent] VertiSplit-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -579,7 +565,6 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -606,7 +591,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
     std::cout << "[Concurrent] HoriSpill-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -628,7 +613,6 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -655,7 +639,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
     std::cout << "[Concurrent] HoriSpill-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName) {
+void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -675,7 +659,6 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
     auto hitWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitModel), "hits", *file, options);
     auto wireWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireModel), "wires", *file, options);
 
-    int nThreads = get_nthreads();
     std::vector<std::shared_ptr<RNTupleFillContext>> hitContexts(nThreads);
     std::vector<std::unique_ptr<RRawPtrWriteEntry>> hitEntries(nThreads);
     std::vector<std::shared_ptr<RNTupleFillContext>> wireContexts(nThreads);
@@ -701,7 +684,7 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
     std::cout << "[Concurrent] Vector-of-Individuals ntuples written in " << totalTime * 1000 << " ms\n";
 }
 
-void out() {
+void out(int nThreads) {
     int numEvents = 1000;
     int hitsPerEvent = 1000;
     int wiresPerEvent = 100;
@@ -709,31 +692,31 @@ void out() {
     int roisPerWire = 10;
 
     std::cout << "Generating HitWire data with Vector format..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector.root");
+    generateAndWrite_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector.root", nThreads);
     std::cout << "Generating HitWire data with Individual format..." << std::endl;
-    generateAndWrite_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual.root");
+    generateAndWrite_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual.root", nThreads);
     std::cout << "Generating VertiSplit HitWire data with Vector format..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector.root", nThreads);
     std::cout << "Generating VertiSplit HitWire data with Individual format..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual.root", nThreads);
     std::cout << "Generating HoriSpill HitWire data with Vector format..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Vector(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Vector(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector.root", nThreads);
     std::cout << "Generating HoriSpill HitWire data with Individual format..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Individual(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Individual(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual.root", nThreads);
     //--- DICTIONARY-BASED EXPERIMENTS ---
     std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
     std::cout << "Generating HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_dict.root");
+    generateAndWrite_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_dict.root", nThreads);
     std::cout << "Generating HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual_dict.root");
+    generateAndWrite_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual_dict.root", nThreads);
     std::cout << "Generating VertiSplit HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector_dict.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector_dict.root", nThreads);
     std::cout << "Generating VertiSplit HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual_dict.root");
+    generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual_dict.root", nThreads);
     std::cout << "Generating HoriSpill HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector_dict.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector_dict.root", nThreads);
     std::cout << "Generating HoriSpill HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual_dict.root");
+    generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual_dict.root", nThreads);
     std::cout << "Generating HitWire data with Vector of Individuals format..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_of_individuals.root");
+    generateAndWrite_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_of_individuals.root", nThreads);
 }

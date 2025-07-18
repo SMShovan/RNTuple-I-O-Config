@@ -8,10 +8,11 @@
 
 int main() {
     ROOT::EnableThreadSafety();
-    ROOT::EnableImplicitMT(std::thread::hardware_concurrency());
+    int nThreads = std::thread::hardware_concurrency();
+    ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
-    out();
-    in();
+    out(nThreads);
+    in(nThreads);
     return 0;
 }
 
