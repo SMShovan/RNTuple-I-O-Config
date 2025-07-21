@@ -36,14 +36,17 @@ using ROOT::Experimental::Detail::RRawPtrWriteEntry;
 static const std::string kOutputDir = "./output";
 
 // Refactor executeInParallel to accept nThreads as a parameter
-static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned)>& workFunc) {
+static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned, int)>& workFunc) {
+    if (nThreads <= 0 || totalEvents < 0) return 0.0;
+    if (totalEvents == 0) return 0.0;
     auto seeds = Utils::generateSeeds(nThreads);
     int chunk = totalEvents / nThreads;
     std::vector<std::future<double>> futures;
     for (int th = 0; th < nThreads; ++th) {
         int start = th * chunk;
         int end = (th == nThreads - 1) ? totalEvents : start + chunk;
-        futures.push_back(std::async(std::launch::async, workFunc, start, end, seeds[th]));
+        if (start >= end) continue;
+        futures.push_back(std::async(std::launch::async, workFunc, start, end, seeds[th], th));
     }
     double totalTime = 0.0;
     for (auto& f : futures) {
@@ -53,6 +56,7 @@ static double executeInParallel(int totalEvents, int nThreads, const std::functi
 }
 
 void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -90,8 +94,7 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
     }
 
     // Thin lambda
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunHitWireVectorWorkFunc(first, last, seed,
                                         *hitContexts[th], *hitEntries[th],
                                         *wireContexts[th], *wireEntries[th],
@@ -104,6 +107,7 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
 }
 
 void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Vector\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -141,8 +145,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
     }
 
     // Thin wrapper for executeInParallel
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunVertiSplitWorkFunc(first, last, seed,
                                      *hitContexts[th], *hitEntries[th],
                                      *wireContexts[th], *wireEntries[th],
@@ -155,6 +158,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
 }
 
 void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Vector\n"; return; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -190,8 +194,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
     }
 
     int totalEntries = numEvents * numHoriSpills;
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (totalEntries / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunHoriSpillWorkFunc(first, last, seed,
                                     *hitContexts[th], *hitEntries[th],
                                     *wireContexts[th], *wireEntries[th],
@@ -204,6 +207,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
 }
 
 void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Individual\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -239,8 +243,7 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
         wireEntries[th] = wireContexts[th]->GetModel().CreateRawPtrWriteEntry();
     }
 
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunIndividualWorkFunc(first, last, seed,
                                      *hitContexts[th], *hitEntries[th],
                                      *wireContexts[th], *wireEntries[th],
@@ -253,6 +256,7 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
 }
 
 void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Individual\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -285,8 +289,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
         wireEntries[th] = wireContexts[th]->GetModel().CreateRawPtrWriteEntry();
     }
 
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunVertiSplitIndividualWorkFunc(first, last, seed,
                                                *hitContexts[th], *hitEntries[th],
                                                *wireContexts[th], *wireEntries[th],
@@ -299,6 +302,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
 }
 
 void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Individual\n"; return; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -333,8 +337,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
     }
 
     int totalEntries = numEvents * numHoriSpills;
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (totalEntries / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunHoriSpillIndividualWorkFunc(first, last, seed,
                                               *hitContexts[th], *hitEntries[th],
                                               *wireContexts[th], *wireEntries[th],
@@ -347,6 +350,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
 }
 
 void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector_Dict\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -384,8 +388,7 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
     }
 
     // Thin lambda
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunHitWireVectorWorkFunc(first, last, seed,
                                         *hitContexts[th], *hitEntries[th],
                                         *wireContexts[th], *wireEntries[th],
@@ -398,6 +401,7 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
 }
 
 void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Individual_Dict\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -434,8 +438,7 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
     }
 
     // Thin lambda for dict work func
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunDictIndividualWorkFunc(first, last, seed,
                                          *hitContexts[th], *hitEntries[th],
                                          *wireContexts[th], *wireEntries[th],
@@ -448,6 +451,7 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
 }
 
 void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -479,8 +483,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
         wireEntries[th] = wireContexts[th]->GetModel().CreateRawPtrWriteEntry();
     }
 
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunDictVertiSplitWorkFunc(first, last, seed,
                                          *hitContexts[th], *hitEntries[th],
                                          *wireContexts[th], *wireEntries[th],
@@ -493,6 +496,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
 }
 
 void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -524,8 +528,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
         wireEntries[th] = wireContexts[th]->GetModel().CreateRawPtrWriteEntry();
     }
 
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunDictVertiSplitIndividualWorkFunc(first, last, seed,
                                                    *hitContexts[th], *hitEntries[th],
                                                    *wireContexts[th], *wireEntries[th],
@@ -538,6 +541,7 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
 }
 
 void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict\n"; return; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -572,8 +576,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
     }
 
     int totalEntries = numEvents * numHoriSpills;
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (totalEntries / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunDictHoriSpillWorkFunc(first, last, seed,
                                         *hitContexts[th], *hitEntries[th],
                                         *wireContexts[th], *wireEntries[th],
@@ -586,6 +589,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
 }
 
 void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict\n"; return; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -620,8 +624,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
     }
 
     int totalEntries = numEvents * numHoriSpills;
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (totalEntries / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunDictHoriSpillIndividualWorkFunc(first, last, seed,
                                                   *hitContexts[th], *hitEntries[th],
                                                   *wireContexts[th], *wireEntries[th],
@@ -634,6 +637,7 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
 }
 
 void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector_Of_Individuals\n"; return; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -665,8 +669,7 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
         wireEntries[th] = wireContexts[th]->GetModel().CreateRawPtrWriteEntry();
     }
 
-    auto thinWorkFunc = [&](int first, int last, unsigned seed) {
-        int th = first / (numEvents / nThreads);
+    auto thinWorkFunc = [&](int first, int last, unsigned seed, int th) {
         return RunVectorOfIndividualsWorkFunc(first, last, seed,
                                               *hitContexts[th], *hitEntries[th],
                                               *wireContexts[th], *wireEntries[th],
