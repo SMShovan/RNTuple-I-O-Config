@@ -2,6 +2,13 @@
 #include <vector>
 #include <TObject.h>
 
+/**
+ * @class HitVector
+ * @brief Container for multiple hits in an event, using vectors for attributes.
+ *
+ * Stores per-hit data like channels, ticks, amplitudes across events.
+ * Supports ROOT I/O via ClassDef and getters for each field.
+ */
 class HitVector{
 public:
     long long EventID;
@@ -77,7 +84,13 @@ public:
     ClassDef(HitVector, 3)
 };
 
-// Individual version for a single hit
+/**
+ * @class HitIndividual
+ * @brief Represents a single hit with individual attributes.
+ *
+ * Used for non-vectorized storage; includes all hit fields as scalars.
+ * Supports ROOT I/O via ClassDef.
+ */
 struct HitIndividual {
     long long EventID;
     unsigned int fChannel;

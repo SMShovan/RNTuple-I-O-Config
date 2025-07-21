@@ -2,23 +2,33 @@
 #include <ROOT/RNTupleWriter.hxx>
 #include <memory>
 #include <string>
+#include <random>  // For random data generation
 
-int main() {
-    // Create a simple ntuple with a single int column
+void GenerateTestNTuple(const std::string& filePath, int numEntries, std::size_t approxClusterSize, int payloadSize = 4) {
     auto model = ROOT::RNTupleModel::Create();
-    auto val = model->MakeField<int>("value");
+    // Use a vector<char> for flexible payload size (simulates larger entries)
+    auto val = model->MakeField<std::vector<char>>("value");
 
-    // Set up write options to force small clusters
     ROOT::RNTupleWriteOptions options;
-    options.SetApproxZippedClusterSize(1024); // small, but large enough for ROOT
+    options.SetApproxZippedClusterSize(approxClusterSize);
 
-    auto writer = ROOT::RNTupleWriter::Recreate(std::move(model), "hits", "test_file.root", options);
+    auto writer = ROOT::RNTupleWriter::Recreate(std::move(model), "hits", filePath, options);
 
-    // Write 1000 entries to ensure multiple clusters
-    for (int i = 0; i < 1000; ++i) {
-        *val = i;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<unsigned char> dist(0, 255);  // Random bytes for poor compression
+
+    for (int i = 0; i < numEntries; ++i) {
+        val->resize(payloadSize);
+        for (auto& byte : *val) {
+            byte = dist(gen);
+        }
         writer->Fill();
     }
-    // File is closed when writer goes out of scope
+    // Writer auto-closes on destruction
+}
+
+int main() {
+    GenerateTestNTuple("test_file.root", 1000, 1024, 4);
     return 0;
 }

@@ -7,6 +7,13 @@
 
 
 
+/**
+ * @class WireVector
+ * @brief Container for multiple wires in an event, with flattened ROI data.
+ *
+ * Stores wire channels, views, and ROI (offsets + data) vectors.
+ * Supports ROOT I/O via ClassDef and getters.
+ */
 class WireVector  {
 public:
     long long EventID;
@@ -35,6 +42,13 @@ public:
 struct WireIndividual;
 WireIndividual generateRandomWireIndividual(long long eventID, int nROIs, std::mt19937& rng);
 
+/**
+ * @struct RegionOfInterest
+ * @brief Single ROI with offset and data vector.
+ *
+ * Used in WireIndividual for per-wire ROIs.
+ * Supports ROOT I/O via ClassDef.
+ */
 struct RegionOfInterest {
     std::size_t offset;
     std::vector<float> data;
@@ -45,6 +59,12 @@ struct RegionOfInterest {
 };
 using RegionsOfInterest_t = std::vector<RegionOfInterest>;
 
+/**
+ * @struct WireIndividual
+ * @brief Represents a single wire with individual attributes and ROI vector.
+ *
+ * Non-vectorized wire storage; supports ROOT I/O via ClassDef.
+ */
 struct WireIndividual {
     long long EventID;
     unsigned int fWire_Channel;

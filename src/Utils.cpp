@@ -17,8 +17,9 @@ std::vector<unsigned int> generateSeeds(int numThreads) {
     return seeds;
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::RNTupleReader* reader, int nChunks) {
-    const auto& desc = reader->GetDescriptor();
+
+std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::RNTupleReader& reader, int nChunks) {
+    const auto& desc = reader.GetDescriptor();
     auto nClusters = desc.GetNClusters();
     if (nClusters == 0) {
         return {};
@@ -41,18 +42,5 @@ std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::R
     return chunks;
 }
 
-std::vector<std::pair<std::size_t, std::size_t>> split_range(std::size_t begin, std::size_t end, int nChunks) {
-    std::vector<std::pair<std::size_t, std::size_t>> chunks;
-    std::size_t total = end - begin;
-    std::size_t chunkSize = total / nChunks;
-    std::size_t remainder = total % nChunks;
-    std::size_t current = begin;
-    for (int i = 0; i < nChunks; ++i) {
-        std::size_t next = current + chunkSize + (i < remainder ? 1 : 0);
-        chunks.emplace_back(current, next);
-        current = next;
-    }
-    return chunks;
-}
 
 } // namespace Utils 
