@@ -50,6 +50,7 @@ add_executable(hitwire
     src/HitWireReaders.cpp
     src/Utils.cpp
     src/HitWireWriterHelpers.cpp
+    src/HitWireStat.cpp
 )
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})
