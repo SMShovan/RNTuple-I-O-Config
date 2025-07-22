@@ -1,5 +1,6 @@
 #include "HitWireWriters.hpp"
 #include "HitWireReaders.hpp"
+#include "HitWireStat.hpp"
 #include <TSystem.h>
 #include <TROOT.h>
 #include <thread>
@@ -11,8 +12,9 @@ int main() {
     int nThreads = std::thread::hardware_concurrency();
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
-    out(nThreads);
-    in(nThreads);
+    out(nThreads, 3);
+    printFileStats(); // Print file statistics
+    in(nThreads, 3);
     return 0;
 }
 

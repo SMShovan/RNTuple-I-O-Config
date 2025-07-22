@@ -3,9 +3,12 @@
 #include <future>
 #include <iostream>
 #include <vector>
+#include <numeric>
+#include <cmath>
 #include "Hit.hpp"
 #include "Wire.hpp"
 #include "Utils.hpp"
+#include <iomanip> // For table formatting
 using namespace Utils;
 
 
@@ -14,7 +17,7 @@ static const std::string kOutputDir = "./output";
 
 
 // 1. Vector format (single HitVector column)
-void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
@@ -58,11 +61,11 @@ void read_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPe
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 2. Split Vector format
-void read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer; timer.Start();
 
     auto processNtuple = [&](const std::string& ntupleName){
@@ -99,11 +102,11 @@ void read_VertiSplit_Hit_Wire_Vector(int /*numEvents*/, int /*hitsPerEvent*/, in
     wiresFuture.get();
     
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime()*1000 << " ms" << std::endl;
+    return timer.RealTime()*1000;
 }
 
 // 3. Spil Vector format
-void read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -141,11 +144,11 @@ void read_HoriSpill_Hit_Wire_Vector(int /*numEvents*/, int /*numSpils*/, int /*h
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 4. Individual format
-void read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -183,11 +186,11 @@ void read_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wir
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 5. Split Individual format
-void read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -225,11 +228,11 @@ void read_VertiSplit_Hit_Wire_Individual(int /*numEvents*/, int /*hitsPerEvent*/
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 6. Spil Individual format
-void read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
      auto processNtuple = [&](const std::string& ntupleName) {
@@ -267,11 +270,11 @@ void read_HoriSpill_Hit_Wire_Data_Individual(int /*numEvents*/, int /*numSpils*/
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 7. Vector Dict format
-void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
@@ -310,11 +313,11 @@ void read_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wi
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 8. Individual Dict format
-void read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -352,11 +355,11 @@ void read_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int 
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 9. Split Vector Dict format
-void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
@@ -395,11 +398,11 @@ void read_VertiSplit_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*hitsPerEvent*
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 10. Split Individual Dict format
-void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -437,11 +440,11 @@ void read_VertiSplit_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*hitsPerEv
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 11. Spil Vector Dict format
-void read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -479,11 +482,11 @@ void read_HoriSpill_Hit_Wire_Vector_Dict(int /*numEvents*/, int /*numSpils*/, in
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // 12. Spil Individual Dict format
-void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
 
@@ -522,7 +525,7 @@ void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 // void readSpilHitAndWireDataVectorDictAlt(int /*numEvents*/, int /*numSpils*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName) {
@@ -551,7 +554,7 @@ void read_HoriSpill_Hit_Wire_Individual_Dict(int /*numEvents*/, int /*numSpils*/
 // }
 
 // 13. Vector of Individuals format
-void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
+double read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/, int /*wiresPerEvent*/, const std::string& fileName, int nThreads) {
     TStopwatch timer;
     timer.Start();
     auto processNtuple = [&](const std::string& ntupleName) {
@@ -589,41 +592,71 @@ void read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent*/
     wiresFuture.get();
 
     timer.Stop();
-    std::cout << "  RNTuple Read Time: " << timer.RealTime() * 1000 << " ms" << std::endl;
+    return timer.RealTime() * 1000;
 }
 
 
-void in(int nThreads) {
+void in(int nThreads, int iter) {
     int numEvents = 1000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 1000;
     int numSpils = 10;
+    int numRuns = iter;
 
-    std::cout << "Reading HitWire data with Vector format (single HitVector)..." << std::endl;
-    read_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root", nThreads);
-    std::cout << "Reading HitWire data with Individual format..." << std::endl;
-    read_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root", nThreads);
-    std::cout << "Reading VertiSplit HitWire data with Vector format..." << std::endl;
-    read_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector.root", nThreads);
-    std::cout << "Reading VertiSplit HitWire data with Individual format..." << std::endl;
-    read_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual.root", nThreads);
-    std::cout << "Reading HoriSpill HitWire data with Vector format..." << std::endl;
-    read_HoriSpill_Hit_Wire_Vector(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector.root", nThreads);
-    std::cout << "Reading HoriSpill HitWire data with Individual format..." << std::endl;
-    read_HoriSpill_Hit_Wire_Data_Individual(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual.root", nThreads);
-    std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
-    std::cout << "Reading HitWire data with Vector format (Dict)..." << std::endl;
-    read_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root", nThreads);
-    std::cout << "Reading HitWire data with Individual format (Dict)..." << std::endl;
-    read_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root", nThreads);
-    std::cout << "Reading VertiSplit HitWire data with Vector format (Dict)..." << std::endl;
-    read_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector_dict.root", nThreads);
-    std::cout << "Reading VertiSplit HitWire data with Individual format (Dict)..." << std::endl;
-    read_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual_dict.root", nThreads);
-    std::cout << "Reading HoriSpill HitWire data with Vector format (Dict)..." << std::endl;
-    read_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector_dict.root", nThreads);
-    std::cout << "Reading HoriSpill HitWire data with Individual format (Dict)..." << std::endl;
-    read_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual_dict.root", nThreads);
-    std::cout << "Reading HitWire data with Vector of Individuals format..." << std::endl;
-    read_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root", nThreads);
+    struct ReaderResult {
+        std::string label;
+        double cold;
+        double warmAvg;
+        double warmStddev;
+    };
+    std::vector<ReaderResult> results;
+
+    auto benchmark = [&](const std::string& label, auto readerFunc, auto&&... args) {
+        std::vector<double> times;
+        for (int i = 0; i < numRuns; ++i) {
+            double t = readerFunc(args...);
+            times.push_back(t);
+        }
+        double cold = times[0];
+        double warmAvg = 0.0, warmStddev = 0.0;
+        if (numRuns > 1) {
+            warmAvg = std::accumulate(times.begin() + 1, times.end(), 0.0) / (times.size() - 1);
+            double sq_sum = std::inner_product(times.begin() + 1, times.end(), times.begin() + 1, 0.0);
+            warmStddev = std::sqrt(sq_sum / (times.size() - 1) - warmAvg * warmAvg);
+        }
+        results.push_back({label, cold, warmAvg, warmStddev});
+    };
+
+    benchmark("Hit/Wire Vector", read_Hit_Wire_Vector, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector.root", nThreads);
+    benchmark("Hit/Wire Individual", read_Hit_Wire_Individual, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual.root", nThreads);
+    benchmark("VertiSplit-Vector", read_VertiSplit_Hit_Wire_Vector, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector.root", nThreads);
+    benchmark("VertiSplit-Individual", read_VertiSplit_Hit_Wire_Individual, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual.root", nThreads);
+    benchmark("HoriSpill-Vector", read_HoriSpill_Hit_Wire_Vector, numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector.root", nThreads);
+    benchmark("HoriSpill-Individual", read_HoriSpill_Hit_Wire_Data_Individual, numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual.root", nThreads);
+    benchmark("Vector-Dict", read_Hit_Wire_Vector_Dict, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_dict.root", nThreads);
+    benchmark("Individual-Dict", read_Hit_Wire_Individual_Dict, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/individual_dict.root", nThreads);
+    benchmark("VertiSplit-Vector-Dict", read_VertiSplit_Hit_Wire_Vector_Dict, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_vector_dict.root", nThreads);
+    benchmark("VertiSplit-Individual-Dict", read_VertiSplit_Hit_Wire_Individual_Dict, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/VertiSplit_individual_dict.root", nThreads);
+    benchmark("HoriSpill-Vector-Dict", read_HoriSpill_Hit_Wire_Vector_Dict, numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_vector_dict.root", nThreads);
+    benchmark("HoriSpill-Individual-Dict", read_HoriSpill_Hit_Wire_Individual_Dict, numEvents, numSpils, hitsPerEvent, wiresPerEvent, kOutputDir + "/HoriSpill_individual_dict.root", nThreads);
+    benchmark("Vector-of-Individuals", read_Hit_Wire_Vector_Of_Individuals, numEvents, hitsPerEvent, wiresPerEvent, kOutputDir + "/vector_of_individuals.root", nThreads);
+
+    // Print table
+    std::cout << std::left
+              << std::setw(32) << "Reader"
+              << std::setw(16) << "Cold (ms)"
+              << std::setw(20) << "Warm Avg (ms)"
+              << std::setw(20) << "Warm StdDev (ms)" << std::endl;
+    std::cout << std::string(88, '-') << std::endl;
+    for (const auto& r : results) {
+        std::cout << std::left
+                  << std::setw(32) << r.label
+                  << std::setw(16) << r.cold;
+        if (numRuns > 1)
+            std::cout << std::setw(20) << r.warmAvg << std::setw(20) << r.warmStddev;
+        else
+            std::cout << std::setw(20) << "-" << std::setw(20) << "-";
+        std::cout << std::endl;
+    }
+    std::cout << std::string(88, '-') << std::endl;
 }

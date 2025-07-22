@@ -5,18 +5,18 @@
 namespace ROOT  { class RNTupleReader; } 
 std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::RNTupleReader* reader, int nChunks);
 
-void in(int nThreads);
-void readHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readHitWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readHitWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readHitWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSpilHitAndWireDataVectorDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readSpilHitAndWireDataIndividualDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-void readHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads); 
+void in(int nThreads, int iter = 20);
+double read_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_HoriSpill_Hit_Wire_Vector(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_HoriSpill_Hit_Wire_Data_Individual(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
+double read_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads); 
 

@@ -13,6 +13,9 @@
 #include <utility>
 #include <TObject.h>
 #include <mutex>
+#include <numeric>
+#include <cmath>
+#include <iomanip> // For table formatting
 
 // NOTE: Adding experimental includes for parallel writing
 #include <ROOT/RRawPtrWriteEntry.hxx>
@@ -55,8 +58,8 @@ static double executeInParallel(int totalEvents, int nThreads, const std::functi
     return totalTime;
 }
 
-void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector\n"; return; }
+double generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -103,11 +106,11 @@ void generateAndWrite_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wires
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] Hit/Wire Vector ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Vector\n"; return; }
+double generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Vector\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -154,11 +157,11 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] VertiSplit-Vector ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Vector\n"; return; }
+double generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Vector\n"; return 0.0; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -203,11 +206,11 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector(int numEvents, int numHoriSpills
     };
 
     double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] HoriSpill-Vector ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Individual\n"; return; }
+double generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Individual\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -252,11 +255,11 @@ void generateAndWrite_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int w
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] Individual ntuples written in " << totalTime * 1000 << " ms" << std::endl;
+    return totalTime * 1000;
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Individual\n"; return; }
+double generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Individual\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -298,11 +301,11 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerE
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] VertiSplit-Individual ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Individual\n"; return; }
+double generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Individual\n"; return 0.0; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -346,11 +349,11 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual(int numEvents, int numHoriSp
     };
 
     double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] HoriSpill-Individual ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector_Dict\n"; return; }
+double generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector_Dict\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -397,11 +400,11 @@ void generateAndWrite_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int 
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Individual_Dict\n"; return; }
+double generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Individual_Dict\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -447,11 +450,11 @@ void generateAndWrite_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, 
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict\n"; return; }
+double generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -492,11 +495,11 @@ void generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPer
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] VertiSplit-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict\n"; return; }
+double generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -537,11 +540,11 @@ void generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hit
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] VertiSplit-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict\n"; return; }
+double generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict\n"; return 0.0; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -585,11 +588,11 @@ void generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numHoriS
     };
 
     double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] HoriSpill-Vector-Dict ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict\n"; return; }
+double generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numHoriSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0 || numHoriSpills <= 0) { std::cerr << "Invalid parameters in generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict\n"; return 0.0; }
     int adjustedHitsPerEvent = hitsPerEvent / numHoriSpills;
     int adjustedWiresPerEvent = wiresPerEvent / numHoriSpills;
     std::filesystem::create_directories(kOutputDir);
@@ -633,11 +636,11 @@ void generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numH
     };
 
     double totalTime = executeInParallel(totalEntries, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] HoriSpill-Individual-Dict ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector_Of_Individuals\n"; return; }
+double generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    if (numEvents <= 0 || nThreads <= 0) { std::cerr << "Invalid parameters in generateAndWrite_Hit_Wire_Vector_Of_Individuals\n"; return 0.0; }
     std::filesystem::create_directories(kOutputDir);
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
@@ -678,42 +681,61 @@ void generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerE
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, thinWorkFunc);
-    std::cout << "[Concurrent] Vector-of-Individuals ntuples written in " << totalTime * 1000 << " ms\n";
+    return totalTime * 1000;
 }
 
-void out(int nThreads) {
+void out(int nThreads, int iter) {
     int numEvents = 1000;
     int hitsPerEvent = 1000;
     int wiresPerEvent = 100;
     int numHoriSpills = 10;
     int roisPerWire = 10;
+    int numRuns = iter;
 
-    std::cout << "Generating HitWire data with Vector format..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector.root", nThreads);
-    std::cout << "Generating HitWire data with Individual format..." << std::endl;
-    generateAndWrite_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual.root", nThreads);
-    std::cout << "Generating VertiSplit HitWire data with Vector format..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Vector(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector.root", nThreads);
-    std::cout << "Generating VertiSplit HitWire data with Individual format..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Individual(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual.root", nThreads);
-    std::cout << "Generating HoriSpill HitWire data with Vector format..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Vector(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector.root", nThreads);
-    std::cout << "Generating HoriSpill HitWire data with Individual format..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Individual(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual.root", nThreads);
-    //--- DICTIONARY-BASED EXPERIMENTS ---
-    std::cout << "\n--- DICTIONARY-BASED EXPERIMENTS ---" << std::endl;
-    std::cout << "Generating HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_dict.root", nThreads);
-    std::cout << "Generating HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual_dict.root", nThreads);
-    std::cout << "Generating VertiSplit HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector_dict.root", nThreads);
-    std::cout << "Generating VertiSplit HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual_dict.root", nThreads);
-    std::cout << "Generating HoriSpill HitWire data with Vector format (Dict)..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector_dict.root", nThreads);
-    std::cout << "Generating HoriSpill HitWire data with Individual format (Dict)..." << std::endl;
-    generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict(numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual_dict.root", nThreads);
-    std::cout << "Generating HitWire data with Vector of Individuals format..." << std::endl;
-    generateAndWrite_Hit_Wire_Vector_Of_Individuals(numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_of_individuals.root", nThreads);
+    struct WriterResult {
+        std::string label;
+        double avg;
+        double stddev;
+    };
+    std::vector<WriterResult> results;
+
+    auto benchmark = [&](const std::string& label, auto writerFunc, auto&&... args) {
+        std::vector<double> times;
+        for (int i = 0; i < numRuns; ++i) {
+            double t = writerFunc(args...);
+            times.push_back(t);
+        }
+        double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+        double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
+        double stddev = std::sqrt(sq_sum / times.size() - avg * avg);
+        results.push_back({label, avg, stddev});
+    };
+
+    benchmark("Hit/Wire Vector", generateAndWrite_Hit_Wire_Vector, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector.root", nThreads);
+    benchmark("Hit/Wire Individual", generateAndWrite_Hit_Wire_Individual, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual.root", nThreads);
+    benchmark("VertiSplit-Vector", generateAndWrite_VertiSplit_Hit_Wire_Vector, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector.root", nThreads);
+    benchmark("VertiSplit-Individual", generateAndWrite_VertiSplit_Hit_Wire_Individual, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual.root", nThreads);
+    benchmark("HoriSpill-Vector", generateAndWrite_HoriSpill_Hit_Wire_Vector, numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector.root", nThreads);
+    benchmark("HoriSpill-Individual", generateAndWrite_HoriSpill_Hit_Wire_Individual, numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual.root", nThreads);
+    benchmark("Vector-Dict", generateAndWrite_Hit_Wire_Vector_Dict, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_dict.root", nThreads);
+    benchmark("Individual-Dict", generateAndWrite_Hit_Wire_Individual_Dict, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/individual_dict.root", nThreads);
+    benchmark("VertiSplit-Vector-Dict", generateAndWrite_VertiSplit_Hit_Wire_Vector_Dict, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_vector_dict.root", nThreads);
+    benchmark("VertiSplit-Individual-Dict", generateAndWrite_VertiSplit_Hit_Wire_Individual_Dict, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/VertiSplit_individual_dict.root", nThreads);
+    benchmark("HoriSpill-Vector-Dict", generateAndWrite_HoriSpill_Hit_Wire_Vector_Dict, numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_vector_dict.root", nThreads);
+    benchmark("HoriSpill-Individual-Dict", generateAndWrite_HoriSpill_Hit_Wire_Individual_Dict, numEvents, numHoriSpills, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/HoriSpill_individual_dict.root", nThreads);
+    benchmark("Vector-of-Individuals", generateAndWrite_Hit_Wire_Vector_Of_Individuals, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, kOutputDir + "/vector_of_individuals.root", nThreads);
+
+    // Print table
+    std::cout << std::left
+              << std::setw(32) << "Writer"
+              << std::setw(16) << "Average (ms)"
+              << std::setw(16) << "StdDev (ms)" << std::endl;
+    std::cout << std::string(64, '-') << std::endl;
+    for (const auto& r : results) {
+        std::cout << std::left
+                  << std::setw(32) << r.label
+                  << std::setw(16) << r.avg
+                  << std::setw(16) << r.stddev << std::endl;
+    }
+    std::cout << std::string(64, '-') << std::endl;
 }
