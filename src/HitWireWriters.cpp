@@ -16,6 +16,9 @@
 #include <numeric>
 #include <cmath>
 #include <iomanip> // For table formatting
+#include <map>
+#include <vector>
+#include <utility> // for std::pair
 
 // NOTE: Adding experimental includes for parallel writing
 #include <ROOT/RRawPtrWriteEntry.hxx>
@@ -30,9 +33,12 @@ using ROOT::Experimental::RNTupleFillContext;
 
 using ROOT::Experimental::Detail::RRawPtrWriteEntry;
 
+#include <TROOT.h>
 
 // Add include at the top (after existing includes)
 #include "HitWireWriterHelpers.hpp"
+
+#include "WriterResult.hpp"
 
 // Removed static int get_nthreads() as part of refactor step 1
 
@@ -684,7 +690,7 @@ double generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPe
     return totalTime * 1000;
 }
 
-void out(int nThreads, int iter) {
+std::vector<WriterResult> out(int nThreads, int iter) {
     int numEvents = 1000;
     int hitsPerEvent = 1000;
     int wiresPerEvent = 100;
@@ -692,11 +698,6 @@ void out(int nThreads, int iter) {
     int roisPerWire = 10;
     int numRuns = iter;
 
-    struct WriterResult {
-        std::string label;
-        double avg;
-        double stddev;
-    };
     std::vector<WriterResult> results;
 
     auto benchmark = [&](const std::string& label, auto writerFunc, auto&&... args) {
@@ -707,7 +708,7 @@ void out(int nThreads, int iter) {
         }
         double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
         double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-        double stddev = std::sqrt(sq_sum / times.size() - avg * avg);
+        double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
         results.push_back({label, avg, stddev});
     };
 
@@ -738,4 +739,26 @@ void out(int nThreads, int iter) {
                   << std::setw(16) << r.stddev << std::endl;
     }
     std::cout << std::string(64, '-') << std::endl;
+
+    return results;
+}
+
+std::map<std::string, std::vector<std::pair<int, double>>> benchmarkScaling(int maxThreads, int iter) {
+    std::vector<int> threadCounts;
+    for (int t = 1; t <= maxThreads; t *= 2) {
+        threadCounts.push_back(t);
+    }
+
+    std::map<std::string, std::vector<std::pair<int, double>>> scalingData;
+
+    for (int threads : threadCounts) {
+        ROOT::EnableImplicitMT(threads);
+        auto results = out(threads, iter);
+        for (const auto& res : results) {
+            scalingData[res.label].emplace_back(threads, res.avg);
+        }
+    }
+
+    ROOT::DisableImplicitMT(); // Reset after benchmarking
+    return scalingData;
 }

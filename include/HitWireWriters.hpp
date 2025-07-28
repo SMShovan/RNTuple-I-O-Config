@@ -1,5 +1,9 @@
 #pragma once
 #include <string>
+#include "WriterResult.hpp"
+#include <map>
+#include <vector>
+#include <utility>
 
 void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
 void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
@@ -18,4 +22,6 @@ void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpil
 
 void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
 
-void out(int nThreads, int iter = 20); 
+std::vector<WriterResult> out(int nThreads, int iter = 20);
+
+std::map<std::string, std::vector<std::pair<int, double>>> benchmarkScaling(int maxThreads, int iter); 

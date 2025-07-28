@@ -9,6 +9,9 @@
 #include "Wire.hpp"
 #include "Utils.hpp"
 #include <iomanip> // For table formatting
+
+#include "ReaderResult.hpp"
+
 using namespace Utils;
 
 
@@ -596,19 +599,13 @@ double read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent
 }
 
 
-void in(int nThreads, int iter) {
+std::vector<ReaderResult> in(int nThreads, int iter) {
     int numEvents = 1000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 1000;
     int numSpils = 10;
     int numRuns = iter;
 
-    struct ReaderResult {
-        std::string label;
-        double cold;
-        double warmAvg;
-        double warmStddev;
-    };
     std::vector<ReaderResult> results;
 
     auto benchmark = [&](const std::string& label, auto readerFunc, auto&&... args) {
@@ -659,4 +656,6 @@ void in(int nThreads, int iter) {
         std::cout << std::endl;
     }
     std::cout << std::string(88, '-') << std::endl;
+
+    return results;
 }

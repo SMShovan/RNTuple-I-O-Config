@@ -8,6 +8,7 @@
 #include "Wire.hpp"
 #include "Hit.hpp"
 #include <iomanip> // Add this at the top
+#include <TFile.h> // For checking keys
 
 namespace fs = std::filesystem;
 
@@ -35,8 +36,14 @@ void printFileStats() {
     std::cout << std::string(64, '-') << "\n";
     for (const auto& file : files) {
         std::size_t totalHits = 0, totalWires = 0, totalROIs = 0;
+
+        auto rootFile = TFile::Open(file.c_str(), "READ");
+        if (!rootFile || rootFile->IsZombie()) {
+            continue; // Skip invalid files
+        }
+
         // Hits
-        try {
+        if (rootFile->Get("hits")) {
             ROOT::RDataFrame dfHits("hits", file);
             const auto& colNames = dfHits.GetColumnNames();
             if (std::find(colNames.begin(), colNames.end(), "HitVector") != colNames.end()) {
@@ -58,9 +65,10 @@ void printFileStats() {
                     totalHits = dfHits.Count().GetValue();
                 }
             }
-        } catch (...) { totalHits = 0; }
-        // Wires (unchanged)
-        try {
+        }
+
+        // Wires
+        if (rootFile->Get("wires")) {
             ROOT::RDataFrame dfWires("wires", file);
             const auto& colNames = dfWires.GetColumnNames();
             if (std::find(colNames.begin(), colNames.end(), "WireVector") != colNames.end()) {
@@ -82,7 +90,10 @@ void printFileStats() {
                     for (const auto& wi : wv) totalROIs += wi.fSignalROI.size();
                 }
             }
-        } catch (...) { totalWires = 0; totalROIs = 0; }
+        }
+
+        rootFile->Close();
+
         std::cout << std::left
                   << std::setw(32) << fs::path(file).filename().string()
                   << std::setw(16) << totalHits
