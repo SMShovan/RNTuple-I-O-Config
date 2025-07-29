@@ -691,7 +691,7 @@ double generateAndWrite_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPe
 }
 
 std::vector<WriterResult> out(int nThreads, int iter) {
-    int numEvents = 1000;
+    int numEvents = 1000000;
     int hitsPerEvent = 1000;
     int wiresPerEvent = 100;
     int numHoriSpills = 10;

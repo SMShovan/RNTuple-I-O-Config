@@ -160,6 +160,7 @@ void visualize_scaling(const std::map<std::string, std::vector<std::pair<int, do
         const auto& points = entry.second;
 
         canvas->cd(padIndex++);
+        gPad->SetLogx(1);
         TGraph* graph = new TGraph(points.size());
         for (size_t i = 0; i < points.size(); ++i) {
             graph->SetPoint(i, points[i].first, points[i].second);

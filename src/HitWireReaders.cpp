@@ -600,7 +600,7 @@ double read_Hit_Wire_Vector_Of_Individuals(int /*numEvents*/, int /*hitsPerEvent
 
 
 std::vector<ReaderResult> in(int nThreads, int iter) {
-    int numEvents = 1000;
+    int numEvents = 1000000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 1000;
     int numSpils = 10;

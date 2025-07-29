@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Persistent Layouts}{7}{0}{1}
+\beamer@sectionintoc {2}{Parallel Optimizations}{13}{0}{2}
+\beamer@sectionintoc {3}{Results}{18}{0}{3}
+\beamer@sectionintoc {4}{Trade-offs}{26}{0}{4}

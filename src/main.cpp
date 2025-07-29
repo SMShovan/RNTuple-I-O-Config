@@ -45,7 +45,8 @@ int main() {
     }
     visualize_file_sizes(fileSizes);
 
-    printFileStats(); // Print file statistics
+    printEntryCounts(); // New table for entry counts
+    printFileStats(); // Existing file statistics
     auto reader_results = in(nThreads, 3);
     visualize_reader_results(reader_results);
 

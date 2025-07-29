@@ -1,2 +1,3 @@
 #pragma once
-void printFileStats(); 
+void printFileStats();
+void printEntryCounts(); 

@@ -102,3 +102,45 @@ void printFileStats() {
     }
     std::cout << std::string(64, '-') << "\n";
 } 
+
+void printEntryCounts() {
+    std::string outputDir = "./output";
+    std::vector<std::pair<std::string, std::string>> writerFiles = {
+        {"Hit/Wire Vector", "vector.root"},
+        {"Hit/Wire Individual", "individual.root"},
+        {"VertiSplit-Vector", "VertiSplit_vector.root"},
+        {"VertiSplit-Individual", "VertiSplit_individual.root"},
+        {"HoriSpill-Vector", "HoriSpill_vector.root"},
+        {"HoriSpill-Individual", "HoriSpill_individual.root"},
+        {"Vector-Dict", "vector_dict.root"},
+        {"Individual-Dict", "individual_dict.root"},
+        {"VertiSplit-Vector-Dict", "VertiSplit_vector_dict.root"},
+        {"VertiSplit-Individual-Dict", "VertiSplit_individual_dict.root"},
+        {"HoriSpill-Vector-Dict", "HoriSpill_vector_dict.root"},
+        {"HoriSpill-Individual-Dict", "HoriSpill_individual_dict.root"},
+        {"Vector-of-Individuals", "vector_of_individuals.root"}
+    };
+
+    std::cout << std::left
+              << std::setw(32) << "Writer"
+              << std::setw(16) << "Hits Entries"
+              << std::setw(16) << "Wires Entries" << std::endl;
+    std::cout << std::string(64, '-') << std::endl;
+
+    for (const auto& [label, fileName] : writerFiles) {
+        std::string filePath = outputDir + "/" + fileName;
+        long long hitsCount = 0;
+        long long wiresCount = 0;
+        if (std::filesystem::exists(filePath)) {
+            ROOT::RDataFrame df_hits("hits", filePath);
+            hitsCount = *df_hits.Count();
+            ROOT::RDataFrame df_wires("wires", filePath);
+            wiresCount = *df_wires.Count();
+        }
+        std::cout << std::left
+                  << std::setw(32) << label
+                  << std::setw(16) << hitsCount
+                  << std::setw(16) << wiresCount << std::endl;
+    }
+    std::cout << std::string(64, '-') << std::endl;
+} 
