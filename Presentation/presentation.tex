@@ -323,7 +323,6 @@
 \end{frame}
 
 % -------- Section: Results --------
-% -------- Section: Results --------
 \section{Results}
 
 \begin{frame}{Evaluation Metrics}
@@ -334,34 +333,28 @@
 % Add your content here
 \end{frame}
 
-\begin{frame}{Experiment 1}
+\begin{frame}{AOS vs SOA: Write Performance Comparison}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/write_times.pdf}
-\captionof{figure}{\small Experiment 1: Description goes here.}
+\includegraphics[width=0.9\linewidth]{../experiments/comparison_write_times.pdf}
+\captionof{figure}{\tiny Write Performance Comparison: AOS vs SOA approaches across different data organization strategies. Red bars represent AOS (Array of Structures) performance, while blue bars show SOA (Structure of Arrays) performance.}
 \end{frame}
 
-\begin{frame}{Experiment 2}
+\begin{frame}{AOS vs SOA: Cold Read Performance Comparison}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/file_sizes.pdf}
-\captionof{figure}{\small Experiment 2: Description goes here.}
+\includegraphics[width=0.9\linewidth]{../experiments/comparison_cold_times.pdf}
+\captionof{figure}{\tiny Cold Read Performance Comparison: Initial read times for AOS vs SOA implementations. Cold reads represent the first access to data after file creation, measuring baseline I/O performance.}
 \end{frame}
 
-\begin{frame}{Experiment 3}
+\begin{frame}{AOS vs SOA: Warm Read Performance Comparison}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/cold_times.pdf}
-\captionof{figure}{\small Experiment 3: Description goes here.}
+\includegraphics[width=0.9\linewidth]{../experiments/comparison_warm_times.pdf}
+\captionof{figure}{\tiny Warm Read Performance Comparison: Subsequent read times for AOS vs SOA implementations. Warm reads benefit from cached data, showing optimized access patterns and memory locality effects.}
 \end{frame}
 
-\begin{frame}{Experiment 4}
+\begin{frame}{AOS vs SOA: File Size Comparison}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/warm_times.pdf}
-\captionof{figure}{\small Experiment 4: Description goes here.}
-\end{frame}
-
-\begin{frame}{Experiment 5}
-\centering
-\includegraphics[width=0.9\linewidth]{../experiments/scaling_plot.pdf}
-\captionof{figure}{\small Experiment 5: Description goes here.}
+\includegraphics[width=0.9\linewidth]{../experiments/comparison_file_sizes.pdf}
+\captionof{figure}{\tiny File Size Comparison: Storage efficiency of AOS vs SOA approaches. File sizes impact storage costs, network transfer times, and overall data management overhead in large-scale HEP experiments.}
 \end{frame}
 
 % -------- Section: Trade-offs --------

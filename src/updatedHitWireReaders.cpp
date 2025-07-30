@@ -406,6 +406,41 @@ std::vector<ReaderResult> updatedIn(int nThreads, int iter) {
     return results;
 }
 
+std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
+    std::vector<ReaderResult> results;
+    auto benchmark = [&](const std::string& label, auto readerFunc, const std::string& file) {
+        std::vector<double> coldTimes, warmTimes;
+        for (int i = 0; i < iter; ++i) {
+            double cold = readerFunc(file, nThreads);
+            coldTimes.push_back(cold);
+            double warm = readerFunc(file, nThreads); // Second read for warm
+            warmTimes.push_back(warm);
+        }
+        double coldAvg = std::accumulate(coldTimes.begin(), coldTimes.end(), 0.0) / iter;
+        double warmAvg = std::accumulate(warmTimes.begin(), warmTimes.end(), 0.0) / iter;
+        double warmSqSum = std::inner_product(warmTimes.begin(), warmTimes.end(), warmTimes.begin(), 0.0);
+        double warmStddev = std::sqrt((warmSqSum - iter * warmAvg * warmAvg) / (iter - 1));
+        results.push_back({label, coldAvg, warmAvg, warmStddev});
+    };
+
+    benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
+    benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, kOutputDir + "/soa_event_perData.root");
+    benchmark("SOA_event_perGroup", readSOA_event_perGroup, kOutputDir + "/soa_event_perGroup.root");
+    benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
+    benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, kOutputDir + "/soa_spill_perData.root");
+    benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
+    benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
+    benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
+    benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
+
+    // Print table
+    std::cout << std::left << std::setw(32) << "SOA Reader" << std::setw(16) << "Cold (ms)" << std::setw(16) << "Warm Avg (ms)" << std::setw(16) << "Warm StdDev (ms)" << std::endl;
+    for (const auto& res : results) {
+        std::cout << std::left << std::setw(32) << res.label << std::setw(16) << res.cold << std::setw(16) << res.warmAvg << std::setw(16) << res.warmStddev << std::endl;
+    }
+    return results;
+}
+
 void traverse(const EventAOS& event) {
     for (const auto& h : event.hits) {
         volatile float sink = h.fPeakAmplitude; (void)sink;

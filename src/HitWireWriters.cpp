@@ -14,6 +14,13 @@
 #include <TObject.h>
 #include <mutex>
 #include <numeric>
+double computeStdDev(const std::vector<double>& values, double mean) {
+    double sum = 0.0;
+    for (const auto& v : values) {
+        sum += (v - mean) * (v - mean);
+    }
+    return std::sqrt(sum / (values.size() - 1));
+}
 #include <cmath>
 #include <iomanip> // For table formatting
 #include <map>
@@ -708,7 +715,7 @@ std::vector<WriterResult> out(int nThreads, int iter) {
         }
         double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
         double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-        double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
+        double stddev = computeStdDev(times, avg);
         results.push_back({label, avg, stddev});
     };
 

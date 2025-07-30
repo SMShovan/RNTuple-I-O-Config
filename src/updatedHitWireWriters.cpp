@@ -789,3 +789,39 @@ double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime * 1000;
 } 
+
+std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
+    int numEvents = 1000;
+    int hitsPerEvent = 100;
+    int wiresPerEvent = 100;
+    int roisPerWire = 10;
+    int numSpills = 10;
+    std::vector<WriterResult> results;
+    auto benchmark = [&](const std::string& label, auto func, auto&&... args) {
+        std::vector<double> times;
+        for (int i = 0; i < iter; ++i) {
+            double t = func(args...);
+            times.push_back(t);
+        }
+        double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+        double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
+        double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
+        results.push_back({label, avg, stddev});
+    };
+    benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
+    benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
+    benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perGroup.root", nThreads);
+    benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_all.root", nThreads);
+    benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perData.root", nThreads);
+    benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perGroup.root", nThreads);
+    benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
+    benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
+    benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
+    benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
+
+    std::cout << std::left << std::setw(32) << "SOA Writer" << std::setw(16) << "Average (ms)" << std::setw(16) << "StdDev (ms)" << std::endl;
+    for (const auto& res : results) {
+        std::cout << std::left << std::setw(32) << res.label << std::setw(16) << res.avg << std::setw(16) << res.stddev << std::endl;
+    }
+    return results;
+} 
