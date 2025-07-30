@@ -3,8 +3,7 @@
 #include <vector>
 #include <random>
 #include <TObject.h>
-
-
+#include "Hit.hpp"
 
 
 /**
@@ -79,4 +78,47 @@ struct WireIndividual {
     RegionsOfInterest_t& getSignalROI() { return fSignalROI; }
     const RegionsOfInterest_t& getSignalROI() const { return fSignalROI; }
     ClassDef(WireIndividual, 3)
+}; 
+
+// Ensure SOAROI, SOAWire are present
+struct SOAROI {
+    std::vector<float> data;
+    ClassDef(SOAROI, 1);
+};
+
+struct SOAWire {
+    long long EventID;
+    unsigned int Channel;
+    int View;
+    std::vector<SOAROI> ROIs;
+    ClassDef(SOAWire, 1);
+};
+
+// For element perGroup wires without ROIs
+struct SOAWireBase {
+    long long EventID;
+    unsigned int Channel;
+    int View;
+    ClassDef(SOAWireBase, 1);
+};
+
+// For flattened ROI with WireID in element
+struct FlatSOAROI {
+    unsigned int WireID;
+    std::vector<float> data;
+    ClassDef(FlatSOAROI, 1);
+};
+
+struct SOAWireVector {
+    std::vector<long long> EventIDs;
+    std::vector<unsigned int> Channels;
+    std::vector<int> Views;
+    std::vector<std::vector<SOAROI>> ROIs;
+    ClassDef(SOAWireVector, 1);
+};
+
+struct EventSOA {
+    SOAHitVector hits;
+    SOAWireVector wires;
+    ClassDef(EventSOA, 1);
 }; 

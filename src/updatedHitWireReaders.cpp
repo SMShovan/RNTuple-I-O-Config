@@ -101,8 +101,8 @@ double readAOS_spill_perGroup(const std::string& fileName, int nThreads) {
 double readAOS_topObject_perDataProduct(const std::string& fileName, int nThreads) {
     TStopwatch sw;
     sw.Start();
-    auto hitsFuture = std::async(std::launch::async, processNtuple<HitIndividual>, fileName, "top_hits", "hit", nThreads);
-    auto wiresFuture = std::async(std::launch::async, processNtuple<WireIndividual>, fileName, "top_wires", "wire", nThreads);
+    auto hitsFuture = std::async(std::launch::async, processNtuple<HitIndividual>, fileName, "aos_top_hits", "hit", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<WireIndividual>, fileName, "aos_top_wires", "wire", nThreads);
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
@@ -112,9 +112,9 @@ double readAOS_topObject_perDataProduct(const std::string& fileName, int nThread
 double readAOS_topObject_perGroup(const std::string& fileName, int nThreads) {
     TStopwatch sw;
     sw.Start();
-    auto hitsFuture = std::async(std::launch::async, processNtuple<HitIndividual>, fileName, "top_hits", "hit", nThreads);
-    auto wiresFuture = std::async(std::launch::async, processNtuple<WireBase>, fileName, "top_wires", "wire", nThreads);
-    auto roisFuture = std::async(std::launch::async, processNtuple<std::vector<FlatROI>>, fileName, "top_rois", "rois", nThreads);
+    auto hitsFuture = std::async(std::launch::async, processNtuple<HitIndividual>, fileName, "aos_top_hits", "hit", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<WireBase>, fileName, "aos_top_wires", "wire", nThreads);
+    auto roisFuture = std::async(std::launch::async, processNtuple<std::vector<FlatROI>>, fileName, "aos_top_rois", "rois", nThreads);
     hitsFuture.get();
     wiresFuture.get();
     roisFuture.get();
@@ -139,6 +139,220 @@ double readAOS_element_perGroup(const std::string& fileName, int nThreads) {
     auto hitsFuture = std::async(std::launch::async, processNtuple<HitIndividual>, fileName, "element_hits", "hit", nThreads);
     auto wiresFuture = std::async(std::launch::async, processNtuple<WireBase>, fileName, "element_wires", "wire", nThreads);
     auto roisFuture = std::async(std::launch::async, processNtuple<FlatROI>, fileName, "element_rois", "roi", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    roisFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+// Define missing SOA structs
+// struct EventSOA { // Removed
+//     HitVector hits; // Removed
+//     WireVector wires; // Removed
+//     ClassDef(EventSOA, 1); // Removed
+// }; // Removed
+
+// struct SOAROI { // Removed
+//     unsigned int WireID; // Removed
+//     std::size_t offset; // Removed
+//     std::vector<float> data; // Removed
+//     ClassDef(SOAROI, 1); // Removed
+// }; // Removed
+
+// SOA Traverse Overloads
+// void traverse(const EventSOA& event) { // Removed
+//     for (size_t i = 0; i < event.hits.fChannel.size(); ++i) {  // Use a field like fChannel // Removed
+//         volatile float sink = event.hits.fPeakAmplitude[i]; (void)sink; // Removed
+//     } // Removed
+//     for (size_t w = 0; w < event.wires.fWire_Channel.size(); ++w) { // Removed
+//         volatile unsigned int sink = event.wires.fWire_Channel[w]; (void)sink; // Removed
+//         auto start = event.wires.fSignalROI_offsets[w]; // Removed
+//         auto end = start + event.wires.fSignalROI_nROIs[w] * 10;  // Assume fixed size or adjust // Removed
+//         for (auto r = start; r < end; r += 10) { // Removed
+//             volatile float sink2 = event.wires.fSignalROI_data[r]; (void)sink2; // Removed
+//         } // Removed
+//     } // Removed
+// } // Removed
+
+// void traverse(const HitVector& hits) { // Removed
+//     for (size_t i = 0; i < hits.fChannel.size(); ++i) { // Removed
+//         volatile float sink = hits.fPeakAmplitude[i]; (void)sink; // Removed
+//     } // Removed
+// } // Removed
+
+// void traverse(const WireVector& wires) { // Removed
+//     for (size_t w = 0; w < wires.fWire_Channel.size(); ++w) { // Removed
+//         volatile unsigned int sink = wires.fWire_Channel[w]; (void)sink; // Removed
+//         auto start = wires.fSignalROI_offsets[w]; // Removed
+//         auto end = start + wires.fSignalROI_nROIs[w] * 10; // Removed
+//         for (auto r = start; r < end; r += 10) { // Removed
+//             volatile float sink2 = wires.fSignalROI_data[r]; (void)sink2; // Removed
+//         } // Removed
+//     } // Removed
+// } // Removed
+
+// void traverse(const std::vector<WireBase>& wires) { // Removed
+//     for (const auto& w : wires) { // Removed
+//         volatile unsigned int sink = w.fWire_Channel; (void)sink; // Removed
+//     } // Removed
+// } // Removed
+
+// void traverse(const std::vector<SOAROI>& rois) { // Removed
+//     for (const auto& r : rois) { // Removed
+//         if (!r.data.empty()) { // Removed
+//             volatile float sink = r.data[0]; (void)sink; // Removed
+//         } // Removed
+//     } // Removed
+// } // Removed
+
+// SOA Reader Functions
+double readSOA_event_allDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    processNtuple<EventSOA>(fileName, "soa_events", "EventSOA", nThreads);
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+double readSOA_event_perDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHitVector>, fileName, "soa_hits", "hits", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWireVector>, fileName, "soa_wires", "wires", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+double readSOA_event_perGroup(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHitVector>, fileName, "soa_hits", "hits", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<std::vector<SOAWireBase>>, fileName, "soa_wires", "wires", nThreads);
+    auto roisFuture = std::async(std::launch::async, processNtuple<std::vector<SOAROI>>, fileName, "soa_rois", "rois", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    roisFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+// Group 2 readers
+double readSOA_spill_allDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    processNtuple<EventSOA>(fileName, "soa_spill_all", "EventSOA", nThreads);
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+// Define missing readers
+double readSOA_spill_perDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHitVector>, fileName, "soa_spill_hits", "hits", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWireVector>, fileName, "soa_spill_wires", "wires", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+double readSOA_spill_perGroup(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHitVector>, fileName, "soa_spill_hits", "hits", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<std::vector<SOAWireBase>>, fileName, "soa_spill_wires", "wires", nThreads);
+    auto roisFuture = std::async(std::launch::async, processNtuple<std::vector<SOAROI>>, fileName, "soa_spill_rois", "rois", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    roisFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+// Traverse already covers EventSOA, SOAHitVector, etc.
+
+// Group 3 readers
+double readSOA_topObject_perDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_top_hits", "hit", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWire>, fileName, "soa_top_wires", "wire", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+// Add readSOA_topObject_perGroup with three futures.
+
+// Add traverse for SOAHit, SOAWire, std::vector<SOAROI>.
+void traverse(const SOAHit& hit) {
+    volatile float sink = hit.PeakAmplitude; (void)sink;
+}
+
+void traverse(const SOAWire& wire) {
+    volatile unsigned int sink = wire.Channel; (void)sink;
+    for (const auto& roi : wire.ROIs) {
+        if (!roi.data.empty()) {
+            volatile float sink2 = roi.data[0]; (void)sink2;
+        }
+    }
+}
+
+void traverse(const SOAWireBase& wire) {
+    volatile unsigned int sink = wire.Channel; (void)sink;
+}
+
+// Group 4 readers
+double readSOA_element_perDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_element_hits", "hit", nThreads);
+    auto wireROIFuture = std::async(std::launch::async, processNtuple<SOAWire>, fileName, "soa_element_wire_rois", "wire_roi", nThreads);
+    hitsFuture.get();
+    wireROIFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+// Add readSOA_element_perGroup with three futures for hit, wire, roi.
+
+// Add traverse for FlatSOAROI if used
+void traverse(const FlatSOAROI& roi) {
+    if (!roi.data.empty()) {
+        volatile float sink = roi.data[0]; (void)sink;
+    }
+}
+
+void traverse(const SOAROI& roi) {
+    if (!roi.data.empty()) {
+        volatile float sink = roi.data[0]; (void)sink;
+    }
+}
+
+double readSOA_topObject_perGroup(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_top_hits", "hit", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWire>, fileName, "soa_top_wires", "wire", nThreads);
+    auto roisFuture = std::async(std::launch::async, processNtuple<std::vector<SOAROI>>, fileName, "soa_top_rois", "rois", nThreads);
+    hitsFuture.get();
+    wiresFuture.get();
+    roisFuture.get();
+    sw.Stop();
+    return sw.RealTime() * 1000;
+}
+
+double readSOA_element_perGroup(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_element_hits", "hit", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWireBase>, fileName, "soa_element_wires", "wire", nThreads);
+    auto roisFuture = std::async(std::launch::async, processNtuple<FlatSOAROI>, fileName, "soa_element_rois", "roi", nThreads);
     hitsFuture.get();
     wiresFuture.get();
     roisFuture.get();
@@ -173,6 +387,15 @@ std::vector<ReaderResult> updatedIn(int nThreads, int iter) {
     benchmark("AOS_topObject_perGroup", readAOS_topObject_perGroup, kOutputDir + "/aos_topObject_perGroup.root");
     benchmark("AOS_element_perDataProduct", readAOS_element_perDataProduct, kOutputDir + "/aos_element_perData.root");
     benchmark("AOS_element_perGroup", readAOS_element_perGroup, kOutputDir + "/aos_element_perGroup.root");
+    benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
+    benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, kOutputDir + "/soa_event_perData.root");
+    benchmark("SOA_event_perGroup", readSOA_event_perGroup, kOutputDir + "/soa_event_perGroup.root");
+    benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
+    benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, kOutputDir + "/soa_spill_perData.root");
+    benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
+    benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
+    benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
+    // benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
 
     // Print table
     std::cout << std::left << std::setw(32) << "Reader" << std::setw(16) << "Cold (ms)" << std::setw(16) << "Warm Avg (ms)" << std::setw(16) << "Warm StdDev (ms)" << std::endl;
@@ -254,5 +477,50 @@ void traverse(const WireROI& wireRoi) {
     volatile unsigned int sink = wireRoi.fWire_Channel; (void)sink;
     if (!wireRoi.roi.data.empty()) {
         volatile float sink2 = wireRoi.roi.data[0]; (void)sink2;
+    }
+}
+
+void traverse(const EventSOA& event) {
+    for (size_t i = 0; i < event.hits.EventIDs.size(); ++i) {
+        volatile float sink = event.hits.PeakAmplitudes[i]; (void)sink;
+    }
+    for (size_t w = 0; w < event.wires.EventIDs.size(); ++w) {
+        volatile unsigned int sink = event.wires.Channels[w]; (void)sink;
+        for (const auto& roi : event.wires.ROIs[w]) {
+            if (!roi.data.empty()) {
+                volatile float sink2 = roi.data[0]; (void)sink2;
+            }
+        }
+    }
+}
+
+void traverse(const SOAHitVector& hits) {
+    for (size_t i = 0; i < hits.EventIDs.size(); ++i) {
+        volatile float sink = hits.PeakAmplitudes[i]; (void)sink;
+    }
+}
+
+void traverse(const SOAWireVector& wires) {
+    for (size_t w = 0; w < wires.EventIDs.size(); ++w) {
+        volatile unsigned int sink = wires.Channels[w]; (void)sink;
+        for (const auto& roi : wires.ROIs[w]) {
+            if (!roi.data.empty()) {
+                volatile float sink2 = roi.data[0]; (void)sink2;
+            }
+        }
+    }
+}
+
+void traverse(const std::vector<SOAWireBase>& wires) {
+    for (const auto& w : wires) {
+        volatile unsigned int sink = w.Channel; (void)sink;
+    }
+}
+
+void traverse(const std::vector<SOAROI>& rois) {
+    for (const auto& r : rois) {
+        if (!r.data.empty()) {
+            volatile float sink = r.data[0]; (void)sink;
+        }
     }
 }

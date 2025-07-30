@@ -122,3 +122,58 @@ struct HitIndividual {
 
 // Individual generator declaration
 HitIndividual generateRandomHitIndividual(long long eventID); 
+
+struct SOAHitVector {
+    std::vector<long long> EventIDs;
+    std::vector<unsigned int> Channels;
+    std::vector<int> Views;
+    std::vector<int> StartTicks;
+    std::vector<int> EndTicks;
+    std::vector<float> PeakTimes;
+    std::vector<float> SigmaPeakTimes;
+    std::vector<float> RMSs;
+    std::vector<float> PeakAmplitudes;
+    std::vector<float> SigmaPeakAmplitudes;
+    std::vector<float> ROISummedADCs;
+    std::vector<float> HitSummedADCs;
+    std::vector<float> Integrals;
+    std::vector<float> SigmaIntegrals;
+    std::vector<short int> Multiplicities;
+    std::vector<short int> LocalIndices;
+    std::vector<float> GoodnessOfFits;
+    std::vector<int> NDFs;
+    std::vector<int> SignalTypes;
+    std::vector<int> WireID_Cryostats;
+    std::vector<int> WireID_TPCs;
+    std::vector<int> WireID_Planes;
+    std::vector<int> WireID_Wires;
+    ClassDef(SOAHitVector, 1);
+};
+
+// Ensure SOAHit is present (scalar fields, no vectors)
+struct SOAHit {
+    long long EventID;
+    unsigned int Channel;
+    int View;
+    int StartTick;
+    int EndTick;
+    float PeakTime;
+    float SigmaPeakTime;
+    float RMS;
+    float PeakAmplitude;
+    float SigmaPeakAmplitude;
+    float ROISummedADC;
+    float HitSummedADC;
+    float Integral;
+    float SigmaIntegral;
+    short int Multiplicity;
+    short int LocalIndex;
+    float GoodnessOfFit;
+    int NDF;
+    int SignalType;
+    int WireID_Cryostat;
+    int WireID_TPC;
+    int WireID_Plane;
+    int WireID_Wire;
+    ClassDef(SOAHit, 1);
+}; 

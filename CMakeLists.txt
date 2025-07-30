@@ -59,7 +59,7 @@ add_executable(hitwire
 )
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})
-target_link_libraries(hitwire PRIVATE ${ROOT_LIBS} WireDict AOSDict)
+target_link_libraries(hitwire PRIVATE ${ROOT_LIBS} WireDict AOSDict SOADict)
 
 # Add this section to build the dictionary as a shared library
 add_library(WireDict SHARED ${DICT_OUTPUT})
@@ -82,6 +82,23 @@ add_library(AOSDict SHARED ${AOS_DICT_OUTPUT})
 target_include_directories(AOSDict PRIVATE ${ROOT_INCDIR})
 add_dependencies(AOSDict WireDict)
 target_link_libraries(AOSDict PRIVATE ${ROOT_LIBS} WireDict)
+
+# --- SOA Dictionary Generation ---
+set(SOA_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp)
+set(SOA_LINKDEF_FILE ${CMAKE_SOURCE_DIR}/include/SOALinkDef.h)
+set(SOA_DICT_OUTPUT ${CMAKE_BINARY_DIR}/SOADict.cxx)
+
+add_custom_command(
+    OUTPUT ${SOA_DICT_OUTPUT}
+    COMMAND rootcling -f ${SOA_DICT_OUTPUT} -c ${SOA_DICT_HEADERS} ${SOA_LINKDEF_FILE}
+    DEPENDS ${SOA_DICT_HEADERS} ${SOA_LINKDEF_FILE}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+add_library(SOADict SHARED ${SOA_DICT_OUTPUT})
+target_include_directories(SOADict PRIVATE ${ROOT_INCDIR})
+add_dependencies(SOADict WireDict)
+target_link_libraries(SOADict PRIVATE ${ROOT_LIBS} WireDict)
 
 include(FetchContent)
 FetchContent_Declare(

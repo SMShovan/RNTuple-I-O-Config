@@ -22,6 +22,15 @@
 #include "WriterResult.hpp"
 #include <TROOT.h>
 
+// Add forward declarations
+double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+
 // Move executeInParallel to the top of the file, before any function implementations
 static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned, int)>& workFunc) {
     if (nThreads <= 0 || totalEvents < 0) return 0.0;
@@ -129,6 +138,93 @@ double AOS_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, in
     return totalTime * 1000;
 }
 
+// SOA_event_allDataProduct
+double SOA_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto [model, token] = CreateSOAAllDataProductModelAndToken();
+    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "soa_events", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        contexts[th] = writer->CreateFillContext();
+        entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
+// SOA_event_perDataProduct
+double SOA_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_hits", *file, options);
+    auto [wiresModel, wiresToken] = CreateSOAWiresModelAndToken();
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_wires", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> hitsEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> wiresEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_event_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
+// SOA_event_perGroup
+double SOA_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_hits", *file, options);
+    auto [wiresModel, wiresToken] = CreateSOABaseWiresModelAndToken();
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_wires", *file, options);
+    auto [roisModel, roisToken] = CreateSOAROIsModelAndToken();
+    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "soa_rois", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> hitsEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> wiresEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> roisContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> roisEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        roisContexts[th] = roisWriter->CreateFillContext();
+        roisEntries[th] = roisContexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_event_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
 // Add any shared helpers here, e.g., executeInParallel from existing code (duplicated to avoid changes)
 
 double AOS_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -226,8 +322,8 @@ double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
     return totalTime * 1000;
 } 
 
+
 double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    // Assume hitsPerEvent == wiresPerEvent
     int totalEntries = numEvents * hitsPerEvent;
     std::filesystem::create_directories("./output");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
@@ -237,28 +333,25 @@ double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
     options.SetApproxZippedClusterSize(2 * 1024 * 1024);
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<HitIndividual>("hit");
-    auto hitsToken = hitsModel->GetToken("hit");
-    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "top_hits", *file, options);
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_top_hits", *file, options);
     auto wiresModel = ROOT::RNTupleModel::Create();
     wiresModel->MakeField<WireIndividual>("wire");
-    auto wiresToken = wiresModel->GetToken("wire");
-    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "top_wires", *file, options);
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> hitsEntries(nThreads);
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> wiresEntries(nThreads);
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "aos_top_wires", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads), wiresContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads), wiresEntries(nThreads);
     for (int th = 0; th < nThreads; ++th) {
         hitsContexts[th] = hitsWriter->CreateFillContext();
-        hitsEntries[th] = hitsContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        hitsEntries[th] = hitsContexts[th]->CreateEntry();
         wiresContexts[th] = wiresWriter->CreateFillContext();
-        wiresEntries[th] = wiresContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        wiresEntries[th] = wiresContexts[th]->CreateEntry();
     }
-    auto workFunc = [&](int first, int last, unsigned seed, int th) {
-        return RunAOS_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, roisPerWire);
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunAOS_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime * 1000;
 }
+
 
 double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int totalEntries = numEvents * hitsPerEvent;
@@ -268,38 +361,27 @@ double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
     options.SetApproxZippedClusterSize(2 * 1024 * 1024);
-    // Hits model
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<HitIndividual>("hit");
-    auto hitsToken = hitsModel->GetToken("hit");
-    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "top_hits", *file, options);
-    // Wires model (WireBase)
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_top_hits", *file, options);
     auto wiresModel = ROOT::RNTupleModel::Create();
     wiresModel->MakeField<WireBase>("wire");
-    auto wiresToken = wiresModel->GetToken("wire");
-    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "top_wires", *file, options);
-    // ROIs model
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "aos_top_wires", *file, options);
     auto roisModel = ROOT::RNTupleModel::Create();
     roisModel->MakeField<std::vector<FlatROI>>("rois");
-    auto roisToken = roisModel->GetToken("rois");
-    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "top_rois", *file, options);
-    // Contexts and entries
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> hitsEntries(nThreads);
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> wiresEntries(nThreads);
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> roisContexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> roisEntries(nThreads);
+    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "aos_top_rois", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads), wiresContexts(nThreads), roisContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads), wiresEntries(nThreads), roisEntries(nThreads);
     for (int th = 0; th < nThreads; ++th) {
         hitsContexts[th] = hitsWriter->CreateFillContext();
-        hitsEntries[th] = hitsContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        hitsEntries[th] = hitsContexts[th]->CreateEntry();
         wiresContexts[th] = wiresWriter->CreateFillContext();
-        wiresEntries[th] = wiresContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        wiresEntries[th] = wiresContexts[th]->CreateEntry();
         roisContexts[th] = roisWriter->CreateFillContext();
-        roisEntries[th] = roisContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        roisEntries[th] = roisContexts[th]->CreateEntry();
     }
-    auto workFunc = [&](int first, int last, unsigned seed, int th) {
-        return RunAOS_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, roisPerWire);
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunAOS_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime * 1000;
@@ -438,6 +520,9 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_all.root", nThreads);
     benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perData.root", nThreads);
     benchmark("AOS_event_perGroup", AOS_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perGroup.root", nThreads);
+    benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
+    benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
+    benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perGroup.root", nThreads);
     benchmark("AOS_spill_allDataProduct", AOS_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_all.root", nThreads);
     benchmark("AOS_spill_perDataProduct", AOS_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_perData.root", nThreads);
     benchmark("AOS_spill_perGroup", AOS_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_perGroup.root", nThreads);
@@ -445,6 +530,13 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_topObject_perGroup.root", nThreads);
     benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_element_perData.root", nThreads);
     benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_element_perGroup.root", nThreads);
+    benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_all.root", nThreads);
+    benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perData.root", nThreads);
+    benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perGroup.root", nThreads);
+    benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
+    benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
+    benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
+    //benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
 
     std::cout << std::left << std::setw(32) << "Writer" << std::setw(16) << "Average (ms)" << std::setw(16) << "StdDev (ms)" << std::endl;
     for (const auto& res : results) {
@@ -465,4 +557,235 @@ std::map<std::string, std::vector<std::pair<int, double>>> benchmarkAOSScaling(i
     }
     ROOT::DisableImplicitMT();
     return data;
+} 
+
+// Group 2: SOA spill functions - complete perData and perGroup
+double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    int adjustedHits = hitsPerEvent / numSpills;
+    int adjustedWires = wiresPerEvent / numSpills;
+    int totalEntries = numEvents * numSpills;
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_spill_hits", *file, options);
+    auto [wiresModel, wiresToken] = CreateSOAWiresModelAndToken();
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_spill_wires", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> hitsEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> wiresEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_spill_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
+    };
+    double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
+double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    int adjustedHits = hitsPerEvent / numSpills;
+    int adjustedWires = wiresPerEvent / numSpills;
+    int totalEntries = numEvents * numSpills;
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_spill_hits", *file, options);
+    auto [wiresModel, wiresToken] = CreateSOABaseWiresModelAndToken();
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_spill_wires", *file, options);
+    auto [roisModel, roisToken] = CreateSOAROIsModelAndToken();
+    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "soa_spill_rois", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads), wiresContexts(nThreads), roisContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> hitsEntries(nThreads), wiresEntries(nThreads), roisEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->GetModel().CreateRawPtrWriteEntry();
+        roisContexts[th] = roisWriter->CreateFillContext();
+        roisEntries[th] = roisContexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_spill_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
+    };
+    double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
+// Group 3: Complete topObject perGroup
+double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    int totalEntries = numEvents * hitsPerEvent;
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto hitsModel = ROOT::RNTupleModel::Create();
+    hitsModel->MakeField<SOAHit>("hit");
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_top_hits", *file, options);
+    auto wiresModel = ROOT::RNTupleModel::Create();
+    wiresModel->MakeField<SOAWireBase>("wire");
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_top_wires", *file, options);
+    auto roisModel = ROOT::RNTupleModel::Create();
+    roisModel->MakeField<std::vector<SOAROI>>("rois");
+    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "soa_top_rois", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads), wiresContexts(nThreads), roisContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads), wiresEntries(nThreads), roisEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->CreateEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->CreateEntry();
+        roisContexts[th] = roisWriter->CreateFillContext();
+        roisEntries[th] = roisContexts[th]->CreateEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunSOA_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
+    };
+    double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
+// Group 4: Complete element perData and perGroup
+double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto hitsModel = ROOT::RNTupleModel::Create();
+    hitsModel->MakeField<SOAHit>("hit");
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_element_hits", *file, options);
+    auto wireROIModel = ROOT::RNTupleModel::Create();
+    wireROIModel->MakeField<SOAWire>("wire_roi");
+    auto wireROIWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireROIModel), "soa_element_wire_rois", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wireROIContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> wireROIEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->CreateEntry();
+        wireROIContexts[th] = wireROIWriter->CreateFillContext();
+        wireROIEntries[th] = wireROIContexts[th]->CreateEntry();
+    }
+    int totalHits = numEvents * hitsPerEvent;
+    int totalWires = numEvents * wiresPerEvent;
+    auto hitsWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_hitsWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], mutex); };
+    double hitsTime = executeInParallel(totalHits, nThreads, hitsWorkFunc);
+    auto wireROIWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_wireROIFunc(first, last, seed, *wireROIContexts[th], *wireROIEntries[th], mutex, roisPerWire); };
+    double wireROITime = executeInParallel(totalWires, nThreads, wireROIWorkFunc);
+    return (hitsTime + wireROITime) * 1000;
+}
+
+double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto hitsModel = ROOT::RNTupleModel::Create();
+    hitsModel->MakeField<SOAHit>("hit");
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_element_hits", *file, options);
+    auto wiresModel = ROOT::RNTupleModel::Create();
+    wiresModel->MakeField<SOAWireBase>("wire");
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_element_wires", *file, options);
+    auto roisModel = ROOT::RNTupleModel::Create();
+    roisModel->MakeField<FlatSOAROI>("roi");
+    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "soa_element_rois", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> wiresEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> roisContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> roisEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->CreateEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->CreateEntry();
+        roisContexts[th] = roisWriter->CreateFillContext();
+        roisEntries[th] = roisContexts[th]->CreateEntry();
+    }
+    int totalHits = numEvents * hitsPerEvent;
+    int totalWires = numEvents * wiresPerEvent;
+    int totalROIs = numEvents * wiresPerEvent * roisPerWire;
+    auto hitsWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_hitsWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], mutex); };
+    double hitsTime = executeInParallel(totalHits, nThreads, hitsWorkFunc);
+    auto wiresWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_wiresWorkFunc(first, last, seed, *wiresContexts[th], *wiresEntries[th], mutex); };
+    double wiresTime = executeInParallel(totalWires, nThreads, wiresWorkFunc);
+    auto roisWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_roisWorkFunc(first, last, seed, *roisContexts[th], *roisEntries[th], mutex, roisPerWire); };
+    double roisTime = executeInParallel(totalROIs, nThreads, roisWorkFunc);
+    return (hitsTime + wiresTime + roisTime) * 1000;
+} 
+
+double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    int adjustedHits = hitsPerEvent / numSpills;
+    int adjustedWires = wiresPerEvent / numSpills;
+    int totalEntries = numEvents * numSpills;
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto [model, token] = CreateSOAAllDataProductModelAndToken();
+    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "soa_spill_all", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        contexts[th] = writer->CreateFillContext();
+        entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_spill_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
+    };
+    double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
+    return totalTime * 1000;
+}
+
+double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    int totalEntries = numEvents * hitsPerEvent;
+    std::filesystem::create_directories("./output");
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options;
+    options.SetUseBufferedWrite(true);
+    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    auto hitsModel = ROOT::RNTupleModel::Create();
+    hitsModel->MakeField<SOAHit>("hit");
+    auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_top_hits", *file, options);
+    auto wiresModel = ROOT::RNTupleModel::Create();
+    wiresModel->MakeField<SOAWire>("wire");
+    auto wiresWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wiresModel), "soa_top_wires", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wiresContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> wiresEntries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        hitsContexts[th] = hitsWriter->CreateFillContext();
+        hitsEntries[th] = hitsContexts[th]->CreateEntry();
+        wiresContexts[th] = wiresWriter->CreateFillContext();
+        wiresEntries[th] = wiresContexts[th]->CreateEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) {
+        return RunSOA_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, roisPerWire);
+    };
+    double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
+    return totalTime * 1000;
 } 
