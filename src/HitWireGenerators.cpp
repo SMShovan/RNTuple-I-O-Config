@@ -68,7 +68,6 @@ WireVector generateRandomWireVector(long long eventID, int wiresPerEvent, int ro
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
-    std::uniform_int_distribution<int> distSize(1, 10);
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
 
     WireVector wire;
@@ -83,7 +82,7 @@ WireVector generateRandomWireVector(long long eventID, int wiresPerEvent, int ro
         wire.getSignalROI_nROIs().push_back(roisPerWire);
         for (int roiIndex = 0; roiIndex < roisPerWire; ++roiIndex) {
             std::size_t offset = distOffset(rng);
-            int size = distSize(rng);
+            constexpr int size = 1;  // Fixed size for ROI data vector
             wire.getSignalROI_offsets().push_back(offset);
             for (int dataIndex = 0; dataIndex < size; ++dataIndex) {
                 float val = distADC(rng);
@@ -139,7 +138,6 @@ WireIndividual generateRandomWireIndividual(long long eventID, int numROIs, std:
     std::uniform_int_distribution<unsigned int> distWireChannel(0, 1023);
     std::uniform_int_distribution<int> distWireEnum(0, 6);
     std::uniform_int_distribution<int> distOffset(0, 500);
-    std::uniform_int_distribution<int> distSize(1, 10);
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
 
     WireIndividual wire;
@@ -150,7 +148,7 @@ WireIndividual generateRandomWireIndividual(long long eventID, int numROIs, std:
     for (int roiIndex = 0; roiIndex < numROIs; ++roiIndex) {
         RegionOfInterest roi;
         roi.offset = distOffset(rng);
-        int size = distSize(rng);
+        constexpr int size = 10;  // Fixed size for ROI data vector
         
         for (int dataIndex = 0; dataIndex < size; ++dataIndex) {
             float val = distADC(rng);

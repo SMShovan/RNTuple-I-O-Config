@@ -52,15 +52,36 @@ add_executable(hitwire
     src/HitWireWriterHelpers.cpp
     src/HitWireStat.cpp
     src/visualization.cpp
+    src/updatedHitWireWriters.cpp
+    src/updatedHitWireReaders.cpp
+    src/updatedHitWireWriterHelpers.cpp
+    src/updatedVisualization.cpp
 )
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})
-target_link_libraries(hitwire PRIVATE ${ROOT_LIBS} WireDict)
+target_link_libraries(hitwire PRIVATE ${ROOT_LIBS} WireDict AOSDict)
 
 # Add this section to build the dictionary as a shared library
 add_library(WireDict SHARED ${DICT_OUTPUT})
 target_include_directories(WireDict PRIVATE ${ROOT_INCDIR})
 target_link_libraries(WireDict PRIVATE ${ROOT_LIBS})
+
+# --- AOS Dictionary Generation ---
+set(AOS_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp ${CMAKE_SOURCE_DIR}/include/updatedHitWireWriterHelpers.hpp)
+set(AOS_LINKDEF_FILE ${CMAKE_SOURCE_DIR}/include/updatedLinkDef.h)
+set(AOS_DICT_OUTPUT ${CMAKE_BINARY_DIR}/AOSDict.cxx)
+
+add_custom_command(
+    OUTPUT ${AOS_DICT_OUTPUT}
+    COMMAND rootcling -f ${AOS_DICT_OUTPUT} -c ${AOS_DICT_HEADERS} ${AOS_LINKDEF_FILE}
+    DEPENDS ${AOS_DICT_HEADERS} ${AOS_LINKDEF_FILE}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+add_library(AOSDict SHARED ${AOS_DICT_OUTPUT})
+target_include_directories(AOSDict PRIVATE ${ROOT_INCDIR})
+add_dependencies(AOSDict WireDict)
+target_link_libraries(AOSDict PRIVATE ${ROOT_LIBS} WireDict)
 
 include(FetchContent)
 FetchContent_Declare(
