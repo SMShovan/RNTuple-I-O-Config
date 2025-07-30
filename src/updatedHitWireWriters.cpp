@@ -536,7 +536,7 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
     benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
     benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
-    //benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
+    benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
 
     std::cout << std::left << std::setw(32) << "Writer" << std::setw(16) << "Average (ms)" << std::setw(16) << "StdDev (ms)" << std::endl;
     for (const auto& res : results) {

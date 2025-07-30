@@ -350,9 +350,10 @@ double readSOA_topObject_perGroup(const std::string& fileName, int nThreads) {
 double readSOA_element_perGroup(const std::string& fileName, int nThreads) {
     TStopwatch sw;
     sw.Start();
-    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_element_hits", "hit", nThreads);
-    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWireBase>, fileName, "soa_element_wires", "wire", nThreads);
-    auto roisFuture = std::async(std::launch::async, processNtuple<FlatSOAROI>, fileName, "soa_element_rois", "roi", nThreads);
+    int localThreads = std::max(1, nThreads / 3);
+    auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_element_hits", "hit", localThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWireBase>, fileName, "soa_element_wires", "wire", localThreads);
+    auto roisFuture = std::async(std::launch::async, processNtuple<FlatSOAROI>, fileName, "soa_element_rois", "roi", localThreads);
     hitsFuture.get();
     wiresFuture.get();
     roisFuture.get();
@@ -395,7 +396,7 @@ std::vector<ReaderResult> updatedIn(int nThreads, int iter) {
     benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
     benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
     benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
-    // benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
+    benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
 
     // Print table
     std::cout << std::left << std::setw(32) << "Reader" << std::setw(16) << "Cold (ms)" << std::setw(16) << "Warm Avg (ms)" << std::setw(16) << "Warm StdDev (ms)" << std::endl;

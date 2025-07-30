@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  29 JUL 2025 11:16
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  30 JUL 2025 14:40
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1244,4 +1244,581 @@ LaTeX Font Info:    Trying to load font information for OT1+mathkerncmss on inp
 ut line 80.
 
 (/usr/local/texlive/2025/texmf-dist/tex/latex/sansmathaccent/ot1mathkerncmss.fd
-File: ot1mathkerncmss.fd 2020/01/31 Fontinst v1.933 font definitions for OT1/
+File: ot1mathkerncmss.fd 2020/01/31 Fontinst v1.933 font definitions for OT1/ma
+thkerncmss.
+)
+
+[7
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 114--114
+[][][][]  
+ []
+
+LaTeX Font Info:    Trying to load font information for OMS+cmtt on input line 
+114.
+LaTeX Font Info:    No file OMScmtt.fd. on input line 114.
+
+LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 114.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 114--114
+\OT1/cmtt/m/n/10 // Columns: fChannel[ ],
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[8
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 148--148
+[][][][]  
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 148--148
+\OT1/cmtt/m/n/10 vector<unsigned int>
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[9
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 204--204
+[][][][]  
+ []
+
+<Figures/AOSLayout.pdf, id=90, 113.4639pt x 123.5817pt>
+File: Figures/AOSLayout.pdf Graphic file (type pdf)
+<use Figures/AOSLayout.pdf>
+Package pdftex.def Info: Figures/AOSLayout.pdf  used on input line 204.
+(pdftex.def)             Requested size: 119.50279pt x 130.16058pt.
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[10
+
+ <./Figures/AOSLayout.pdf>]
+File: Figures/AOSLayout.pdf Graphic file (type pdf)
+<use Figures/AOSLayout.pdf>
+Package pdftex.def Info: Figures/AOSLayout.pdf  used on input line 204.
+(pdftex.def)             Requested size: 119.50279pt x 130.16058pt.
+<Figures/Vertical1.pdf, id=105, 59.2614pt x 45.2892pt>
+File: Figures/Vertical1.pdf Graphic file (type pdf)
+<use Figures/Vertical1.pdf>
+Package pdftex.def Info: Figures/Vertical1.pdf  used on input line 204.
+(pdftex.def)             Requested size: 92.01631pt x 70.32535pt.
+<Figures/Vertical2.pdf, id=106, 67.2111pt x 45.2892pt>
+File: Figures/Vertical2.pdf Graphic file (type pdf)
+<use Figures/Vertical2.pdf>
+Package pdftex.def Info: Figures/Vertical2.pdf  used on input line 204.
+(pdftex.def)             Requested size: 92.01631pt x 62.00365pt.
+<Figures/Vertical3.pdf, id=107, 89.3739pt x 45.2892pt>
+File: Figures/Vertical3.pdf Graphic file (type pdf)
+<use Figures/Vertical3.pdf>
+Package pdftex.def Info: Figures/Vertical3.pdf  used on input line 204.
+(pdftex.def)             Requested size: 92.01631pt x 46.6311pt.
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[11
+
+ <./Figures/Vertical1.pdf> <./Figures/Vertical2.pdf> <./Figures/Vertical3.pdf>]
+File: Figures/AOSLayout.pdf Graphic file (type pdf)
+<use Figures/AOSLayout.pdf>
+Package pdftex.def Info: Figures/AOSLayout.pdf  used on input line 204.
+(pdftex.def)             Requested size: 119.50279pt x 130.16058pt.
+File: Figures/Vertical1.pdf Graphic file (type pdf)
+<use Figures/Vertical1.pdf>
+Package pdftex.def Info: Figures/Vertical1.pdf  used on input line 204.
+(pdftex.def)             Requested size: 92.01631pt x 70.32535pt.
+File: Figures/Vertical2.pdf Graphic file (type pdf)
+<use Figures/Vertical2.pdf>
+Package pdftex.def Info: Figures/Vertical2.pdf  used on input line 204.
+(pdftex.def)             Requested size: 92.01631pt x 62.00365pt.
+File: Figures/Vertical3.pdf Graphic file (type pdf)
+<use Figures/Vertical3.pdf>
+Package pdftex.def Info: Figures/Vertical3.pdf  used on input line 204.
+(pdftex.def)             Requested size: 92.01631pt x 46.6311pt.
+<Figures/Hori1.pdf, id=140, 59.2614pt x 41.1939pt>
+File: Figures/Hori1.pdf Graphic file (type pdf)
+<use Figures/Hori1.pdf>
+Package pdftex.def Info: Figures/Hori1.pdf  used on input line 204.
+(pdftex.def)             Requested size: 69.70894pt x 48.45874pt.
+<Figures/Hori2.pdf, id=141, 89.3739pt x 41.1939pt>
+File: Figures/Hori2.pdf Graphic file (type pdf)
+<use Figures/Hori2.pdf>
+Package pdftex.def Info: Figures/Hori2.pdf  used on input line 204.
+(pdftex.def)             Requested size: 69.70894pt x 32.13171pt.
+<Figures/Hori3.pdf, id=142, 89.3739pt x 41.1939pt>
+File: Figures/Hori3.pdf Graphic file (type pdf)
+<use Figures/Hori3.pdf>
+Package pdftex.def Info: Figures/Hori3.pdf  used on input line 204.
+(pdftex.def)             Requested size: 69.70894pt x 32.13171pt.
+<Figures/Hori4.pdf, id=143, 89.3739pt x 41.1939pt>
+File: Figures/Hori4.pdf Graphic file (type pdf)
+<use Figures/Hori4.pdf>
+Package pdftex.def Info: Figures/Hori4.pdf  used on input line 204.
+(pdftex.def)             Requested size: 69.70894pt x 32.13171pt.
+
+Overfull \vbox (6.2108pt too high) detected at line 204
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[12
+
+ <./Figures/Hori1.pdf> <./Figures/Hori2.pdf> <./Figures/Hori3.pdf> <./Figures/H
+ori4.pdf>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 219--219
+[][][][]  
+ []
+
+File: Figures/AOSLayout.pdf Graphic file (type pdf)
+<use Figures/AOSLayout.pdf>
+Package pdftex.def Info: Figures/AOSLayout.pdf  used on input line 219.
+(pdftex.def)             Requested size: 199.1693pt x 216.94814pt.
+<Figures/SOALayout.pdf, id=182, 113.4639pt x 123.5817pt>
+File: Figures/SOALayout.pdf Graphic file (type pdf)
+<use Figures/SOALayout.pdf>
+Package pdftex.def Info: Figures/SOALayout.pdf  used on input line 219.
+(pdftex.def)             Requested size: 199.1693pt x 216.94814pt.
+
+Overfull \vbox (30.4156pt too high) detected at line 219
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[13
+
+ <./Figures/SOALayout.pdf>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 223--223
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[14
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 227--227
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[15
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 229--229
+[][][][]  
+ []
+
+
+
+[16
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 260--260
+[][][][]  
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 260--260
+[]\OT1/cmtt/m/n/10 std::vector<unsigned int> seeds =
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 260--260
+\OT1/cmtt/m/n/10 for (int th = 0; th < nThreads;
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 260--260
+\OT1/cmtt/m/n/10 int last = std::min(first +
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 260--260
+\OT1/cmtt/m/n/10 std::launch::async, thinWorkFunc,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 260--260
+[]\OMS/cmtt/m/n/10 f \OT1/cmtt/m/n/10 std::lock[]guard<std::mutex>
+ []
+
+
+Overfull \vbox (22.77068pt too high) detected at line 260
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[17
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 290--290
+[][][][]  
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 290--290
+[]\OT1/cmtt/m/n/10 auto clusters =
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 290--290
+\OT1/cmtt/m/n/10 split[]range[]by[]clusters(*reader,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 290--290
+\OT1/cmtt/m/n/10 &processChunk, chunk.first,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 290--290
+[]\OT1/cmtt/m/n/10 std::vector<std::pair<size[]t,
+ []
+
+
+Overfull \hbox (47.33684pt too wide) in paragraph at lines 290--290
+\OT1/cmtt/m/n/10 split[]range[]by[]clusters(ROOT::RNTupleReader&
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[18
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 319--319
+[][][][]  
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 319--319
+[]\OT1/cmtt/m/n/10 for (int idx = first; idx < last;
+ []
+
+
+Overfull \hbox (4.49725pt too wide) in paragraph at lines 319--319
+\OT1/cmtt/m/n/10 if (hitStatus.ShouldFlushCluster())
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 319--319
+\OMS/cmtt/m/n/10 f \OT1/cmtt/m/n/10 std::lock[]guard<std::mutex>
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[19
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 323--323
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[20
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 327--327
+[][][][]  
+ []
+
+
+
+[21
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 331--331
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[22
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 335--335
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[23
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 341--341
+[][][][]  
+ []
+
+<../experiments/write_times.pdf, id=249, 569.12625pt x 275.0275pt>
+File: ../experiments/write_times.pdf Graphic file (type pdf)
+<use ../experiments/write_times.pdf>
+Package pdftex.def Info: ../experiments/write_times.pdf  used on input line 341
+.
+(pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[24
+
+ <../experiments/write_times.pdf, page is rotated 90 degrees>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 347--347
+[][][][]  
+ []
+
+<../experiments/file_sizes.pdf, id=298, 569.12625pt x 275.0275pt>
+File: ../experiments/file_sizes.pdf Graphic file (type pdf)
+<use ../experiments/file_sizes.pdf>
+Package pdftex.def Info: ../experiments/file_sizes.pdf  used on input line 347.
+
+(pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[25
+
+ <../experiments/file_sizes.pdf, page is rotated 90 degrees>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 353--353
+[][][][]  
+ []
+
+<../experiments/cold_times.pdf, id=349, 569.12625pt x 275.0275pt>
+File: ../experiments/cold_times.pdf Graphic file (type pdf)
+<use ../experiments/cold_times.pdf>
+Package pdftex.def Info: ../experiments/cold_times.pdf  used on input line 353.
+
+(pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[26
+
+ <../experiments/cold_times.pdf, page is rotated 90 degrees>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 359--359
+[][][][]  
+ []
+
+<../experiments/warm_times.pdf, id=398, 569.12625pt x 275.0275pt>
+File: ../experiments/warm_times.pdf Graphic file (type pdf)
+<use ../experiments/warm_times.pdf>
+Package pdftex.def Info: ../experiments/warm_times.pdf  used on input line 359.
+
+(pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[27
+
+ <../experiments/warm_times.pdf, page is rotated 90 degrees>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 365--365
+[][][][]  
+ []
+
+<../experiments/scaling_plot.pdf, id=447, 569.12625pt x 371.3875pt>
+File: ../experiments/scaling_plot.pdf Graphic file (type pdf)
+<use ../experiments/scaling_plot.pdf>
+Package pdftex.def Info: ../experiments/scaling_plot.pdf  used on input line 36
+5.
+(pdftex.def)             Requested size: 358.50229pt x 233.95268pt.
+
+Overfull \vbox (52.89516pt too high) detected at line 365
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[28
+
+ <../experiments/scaling_plot.pdf, page is rotated 90 degrees>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 368--368
+[][][][]  
+ []
+
+
+
+[29
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 371--371
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[30
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 375--375
+[][][][]  
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[31
+
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 381--381
+ [][][][] 
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][][][] 
+ []
+
+[32
+
+]
+\tf@nav=\write7
+\openout7 = `presentation.nav'.
+
+\tf@toc=\write8
+\openout8 = `presentation.toc'.
+
+\tf@snm=\write9
+\openout9 = `presentation.snm'.
+
+runsystem(latexminted cleantemp  --timestamp 20250730144035 2486923A98E77FD0740
+381D01ACD1782)...executed.
+
+ (./presentation.aux)
+ ***********
+LaTeX2e <2024-11-01> patch level 2
+L3 programming layer <2025-01-18>
+ ***********
+
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+Package rerunfilecheck Info: File `presentation.out' has not changed.
+(rerunfilecheck)             Checksum: 7CAAD757FB42ECC6FAAAF98F3432A60D;463.
+ ) 
+Here is how much of TeX's memory you used:
+ 30478 strings out of 473190
+ 645256 string characters out of 5715801
+ 1103613 words of memory out of 5000000
+ 53102 multiletter control sequences out of 15000+600000
+ 571377 words of font info for 81 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 128i,15n,123p,1923b,1050s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb
+></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb><
+/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb>
+</usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><
+/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></
+usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1095.pfb>
+Output written on presentation.pdf (32 pages, 309753 bytes).
+PDF statistics:
+ 563 PDF objects out of 1000 (max. 8388607)
+ 350 compressed objects within 4 object streams
+ 69 named destinations out of 1000 (max. 500000)
+ 145 words of extra memory for PDF output out of 10000 (max. 10000000)
+
