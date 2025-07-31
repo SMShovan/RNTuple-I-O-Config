@@ -1,4 +1,6 @@
-\beamer@sectionintoc {1}{Persistent Layouts}{7}{0}{1}
-\beamer@sectionintoc {2}{Parallel Optimizations}{16}{0}{2}
-\beamer@sectionintoc {3}{Results}{21}{0}{3}
-\beamer@sectionintoc {4}{Trade-offs}{28}{0}{4}
+\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
+\beamer@sectionintoc {2}{Persistent Layouts}{8}{0}{2}
+\beamer@sectionintoc {3}{Parallel Optimizations}{17}{0}{3}
+\beamer@sectionintoc {4}{Challenges}{20}{0}{4}
+\beamer@sectionintoc {5}{Results}{23}{0}{5}
+\beamer@sectionintoc {6}{Trade-offs}{31}{0}{6}
