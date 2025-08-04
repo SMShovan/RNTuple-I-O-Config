@@ -3,4 +3,4 @@
 \beamer@sectionintoc {3}{Parallel Optimizations}{15}{0}{3}
 \beamer@sectionintoc {4}{Challenges}{18}{0}{4}
 \beamer@sectionintoc {5}{Results}{21}{0}{5}
-\beamer@sectionintoc {6}{Trade-offs}{29}{0}{6}
+\beamer@sectionintoc {6}{Trade-offs}{31}{0}{6}

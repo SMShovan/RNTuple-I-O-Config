@@ -349,10 +349,16 @@ Element‑wise    & --                                   & \texttt{element\_perD
 \end{frame}
 
 
-\begin{frame}{AOS vs SOA: Write Performance Comparison}
+\begin{frame}{AOS: Write Performance}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/comparison_write_times.pdf}
-\captionof{figure}{\scriptsize Write Performance Comparison: AOS vs SOA approaches across different data organization strategies. Red bars represent AOS (Array of Structures) performance, while blue bars show SOA (Structure of Arrays) performance.}
+\includegraphics[width=0.9\linewidth]{../experiments/aos_write_times.pdf}
+\captionof{figure}{\scriptsize AOS (Array of Structures) Write Performance across different data organization strategies.}
+\end{frame}
+
+\begin{frame}{SOA: Write Performance}
+\centering
+\includegraphics[width=0.9\linewidth]{../experiments/soa_write_times.pdf}
+\captionof{figure}{\scriptsize SOA (Structure of Arrays) Write Performance across different data organization strategies.}
 \end{frame}
 \begin{frame}[c]{CPU Time Overheads}
   \small
@@ -392,10 +398,16 @@ Element‑wise    & --                                   & \texttt{element\_perD
 \captionof{figure}{\scriptsize Warm Read Performance Comparison: Subsequent read times for AOS vs SOA implementations.}
 \end{frame}
 
-\begin{frame}{AOS vs SOA: File Size Comparison}
+\begin{frame}{AOS: File Size Analysis}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/comparison_file_sizes.pdf}
-\captionof{figure}{\scriptsize File Size Comparison: Storage efficiency of AOS vs SOA approaches.}
+\includegraphics[width=0.9\linewidth]{../experiments/aos_file_sizes.pdf}
+\captionof{figure}{\scriptsize AOS (Array of Structures) File Size Analysis across different data organization strategies.}
+\end{frame}
+
+\begin{frame}{SOA: File Size Analysis}
+\centering
+\includegraphics[width=0.9\linewidth]{../experiments/soa_file_sizes.pdf}
+\captionof{figure}{\scriptsize SOA (Structure of Arrays) File Size Analysis across different data organization strategies.}
 \end{frame}
 
 % -------- Section: Trade-offs --------
