@@ -274,6 +274,12 @@ Element‑wise    & --                                   & \texttt{element\_perD
 
 % -------- Section: Challenges --------
 \section{Challenges}
+\begin{frame}{Challenge: Corrupted ROOT Files}
+\centering
+\includegraphics[width=0.9\linewidth]{Figures/Challenge.pdf}
+\captionof{figure}{\scriptsize Challenge: Addressing corrupted ROOT files in parallel write operations.}
+\end{frame}
+
 \begin{frame}{Parallel Write Challenge: File Corruption Solution}
   \begin{columns}
     \column{0.4\textwidth}
@@ -448,7 +454,17 @@ Element‑wise    & --                                   & \texttt{element\_perD
 \end{frame}
 
 \begin{frame}{Future Considerations}
-% Add your content here
+\begin{itemize}
+  \item \textbf{Thread Scaling Analysis:} Rigorous testing across 1--128 threads to evaluate layout performance scaling and optimal configurations.
+  
+  \vspace{0.5em}
+  
+  \item \textbf{Extensible Framework:} Develop scalable architecture for arbitrary data products beyond Hits and Wires with configurable layouts.
+  
+  \vspace{0.5em}
+  
+  \item \textbf{Advanced Layout Testing:} Explore N-tuple groupings and clustering strategies for improved read/write efficiency and storage optimization.
+\end{itemize}
 \end{frame}
 
 % References Slide
