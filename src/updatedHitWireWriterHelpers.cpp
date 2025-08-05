@@ -495,14 +495,24 @@ double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
         for (int h = 0; h < hitsPerEvent; ++h) {
             *hitPtr = generateSOASingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
             sw.Start();
-            hitsContext.Fill(hitsEntry);
+            ROOT::RNTupleFillStatus hitStatus;
+            hitsContext.FillNoFlush(hitsEntry, hitStatus);
             totalTime += sw.RealTime();
+            if (hitStatus.ShouldFlushCluster()) {
+                hitsContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+            }
         }
         for (int w = 0; w < wiresPerEvent; ++w) {
             *wroiPtr = generateSOASingleWire(static_cast<long long>(evt) * wiresPerEvent + w, roisPerWire, rng);
             sw.Start();
-            wireROIContext.Fill(wireROIEntry);
+            ROOT::RNTupleFillStatus wroiStatus;
+            wireROIContext.FillNoFlush(wireROIEntry, wroiStatus);
             totalTime += sw.RealTime();
+            if (wroiStatus.ShouldFlushCluster()) {
+                wireROIContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); wireROIContext.FlushCluster(); }
+            }
         }
     }
     {
@@ -542,8 +552,13 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
             wirePtr->fWire_Channel = rng() % 1024;
             wirePtr->fWire_View    = rng() % 7;
             sw.Start();
-            wiresContext.Fill(wiresEntry);
+            ROOT::RNTupleFillStatus wireStatus;
+            wiresContext.FillNoFlush(wiresEntry, wireStatus);
             totalTime += sw.RealTime();
+            if (wireStatus.ShouldFlushCluster()) {
+                wiresContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+            }
 
             // its ROIs
             for (int r = 0; r < roisPerWire; ++r) {
@@ -552,8 +567,13 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
                 roiPtr->data.resize(10);
                 for (auto& val : roiPtr->data) val = static_cast<float>(rng() % 100);
                 sw.Start();
-                roisContext.Fill(roisEntry);
+                ROOT::RNTupleFillStatus roiStatus;
+                roisContext.FillNoFlush(roisEntry, roiStatus);
                 totalTime += sw.RealTime();
+                if (roiStatus.ShouldFlushCluster()) {
+                    roisContext.FlushColumns();
+                    { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+                }
             }
         }
     }
@@ -586,21 +606,36 @@ double RunSOA_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
         for (int h = 0; h < hitsPerEvent; ++h) {
             *hitPtr = generateSOASingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
             sw.Start();
-            hitsContext.Fill(hitsEntry);
+            ROOT::RNTupleFillStatus hitStatus;
+            hitsContext.FillNoFlush(hitsEntry, hitStatus);
             totalTime += sw.RealTime();
+            if (hitStatus.ShouldFlushCluster()) {
+                hitsContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+            }
         }
         for (int w = 0; w < wiresPerEvent; ++w) {
             wirePtr->EventID = evt;
             wirePtr->Channel = rng() % 1024;
             wirePtr->View    = rng() % 7;
             sw.Start();
-            wiresContext.Fill(wiresEntry);
+            ROOT::RNTupleFillStatus wireStatus;
+            wiresContext.FillNoFlush(wiresEntry, wireStatus);
             totalTime += sw.RealTime();
+            if (wireStatus.ShouldFlushCluster()) {
+                wiresContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+            }
             for (int r = 0; r < roisPerWire; ++r) {
                 *roiPtr = generateSOASingleROI(w, rng);
                 sw.Start();
-                roisContext.Fill(roisEntry);
+                ROOT::RNTupleFillStatus roiStatus;
+                roisContext.FillNoFlush(roisEntry, roiStatus);
                 totalTime += sw.RealTime();
+                if (roiStatus.ShouldFlushCluster()) {
+                    roisContext.FlushColumns();
+                    { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+                }
             }
         }
     }
