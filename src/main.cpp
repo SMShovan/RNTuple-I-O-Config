@@ -25,42 +25,9 @@ int main() {
     int nThreads = std::thread::hardware_concurrency();
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
-    // auto writer_results = out(nThreads, 3);
-    // std::cout << "Calling visualize_writer_results..." << std::endl;
-    // visualize_writer_results(writer_results);
-
-    // Collect file sizes
-    // std::vector<std::pair<std::string, double>> fileSizes;
-    // std::string outputDir = "./output";
-    // std::vector<std::string> fileNames = {
-    //     "vector.root", "individual.root", "VertiSplit_vector.root", "VertiSplit_individual.root",
-    //     "HoriSpill_vector.root", "HoriSpill_individual.root", "vector_dict.root", "individual_dict.root",
-    //     "VertiSplit_vector_dict.root", "VertiSplit_individual_dict.root", "HoriSpill_vector_dict.root",
-    //     "HoriSpill_individual_dict.root", "vector_of_individuals.root"
-    // };
-    // for (size_t i = 0; i < writer_results.size(); ++i) {
-    //     std::string filePath = outputDir + "/" + fileNames[i];
-    //     if (std::filesystem::exists(filePath)) {
-    //         double sizeMB = static_cast<double>(std::filesystem::file_size(filePath)) / (1024 * 1024);
-    //         fileSizes.emplace_back(writer_results[i].label, sizeMB);
-    //     } else {
-    //         fileSizes.emplace_back(writer_results[i].label, 0.0);
-    //     }
-    // }
-    // visualize_file_sizes(fileSizes);
-
-    // printEntryCounts(); // New table for entry counts
-    // printFileStats(); // Existing file statistics
-    // auto reader_results = in(nThreads, 3);
-    // visualize_reader_results(reader_results);
-
-    // New scaling benchmark and visualization
-    // auto scalingData = benchmarkScaling(32, 3); // maxThreads=32, iter=3
-    // visualize_scaling(scalingData);
-
-    // Remove temporary calls
+    
     // Add AOS visualization - use separate AOS-only functions
-    auto aos_writer_results = updatedOut(nThreads, 3);
+    auto aos_writer_results = updatedOut(nThreads, 1);
     // Filter to get only AOS results
     std::vector<WriterResult> aos_only_writer_results;
     for (const auto& result : aos_writer_results) {
@@ -70,7 +37,7 @@ int main() {
     }
     visualize_aos_writer_results(aos_only_writer_results);
     
-    auto aos_reader_results = updatedIn(nThreads, 3);
+    auto aos_reader_results = updatedIn(nThreads, 1);
     // Filter to get only AOS results
     std::vector<ReaderResult> aos_only_reader_results;
     for (const auto& result : aos_reader_results) {

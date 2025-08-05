@@ -31,6 +31,28 @@ double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
 double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 
+double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wireROIContext, ROOT::REntry& wireROIEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
+double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry,
+    ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
+double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wireROIContext, ROOT::REntry& wireROIEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
+double RunSOA_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry,
+    ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
 // Move executeInParallel to the top of the file, before any function implementations
 static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned, int)>& workFunc) {
     if (nThreads <= 0 || totalEvents < 0) return 0.0;
@@ -51,25 +73,32 @@ static double executeInParallel(int totalEvents, int nThreads, const std::functi
     return totalTime;
 }
 
-// Placeholder for AOS_event_allDataProduct
+// One-pass implementation with single EventAOS ntuple (matches reader expectations)
 double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     std::filesystem::create_directories("./output");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
+
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
     options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+
     auto [model, token] = CreateAOSAllDataProductModelAndToken();
     auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_events", *file, options);
+
+    // Thread-local contexts and entries
     std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
     std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+
     for (int th = 0; th < nThreads; ++th) {
         contexts[th] = writer->CreateFillContext();
         entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
     }
+
     auto workFunc = [&](int first, int last, unsigned seed, int th) {
         return RunAOS_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
+
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
     return totalTime * 1000;
 }
@@ -420,22 +449,15 @@ double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
         wireROIEntries[th] = wireROIContexts[th]->CreateEntry();
     }
 
-    int totalHits = numEvents * hitsPerEvent;
-    int totalROIs = numEvents * wiresPerEvent * roisPerWire;
-
-    // Work function for hits (parallel over totalHits)
-    auto hitsWorkFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_element_hitsWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], mutex);
+    // Single-pass combined work function (parallel over events)
+    auto workFunc = [&](int firstEvt, int lastEvt, unsigned seed, int th) -> double {
+        return RunAOS_element_perDataProductCombinedWorkFunc(firstEvt, lastEvt, seed,
+                                                             *hitsContexts[th], *hitsEntries[th],
+                                                             *wireROIContexts[th], *wireROIEntries[th],
+                                                             mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
-    double hitsTime = executeInParallel(totalHits, nThreads, hitsWorkFunc);
-
-    // Work function for wireROIs (parallel over totalROIs)
-    auto wireROIWorkFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_element_wireROIWorkFunc(first, last, seed, *wireROIContexts[th], *wireROIEntries[th], mutex, roisPerWire);
-    };
-    double wireROITime = executeInParallel(totalROIs, nThreads, wireROIWorkFunc);
-
-    return (hitsTime + wireROITime) * 1000; // Total time in ms
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
 }
 
 double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -474,29 +496,16 @@ double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
         roisEntries[th] = roisContexts[th]->CreateEntry();
     }
 
-    int totalHits = numEvents * hitsPerEvent;
-    int totalWires = numEvents * wiresPerEvent;
-    int totalROIs = numEvents * wiresPerEvent * roisPerWire;
-
-    // Hits work func (parallel over totalHits)
-    auto hitsWorkFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_element_hitsWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], mutex);
+    // Single-pass combined work function (parallel over events)
+    auto workFunc = [&](int firstEvt, int lastEvt, unsigned seed, int th) -> double {
+        return RunAOS_element_perGroupCombinedWorkFunc(firstEvt, lastEvt, seed,
+                                                       *hitsContexts[th], *hitsEntries[th],
+                                                       *wiresContexts[th], *wiresEntries[th],
+                                                       *roisContexts[th], *roisEntries[th],
+                                                       mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
-    double hitsTime = executeInParallel(totalHits, nThreads, hitsWorkFunc);
-
-    // Wires work func (parallel over totalWires)
-    auto wiresWorkFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_element_wiresWorkFunc(first, last, seed, *wiresContexts[th], *wiresEntries[th], mutex);
-    };
-    double wiresTime = executeInParallel(totalWires, nThreads, wiresWorkFunc);
-
-    // ROIs work func (parallel over totalROIs)
-    auto roisWorkFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_element_roisWorkFunc(first, last, seed, *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
-    };
-    double roisTime = executeInParallel(totalROIs, nThreads, roisWorkFunc);
-
-    return (hitsTime + wiresTime + roisTime) * 1000; // Total time in ms
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
 } 
 
 std::vector<WriterResult> updatedOut(int nThreads, int iter) {
@@ -683,13 +692,14 @@ double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
         wireROIContexts[th] = wireROIWriter->CreateFillContext();
         wireROIEntries[th] = wireROIContexts[th]->CreateEntry();
     }
-    int totalHits = numEvents * hitsPerEvent;
-    int totalWires = numEvents * wiresPerEvent;
-    auto hitsWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_hitsWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], mutex); };
-    double hitsTime = executeInParallel(totalHits, nThreads, hitsWorkFunc);
-    auto wireROIWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_wireROIFunc(first, last, seed, *wireROIContexts[th], *wireROIEntries[th], mutex, roisPerWire); };
-    double wireROITime = executeInParallel(totalWires, nThreads, wireROIWorkFunc);
-    return (hitsTime + wireROITime) * 1000;
+    auto workFunc = [&](int firstEvt, int lastEvt, unsigned seed, int th) -> double {
+        return RunSOA_element_perDataProductCombinedWorkFunc(firstEvt, lastEvt, seed,
+                                                             *hitsContexts[th], *hitsEntries[th],
+                                                             *wireROIContexts[th], *wireROIEntries[th],
+                                                             mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
 }
 
 double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -722,16 +732,15 @@ double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
         roisContexts[th] = roisWriter->CreateFillContext();
         roisEntries[th] = roisContexts[th]->CreateEntry();
     }
-    int totalHits = numEvents * hitsPerEvent;
-    int totalWires = numEvents * wiresPerEvent;
-    int totalROIs = numEvents * wiresPerEvent * roisPerWire;
-    auto hitsWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_hitsWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], mutex); };
-    double hitsTime = executeInParallel(totalHits, nThreads, hitsWorkFunc);
-    auto wiresWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_wiresWorkFunc(first, last, seed, *wiresContexts[th], *wiresEntries[th], mutex); };
-    double wiresTime = executeInParallel(totalWires, nThreads, wiresWorkFunc);
-    auto roisWorkFunc = [&](int first, int last, unsigned seed, int th) -> double { return RunSOA_element_roisWorkFunc(first, last, seed, *roisContexts[th], *roisEntries[th], mutex, roisPerWire); };
-    double roisTime = executeInParallel(totalROIs, nThreads, roisWorkFunc);
-    return (hitsTime + wiresTime + roisTime) * 1000;
+    auto workFunc = [&](int firstEvt, int lastEvt, unsigned seed, int th) -> double {
+        return RunSOA_element_perGroupCombinedWorkFunc(firstEvt, lastEvt, seed,
+            *hitsContexts[th], *hitsEntries[th],
+            *wiresContexts[th], *wiresEntries[th],
+            *roisContexts[th], *roisEntries[th],
+            mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
+    return totalTime * 1000;
 } 
 
 double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
