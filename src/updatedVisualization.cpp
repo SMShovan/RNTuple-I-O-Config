@@ -106,6 +106,7 @@ void visualize_aos_writer_results(const std::vector<WriterResult>& results) {
     hWrite->GetYaxis()->SetLabelSize(0.06);
     auto cWrite = make_unique<TCanvas>("cWriteAOS", "AOS Write Times", 1600, 800);
     cWrite->SetBottomMargin(0.3);
+    hWrite->SetMinimum(0);
     hWrite->Draw("BAR E");
     gPad->SetGrid(1, 1);
     // Add labels on top of bars
@@ -148,6 +149,7 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
     hCold->GetYaxis()->SetLabelSize(0.06);
     auto cCold = make_unique<TCanvas>("cColdAOS", "AOS Cold Read Times", 1600, 800);
     cCold->SetBottomMargin(0.3);
+    hCold->SetMinimum(0);
     hCold->Draw("BAR");
     gPad->SetGrid(1, 1);
     // Add labels on top of bars
@@ -183,6 +185,7 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
     hWarm->GetYaxis()->SetLabelSize(0.06);
     auto cWarm = make_unique<TCanvas>("cWarmAOS", "AOS Warm Read Times", 1600, 800);
     cWarm->SetBottomMargin(0.3);
+    hWarm->SetMinimum(0);
     hWarm->Draw("BAR E");
     gPad->SetGrid(1, 1);
     // Add labels on top of bars
@@ -228,6 +231,7 @@ void visualize_aos_file_sizes(const std::vector<std::pair<std::string, double>>&
     hSize->GetYaxis()->SetLabelSize(0.06);
     auto cSize = make_unique<TCanvas>("cSizeAOS", "AOS File Sizes", 1600, 800);
     cSize->SetBottomMargin(0.3);
+    hSize->SetMinimum(0);
     hSize->Draw("BAR");
     gPad->SetGrid(1, 1);
     double maxY = hSize->GetMaximum();
@@ -263,13 +267,16 @@ void visualize_aos_scaling(const std::map<std::string, std::vector<std::pair<int
         canvas->cd(padIndex++);
         gPad->SetLogx(1);
         TGraph* graph = new TGraph(points.size());
+        double maxY = 0;
         for (size_t i = 0; i < points.size(); ++i) {
             graph->SetPoint(i, points[i].first, points[i].second);
+            if (points[i].second > maxY) maxY = points[i].second;
         }
         graph->SetTitle(("AOS " + label).c_str());
         graph->GetXaxis()->SetTitle("Number of Threads");
         graph->GetYaxis()->SetTitle("Average Time (s)");
         graph->Draw("ALP");
+        graph->GetYaxis()->SetRangeUser(0, maxY * 1.1);
         graph->SetMarkerStyle(20);
         graph->SetLineWidth(2);
         graph->SetLineColor(kRed);
@@ -309,6 +316,7 @@ void visualize_soa_writer_results(const std::vector<WriterResult>& results) {
     hWrite->GetYaxis()->SetLabelSize(0.06);
     auto cWrite = make_unique<TCanvas>("cWriteSOA", "SOA Write Times", 1600, 800);
     cWrite->SetBottomMargin(0.3);
+    hWrite->SetMinimum(0);
     hWrite->Draw("BAR E");
     gPad->SetGrid(1, 1);
     // Add labels on top of bars
@@ -351,6 +359,7 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
     hCold->GetYaxis()->SetLabelSize(0.06);
     auto cCold = make_unique<TCanvas>("cColdSOA", "SOA Cold Read Times", 1600, 800);
     cCold->SetBottomMargin(0.3);
+    hCold->SetMinimum(0);
     hCold->Draw("BAR");
     gPad->SetGrid(1, 1);
     // Add labels on top of bars
@@ -386,6 +395,7 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
     hWarm->GetYaxis()->SetLabelSize(0.06);
     auto cWarm = make_unique<TCanvas>("cWarmSOA", "SOA Warm Read Times", 1600, 800);
     cWarm->SetBottomMargin(0.3);
+    hWarm->SetMinimum(0);
     hWarm->Draw("BAR E");
     gPad->SetGrid(1, 1);
     // Add labels on top of bars
@@ -431,6 +441,7 @@ void visualize_soa_file_sizes(const std::vector<std::pair<std::string, double>>&
     hSize->GetYaxis()->SetLabelSize(0.06);
     auto cSize = make_unique<TCanvas>("cSizeSOA", "SOA File Sizes", 1600, 800);
     cSize->SetBottomMargin(0.3);
+    hSize->SetMinimum(0);
     hSize->Draw("BAR");
     gPad->SetGrid(1, 1);
     double maxY = hSize->GetMaximum();
@@ -466,13 +477,16 @@ void visualize_soa_scaling(const std::map<std::string, std::vector<std::pair<int
         canvas->cd(padIndex++);
         gPad->SetLogx(1);
         TGraph* graph = new TGraph(points.size());
+        double maxY = 0;
         for (size_t i = 0; i < points.size(); ++i) {
             graph->SetPoint(i, points[i].first, points[i].second);
+            if (points[i].second > maxY) maxY = points[i].second;
         }
         graph->SetTitle(("SOA " + label).c_str());
         graph->GetXaxis()->SetTitle("Number of Threads");
         graph->GetYaxis()->SetTitle("Average Time (s)");
         graph->Draw("ALP");
+        graph->GetYaxis()->SetRangeUser(0, maxY * 1.1);
         graph->SetMarkerStyle(20);
         graph->SetLineWidth(2);
         graph->SetLineColor(kBlue);
@@ -516,6 +530,7 @@ void visualize_comparison_writer_results(const std::vector<WriterResult>& aosRes
     
     auto cWrite = make_unique<TCanvas>("cWriteComp", "AOS vs SOA Write Times", 1600, 800);
     cWrite->SetBottomMargin(0.3);
+    hWrite->SetMinimum(0);
     hWrite->Draw("BAR E");
     gPad->SetGrid(1, 1);
     
@@ -570,6 +585,7 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
     
     auto cCold = make_unique<TCanvas>("cColdComp", "AOS vs SOA Cold Read Times", 1600, 800);
     cCold->SetBottomMargin(0.3);
+    hCold->SetMinimum(0);
     hCold->Draw("BAR");
     gPad->SetGrid(1, 1);
     
@@ -613,6 +629,7 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
     
     auto cWarm = make_unique<TCanvas>("cWarmComp", "AOS vs SOA Warm Read Times", 1600, 800);
     cWarm->SetBottomMargin(0.3);
+    hWarm->SetMinimum(0);
     hWarm->Draw("BAR E");
     gPad->SetGrid(1, 1);
     
@@ -668,6 +685,7 @@ void visualize_comparison_file_sizes(const std::vector<std::pair<std::string, do
     
     auto cSize = make_unique<TCanvas>("cSizeComp", "AOS vs SOA File Sizes", 1600, 800);
     cSize->SetBottomMargin(0.3);
+    hSize->SetMinimum(0);
     hSize->Draw("BAR");
     gPad->SetGrid(1, 1);
     
