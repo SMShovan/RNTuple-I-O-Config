@@ -1,345 +1,117 @@
-#ifndef HITWIREWRITERHELPERS_HPP
-#define HITWIREWRITERHELPERS_HPP
-
+#pragma once
+#include "Hit.hpp"
+#include "Wire.hpp"
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RFieldToken.hxx>
-#include <unordered_map>
-#include <utility> // for std::pair
-
-// Forward declarations if needed (e.g., for custom types like WireVector)
-class WireVector;
-
-// Helper for creating vertically split hit model and tokens
-auto CreateVertiSplitHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Helper for creating wire model and token
-auto CreateWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Helper for HitVector model and token
-auto CreateHitVectorModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Helper for WireVector model and token
-auto CreateWireVectorModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Helper for HoriSpill hit model and tokens
-auto CreateHoriSpillHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Helper for individual hit model and tokens
-auto CreateIndividualHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Helper for individual wire model and token
-auto CreateIndividualWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Helper for VertiSplit individual hit model and tokens
-auto CreateVertiSplitIndividualHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Helper for VertiSplit individual wire model and token
-auto CreateIndividualWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Helper for HoriSpill individual hit model and tokens
-auto CreateHoriSpillIndividualHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Helper for HoriSpill individual wire model and token (reuse CreateIndividualWireModelAndToken)
-
-// Forward declarations for other dependencies in work func (add as needed)
-#include <ROOT/RNTupleFillContext.hxx>
 #include <ROOT/RRawPtrWriteEntry.hxx>
+#include <ROOT/RNTupleFillContext.hxx>
+#include <ROOT/RNTupleFillStatus.hxx>
+#include <unordered_map>
+#include <random>
+#include <vector>
 #include <mutex>
+#include <TStopwatch.h>
 
+struct FlatROI {
+    unsigned int WireID;
+    std::size_t offset;
+    std::vector<float> data;
+    ClassDef(FlatROI, 1);
+};
 
-// Helper for the work function
-double RunVertiSplitWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+std::vector<HitIndividual> generateEventHits(long long eventID, int numHits, std::mt19937& rng);
+std::vector<WireIndividual> generateEventWires(long long eventID, int numWires, int roisPerWire, std::mt19937& rng);
+std::vector<FlatROI> flattenROIs(const std::vector<WireIndividual>& wires);
 
-// Helper for the work function
-double RunHitWireVectorWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+struct EventAOS {
+    std::vector<HitIndividual> hits;
+    std::vector<WireIndividual> wires;
+    ClassDef(EventAOS, 1);
+};
 
-// Helper for the work function
-double RunHoriSpillWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-);
+auto CreateAOSAllDataProductModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateAOSHitsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateAOSWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateAOSROIsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateAOSBaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
 
-// Helper for the work function
-double RunIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+double RunAOS_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunAOS_event_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunAOS_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire); 
+double RunAOS_spill_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire);
+double RunAOS_spill_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire);
+double RunAOS_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire); 
 
-// Helper for the work function
-double RunVertiSplitIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+HitIndividual generateSingleHit(long long id, std::mt19937& rng);
+WireIndividual generateSingleWire(long long id, int roisPerWire, std::mt19937& rng);
 
-// Helper for the work function
-double RunHoriSpillIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-);
+double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
+double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire); 
 
-// Helper for HitWire Vector Dict model and token
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateHitWireVectorDictModelAndToken();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateWireVectorDictModelAndToken();
+struct WireBase {
+    long long EventID;
+    unsigned int fWire_Channel;
+    int fWire_View;
+    ClassDef(WireBase, 1);
+};
 
-double RunHitWireVectorDictWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+WireBase extractWireBase(const WireIndividual& wire); 
 
-// Helper for HitWire Individual Dict model and token
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateHitWireIndividualDictModelAndToken();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateWireIndividualDictModelAndToken();
+struct WireROI {
+    long long EventID;
+    unsigned int fWire_Channel;
+    int fWire_View;
+    RegionOfInterest roi;
+    ClassDef(WireROI, 1);
+};
 
-double RunHitWireIndividualDictWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+std::vector<WireROI> flattenWiresToROIs(const std::vector<WireIndividual>& wires); 
 
-// Helper for VertiSplit HitWire Vector Dict model and tokens
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> CreateVertiSplitHitWireVectorDictModelAndTokens();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateWireVectorDictModelAndToken();
+double RunAOS_element_hitsWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex);
+double RunAOS_element_wireROIWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire);
+double RunAOS_element_wiresWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex);
+double RunAOS_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire); 
 
-double RunVertiSplitHitWireVectorDictWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+// SOA Declarations
+SOAHitVector generateSOAEventHits(long long eventID, int numHits, std::mt19937& rng);
+SOAWireVector generateSOAEventWires(long long eventID, int numWires, int roisPerWire, std::mt19937& rng);
+std::vector<SOAROI> flattenSOAROIs(const SOAWireVector& wires);
+std::vector<SOAWireBase> extractSOABaseWires(const SOAWireVector& wires);
 
-// Helper for VertiSplit HitWire Individual Dict model and tokens
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> CreateVertiSplitHitWireIndividualDictModelAndTokens();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateWireIndividualDictModelAndToken();
+auto CreateSOAAllDataProductModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateSOAHitsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateSOAWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateSOAROIsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateSOABaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
 
-double RunVertiSplitHitWireIndividualDictWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
+double RunSOA_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunSOA_event_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunSOA_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire); 
 
-// Helper for VertiSplit HitWire Individual Dict wire model and token
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateVertiSplitWireIndividualDictModelAndToken();
+// Spill generation
+SOAHitVector generateSOASpillHits(long long spillID, int adjustedHits, std::mt19937& rng);
+SOAWireVector generateSOASpillWires(long long spillID, int adjustedWires, int roisPerWire, std::mt19937& rng);
 
-// Helper for HoriSpill HitWire Vector Dict model and tokens
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> CreateHoriSpillHitWireVectorDictModelAndTokens();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateHoriSpillWireVectorDictModelAndToken();
+// Single for topObject/element
+SOAHit generateSOASingleHit(long long id, std::mt19937& rng);
+SOAWire generateSOASingleWire(long long id, int roisPerWire, std::mt19937& rng);
+FlatSOAROI generateSOASingleROI(unsigned int wireID, std::mt19937& rng);
+std::vector<FlatSOAROI> flattenSOAROIsWithID(const SOAWireVector& wires);
 
-double RunHoriSpillHitWireVectorDictWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-);
+// SOA spill work funcs
+double RunSOA_spill_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire);
+double RunSOA_spill_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire);
+double RunSOA_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire);
 
-// Helper for HoriSpill HitWire Individual Dict model and tokens
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> CreateHoriSpillHitWireIndividualDictModelAndTokens();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> CreateHoriSpillWireIndividualDictModelAndToken();
+// Update declarations for AOS_topObject_perDataProductWorkFunc and AOS_topObject_perGroupWorkFunc to use REntry without tokens
 
-double RunHoriSpillHitWireIndividualDictWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-);
+double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
+double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire);
+// Element work funcs
+double RunSOA_element_hitsWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex);
+double RunSOA_element_wiresWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex);
+double RunSOA_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire);
+double RunSOA_element_wireROIFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire); 
 
-// Helper for HitWire Vector Of Individuals model and tokens
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> CreateHitWireVectorOfIndividualsModelAndTokens();
-std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> CreateWireVectorOfIndividualsModelAndTokens();
-
-double RunHitWireVectorOfIndividualsWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& wireTokens,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
-
-// Dict-specific model creation for individual hit
-auto CreateDictIndividualHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Dict-specific model creation for individual wire
-auto CreateDictIndividualWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Dict-specific work function for individual dict
-double RunDictIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
-
-// Dict-specific verti-split hit model and token (using single class field)
-auto CreateDictVertiSplitHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Dict-specific work function for verti-split vector (binding single pointer)
-double RunDictVertiSplitWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
-
-// Dict-specific verti-split individual hit model and token (single class field)
-auto CreateDictVertiSplitIndividualHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Dict-specific work function for verti-split individual
-double RunDictVertiSplitIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
-
-// Dict-specific hori-spill hit model and token (single class field)
-auto CreateDictHoriSpillHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Dict-specific work function for hori-spill vector
-double RunDictHoriSpillWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-);
-
-// Dict-specific hori-spill individual hit model and token (single class field)
-auto CreateDictHoriSpillIndividualHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
-
-// Dict-specific work function for hori-spill individual
-double RunDictHoriSpillIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-);
-
-// Model creation for vector-of-individuals hit
-auto CreateVectorOfIndividualsHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Model creation for vector-of-individuals wire
-auto CreateVectorOfIndividualsWireModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>>;
-
-// Work function for vector-of-individuals
-double RunVectorOfIndividualsWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& wireTokens,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-);
-
-#endif // HITWIREWRITERHELPERS_HPP 
+double RunSOA_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
+double RunSOA_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire); 

@@ -1,24 +1,20 @@
-#include "updatedVisualization.hpp"
-#include "updatedHitWireReaders.hpp"
+#include "visualization.hpp"
 #include "HitWireReaders.hpp"
-#include "HitWireStat.hpp"
 #include <TSystem.h>
 #include <TROOT.h>
 #include <thread>
 
 #include "ReaderResult.hpp"
 
-#include "visualization.hpp"
-
 #include "WriterResult.hpp"
 
 #include <iostream>
 #include <filesystem>
 
-#include "updatedHitWireWriters.hpp"
+#include "HitWireWriters.hpp"
 #include <TFile.h>
 
-// Enable ROOT thread safety and implicit multi-threading
+
 
 int main() {
     ROOT::EnableThreadSafety();
@@ -26,26 +22,14 @@ int main() {
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
     
-    // Add AOS visualization - use separate AOS-only functions
+
     auto aos_writer_results = updatedOutAOS(nThreads, 3);
-    // Filter to get only AOS results
-    std::vector<WriterResult> aos_only_writer_results;
-    for (const auto& result : aos_writer_results) {
-        if (result.label.find("AOS_") == 0) {
-            aos_only_writer_results.push_back(result);
-        }
-    }
-    visualize_aos_writer_results(aos_only_writer_results);
+    
+    visualize_aos_writer_results(aos_writer_results);
     
     auto aos_reader_results = updatedInAOS(nThreads, 3);
-    // Filter to get only AOS results
-    std::vector<ReaderResult> aos_only_reader_results;
-    for (const auto& result : aos_reader_results) {
-        if (result.label.find("AOS_") == 0) {
-            aos_only_reader_results.push_back(result);
-        }
-    }
-    visualize_aos_reader_results(aos_only_reader_results);
+    
+    visualize_aos_reader_results(aos_reader_results);
 
     // Collect AOS file sizes
     std::vector<std::pair<std::string, double>> aos_file_sizes;
@@ -102,8 +86,8 @@ int main() {
     visualize_soa_file_sizes(soa_file_sizes);
 
     // Add comparison visualizations
-    visualize_comparison_writer_results(aos_only_writer_results, soa_writer_results);
-    visualize_comparison_reader_results(aos_only_reader_results, soa_reader_results);
+    visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
+    visualize_comparison_reader_results(aos_reader_results, soa_reader_results);
     visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
 
     // auto aos_scaling = benchmarkAOSScaling(32, 3);
@@ -112,12 +96,8 @@ int main() {
     return 0;
 }
 
-// cd project && mkdir -p build && cd build && cmake .. && make && cd .. && ./build/hitwire
-// cd project && mkdir -p build && cd build && cmake .. && make && cd .. && ./build/hitwire && rm -rf ./build && cd ..
-
-
 /*
-cd project && \
+cd RNTuple-I-O-Config && \
 rm -rf build && \
 mkdir build && \
 cd build && \
@@ -125,7 +105,8 @@ cmake .. && \
 make && \
 ./tests/gen_test_rootfile && \
 ctest -R test_split_range_by_clusters --output-on-failure && \
-./hitwire && \
+echo "Started at: $(date)" | tee ../experiments/log.txt && \
+./hitwire 2>&1 | tee -a ../experiments/log.txt && \
 rm -rf build && \
-cd ..
+cd .. && cd ..
 */

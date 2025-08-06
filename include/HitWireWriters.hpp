@@ -1,27 +1,28 @@
 #pragma once
 #include <string>
-#include "WriterResult.hpp"
-#include <map>
 #include <vector>
+#include <map>
 #include <utility>
+#include "WriterResult.hpp"
 
-void generateAndWriteHitWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSplitHitAndWireDataVector(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSpilHitAndWireDataVector(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteHitWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSplitHitAndWireDataIndividual(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSpilHitAndWireDataIndividual(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
+// Group 1: Event-level
+double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 
-// Dictionary-based experiments
-void generateAndWriteHitWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteHitWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSplitHitAndWireDataVectorDict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSplitHitAndWireDataIndividualDict(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSpilHitAndWireDataVectorDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
-void generateAndWriteSpilHitAndWireDataIndividualDict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
+// Group 2: Spill-level
+double AOS_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 
-void generateAndWriteHitWireDataVectorOfIndividuals(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName);
+// Group 3: TopObject-level (skip 3.1)
+double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 
-std::vector<WriterResult> out(int nThreads, int iter = 20);
+// Group 4: Element-level (skip 4.1)
+double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads); 
 
-std::map<std::string, std::vector<std::pair<int, double>>> benchmarkScaling(int maxThreads, int iter); 
+std::vector<WriterResult> updatedOutAOS(int nThreads, int iter);
+std::vector<WriterResult> updatedOutSOA(int nThreads, int iter);
+std::map<std::string, std::vector<std::pair<int, double>>> benchmarkAOSScaling(int maxThreads, int iter); 

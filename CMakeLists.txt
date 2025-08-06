@@ -45,17 +45,12 @@ add_custom_command(
 set(DICTIONARY_SOURCES ${DICT_OUTPUT})
 add_executable(hitwire
     src/main.cpp
-    src/HitWireWriters.cpp
     src/HitWireGenerators.cpp
-    src/HitWireReaders.cpp
     src/Utils.cpp
     src/HitWireWriterHelpers.cpp
-    src/HitWireStat.cpp
+    src/HitWireWriters.cpp
+    src/HitWireReaders.cpp
     src/visualization.cpp
-    src/updatedHitWireWriters.cpp
-    src/updatedHitWireReaders.cpp
-    src/updatedHitWireWriterHelpers.cpp
-    src/updatedVisualization.cpp
     src/ProgressiveTablePrinter.cpp
 )
 
@@ -68,7 +63,7 @@ target_include_directories(WireDict PRIVATE ${ROOT_INCDIR})
 target_link_libraries(WireDict PRIVATE ${ROOT_LIBS})
 
 # --- AOS Dictionary Generation ---
-set(AOS_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp ${CMAKE_SOURCE_DIR}/include/updatedHitWireWriterHelpers.hpp)
+set(AOS_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp ${CMAKE_SOURCE_DIR}/include/HitWireWriterHelpers.hpp)
 set(AOS_LINKDEF_FILE ${CMAKE_SOURCE_DIR}/include/updatedLinkDef.h)
 set(AOS_DICT_OUTPUT ${CMAKE_BINARY_DIR}/AOSDict.cxx)
 

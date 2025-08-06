@@ -1,1252 +1,1266 @@
 #include "HitWireWriterHelpers.hpp"
-#include "HitWireGenerators.hpp" // For generateRandomHitVector, generateRandomWireVector
-#include "Hit.hpp" // For HitVector
-#include "Wire.hpp" // For WireVector
-#include <ROOT/RNTupleFillStatus.hxx>
-#include <TStopwatch.h>
+#include "HitWireGenerators.hpp"
+#include "Hit.hpp"
+#include "Wire.hpp"
+#include <ROOT/RNTupleModel.hxx>
+#include <ROOT/RFieldToken.hxx>
 #include <ROOT/RRawPtrWriteEntry.hxx>
 #include <ROOT/RNTupleFillContext.hxx>
-#include <ROOT/RField.hxx> // For base field types
-#include <ROOT/RNTupleParallelWriter.hxx> // For parallel writer context
-#include <ROOT/RNTupleWriteOptions.hxx> // If needed for options
+#include <ROOT/RNTupleFillStatus.hxx>
+#include <unordered_map>
+#include <random>
+#include <vector>
+#include <mutex>
+#include <TStopwatch.h>
 
-using namespace ROOT::Detail;
-
-// Implement hit model creation
-auto CreateVertiSplitHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID = hitModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = hitModel->GetToken("EventID");
-    auto ch = hitModel->MakeField<std::vector<unsigned int>>("Channel");
-    ROOT::RFieldToken tChannel = hitModel->GetToken("Channel");
-    auto view = hitModel->MakeField<std::vector<int>>("View");
-    ROOT::RFieldToken tView = hitModel->GetToken("View");
-    auto sTick = hitModel->MakeField<std::vector<int>>("StartTick");
-    ROOT::RFieldToken tStartTick = hitModel->GetToken("StartTick");
-    auto eTick = hitModel->MakeField<std::vector<int>>("EndTick");
-    ROOT::RFieldToken tEndTick = hitModel->GetToken("EndTick");
-    auto peak = hitModel->MakeField<std::vector<float>>("PeakTime");
-    ROOT::RFieldToken tPeakTime = hitModel->GetToken("PeakTime");
-    auto sigmaPeak = hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
-    ROOT::RFieldToken tSigmaPeakTime = hitModel->GetToken("SigmaPeakTime");
-    auto rms = hitModel->MakeField<std::vector<float>>("RMS");
-    ROOT::RFieldToken tRMS = hitModel->GetToken("RMS");
-    auto amp = hitModel->MakeField<std::vector<float>>("PeakAmplitude");
-    ROOT::RFieldToken tPeakAmplitude = hitModel->GetToken("PeakAmplitude");
-    auto sigmaAmp = hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
-    ROOT::RFieldToken tSigmaPeakAmplitude = hitModel->GetToken("SigmaPeakAmplitude");
-    auto roiADC = hitModel->MakeField<std::vector<float>>("ROISummedADC");
-    ROOT::RFieldToken tROISummedADC = hitModel->GetToken("ROISummedADC");
-    auto hitADC = hitModel->MakeField<std::vector<float>>("HitSummedADC");
-    ROOT::RFieldToken tHitSummedADC = hitModel->GetToken("HitSummedADC");
-    auto integ = hitModel->MakeField<std::vector<float>>("Integral");
-    ROOT::RFieldToken tIntegral = hitModel->GetToken("Integral");
-    auto sigmaInt = hitModel->MakeField<std::vector<float>>("SigmaIntegral");
-    ROOT::RFieldToken tSigmaIntegral = hitModel->GetToken("SigmaIntegral");
-    auto mult = hitModel->MakeField<std::vector<short int>>("Multiplicity");
-    ROOT::RFieldToken tMultiplicity = hitModel->GetToken("Multiplicity");
-    auto locIdx = hitModel->MakeField<std::vector<short int>>("LocalIndex");
-    ROOT::RFieldToken tLocalIndex = hitModel->GetToken("LocalIndex");
-    auto gof = hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
-    ROOT::RFieldToken tGoodnessOfFit = hitModel->GetToken("GoodnessOfFit");
-    auto ndf = hitModel->MakeField<std::vector<int>>("NDF");
-    ROOT::RFieldToken tNDF = hitModel->GetToken("NDF");
-    auto sigType = hitModel->MakeField<std::vector<int>>("SignalType");
-    ROOT::RFieldToken tSignalType = hitModel->GetToken("SignalType");
-    auto cryo = hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
-    ROOT::RFieldToken tWireID_Cryostat = hitModel->GetToken("WireID_Cryostat");
-    auto tpc = hitModel->MakeField<std::vector<int>>("WireID_TPC");
-    ROOT::RFieldToken tWireID_TPC = hitModel->GetToken("WireID_TPC");
-    auto plane = hitModel->MakeField<std::vector<int>>("WireID_Plane");
-    ROOT::RFieldToken tWireID_Plane = hitModel->GetToken("WireID_Plane");
-    auto wire = hitModel->MakeField<std::vector<int>>("WireID_Wire");
-    ROOT::RFieldToken tWireID_Wire = hitModel->GetToken("WireID_Wire");
-
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"Channel", tChannel},
-        {"View", tView},
-        {"StartTick", tStartTick},
-        {"EndTick", tEndTick},
-        {"PeakTime", tPeakTime},
-        {"SigmaPeakTime", tSigmaPeakTime},
-        {"RMS", tRMS},
-        {"PeakAmplitude", tPeakAmplitude},
-        {"SigmaPeakAmplitude", tSigmaPeakAmplitude},
-        {"ROISummedADC", tROISummedADC},
-        {"HitSummedADC", tHitSummedADC},
-        {"Integral", tIntegral},
-        {"SigmaIntegral", tSigmaIntegral},
-        {"Multiplicity", tMultiplicity},
-        {"LocalIndex", tLocalIndex},
-        {"GoodnessOfFit", tGoodnessOfFit},
-        {"NDF", tNDF},
-        {"SignalType", tSignalType},
-        {"WireID_Cryostat", tWireID_Cryostat},
-        {"WireID_TPC", tWireID_TPC},
-        {"WireID_Plane", tWireID_Plane},
-        {"WireID_Wire", tWireID_Wire}
-    };
-
-    return {std::move(hitModel), tokens};
+// Data generation (adapt from existing generators)
+std::vector<HitIndividual> generateEventHits(long long eventID, int numHits, std::mt19937& rng) {
+    std::vector<HitIndividual> hits;
+    for (int i = 0; i < numHits; ++i) {
+        hits.push_back(generateRandomHitIndividual(eventID, rng)); // Assume this exists or implement
+    }
+    return hits;
 }
 
-// Implement wire model creation
-auto CreateWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireVector>("WireVector");
-    ROOT::RFieldToken wireToken = wireModel->GetToken("WireVector");
-    return {std::move(wireModel), wireToken};
+std::vector<WireIndividual> generateEventWires(long long eventID, int numWires, int roisPerWire, std::mt19937& rng) {
+    std::vector<WireIndividual> wires;
+    for (int i = 0; i < numWires; ++i) {
+        wires.push_back(generateRandomWireIndividual(eventID, roisPerWire, rng));
+    }
+    return wires;
 }
 
-// Implement work function
-double RunVertiSplitWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
+// Flatten ROIs with WireID (assume WireID from fWire_Channel for simplicity)
+std::vector<FlatROI> flattenROIs(const std::vector<WireIndividual>& wires) {
+    std::vector<FlatROI> flatROIs;
+    for (const auto& wire : wires) {
+        unsigned int wireID = wire.fWire_Channel;
+        for (const auto& roi : wire.getSignalROI()) {
+            FlatROI flat;
+            flat.WireID = wireID;
+            flat.offset = roi.offset;
+            flat.data = roi.data;
+            flatROIs.push_back(flat);
+        }
+    }
+    return flatROIs;
+}
+
+std::vector<WireROI> flattenWiresToROIs(const std::vector<WireIndividual>& allWires) {
+    std::vector<WireROI> wireROIs;
+    for (const auto& wire : allWires) {
+        for (const auto& roi : wire.getSignalROI()) {
+            WireROI wroi;
+            wroi.EventID = wire.EventID;
+            wroi.fWire_Channel = wire.fWire_Channel;
+            wroi.fWire_View = wire.fWire_View;
+            wroi.roi = roi;
+            wireROIs.push_back(wroi);
+        }
+    }
+    return wireROIs;
+}
+
+// Model for allDataProduct: struct EventAOS { std::vector<HitIndividual> hits; std::vector<WireIndividual> wires; }
+auto CreateAOSAllDataProductModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<EventAOS>("EventAOS");
+    return {std::move(model), model->GetToken("EventAOS")};
+}
+
+// Model for perDataProduct: separate hits and wires models
+auto CreateAOSHitsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<std::vector<HitIndividual>>("hits");
+    return {std::move(model), model->GetToken("hits")};
+}
+auto CreateAOSWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<std::vector<WireIndividual>>("wires");
+    return {std::move(model), model->GetToken("wires")};
+}
+
+// Model for perGroup: hits, wires, rois separately
+auto CreateAOSROIsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<std::vector<FlatROI>>("rois");
+    return {std::move(model), model->GetToken("rois")};
+}
+
+auto CreateAOSBaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<std::vector<WireBase>>("wires");
+    return {std::move(model), model->GetToken("wires")};
+}
+
+// Work function for allDataProduct
+double RunAOS_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads); // Approximate thread index
-
     TStopwatch sw;
+    double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        HitVector localHit = generateRandomHitVector(evt, hitsPerEvent, rng);
-        WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, roisPerWire, rng);
+        EventAOS eventData;
+        eventData.hits = generateEventHits(evt, hitsPerEvent, rng);
+        eventData.wires = generateEventWires(evt, wiresPerEvent, roisPerWire, rng);
         sw.Start();
-
-        // Declare locals for binding
-        long long localEventID = localHit.EventID;
-        auto localChannel = std::move(localHit.getChannel());
-        auto localView = std::move(localHit.getView());
-        auto localStartTick = std::move(localHit.getStartTick());
-        auto localEndTick = std::move(localHit.getEndTick());
-        auto localPeakTime = std::move(localHit.getPeakTime());
-        auto localSigmaPeakTime = std::move(localHit.getSigmaPeakTime());
-        auto localRMS = std::move(localHit.getRMS());
-        auto localPeakAmplitude = std::move(localHit.getPeakAmplitude());
-        auto localSigmaPeakAmplitude = std::move(localHit.getSigmaPeakAmplitude());
-        auto localROISummedADC = std::move(localHit.getROISummedADC());
-        auto localHitSummedADC = std::move(localHit.getHitSummedADC());
-        auto localIntegral = std::move(localHit.getIntegral());
-        auto localSigmaIntegral = std::move(localHit.getSigmaIntegral());
-        auto localMultiplicity = std::move(localHit.getMultiplicity());
-        auto localLocalIndex = std::move(localHit.getLocalIndex());
-        auto localGoodnessOfFit = std::move(localHit.getGoodnessOfFit());
-        auto localNDF = std::move(localHit.getNDF());
-        auto localSignalType = std::move(localHit.getSignalType());
-        auto localWireID_Cryostat = std::move(localHit.getWireID_Cryostat());
-        auto localWireID_TPC = std::move(localHit.getWireID_TPC());
-        auto localWireID_Plane = std::move(localHit.getWireID_Plane());
-        auto localWireID_Wire = std::move(localHit.getWireID_Wire());
-
-        // Bind hit fields
-        hitEntry.BindRawPtr(hitTokens.at("EventID"), &localEventID);
-        hitEntry.BindRawPtr(hitTokens.at("Channel"), &localChannel);
-        hitEntry.BindRawPtr(hitTokens.at("View"), &localView);
-        hitEntry.BindRawPtr(hitTokens.at("StartTick"), &localStartTick);
-        hitEntry.BindRawPtr(hitTokens.at("EndTick"), &localEndTick);
-        hitEntry.BindRawPtr(hitTokens.at("PeakTime"), &localPeakTime);
-        hitEntry.BindRawPtr(hitTokens.at("SigmaPeakTime"), &localSigmaPeakTime);
-        hitEntry.BindRawPtr(hitTokens.at("RMS"), &localRMS);
-        hitEntry.BindRawPtr(hitTokens.at("PeakAmplitude"), &localPeakAmplitude);
-        hitEntry.BindRawPtr(hitTokens.at("SigmaPeakAmplitude"), &localSigmaPeakAmplitude);
-        hitEntry.BindRawPtr(hitTokens.at("ROISummedADC"), &localROISummedADC);
-        hitEntry.BindRawPtr(hitTokens.at("HitSummedADC"), &localHitSummedADC);
-        hitEntry.BindRawPtr(hitTokens.at("Integral"), &localIntegral);
-        hitEntry.BindRawPtr(hitTokens.at("SigmaIntegral"), &localSigmaIntegral);
-        hitEntry.BindRawPtr(hitTokens.at("Multiplicity"), &localMultiplicity);
-        hitEntry.BindRawPtr(hitTokens.at("LocalIndex"), &localLocalIndex);
-        hitEntry.BindRawPtr(hitTokens.at("GoodnessOfFit"), &localGoodnessOfFit);
-        hitEntry.BindRawPtr(hitTokens.at("NDF"), &localNDF);
-        hitEntry.BindRawPtr(hitTokens.at("SignalType"), &localSignalType);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_Cryostat"), &localWireID_Cryostat);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_TPC"), &localWireID_TPC);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_Plane"), &localWireID_Plane);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_Wire"), &localWireID_Wire);
-        ROOT::RNTupleFillStatus hitStatus;
-        hitContext.FillNoFlush(hitEntry, hitStatus);
-        if (hitStatus.ShouldFlushCluster()) {
-            hitContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+        entry.BindRawPtr(token, &eventData);
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
         }
-
-        // Bind and fill wires
-        wireEntry.BindRawPtr(wireToken, &localWire);
-        ROOT::RNTupleFillStatus wireStatus;
-        wireContext.FillNoFlush(wireEntry, wireStatus);
-        if (wireStatus.ShouldFlushCluster()) {
-            wireContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-        }
-
-        sw.Stop();
+        totalTime += sw.RealTime();
     }
-    return sw.RealTime();
-} 
-
-// Implement HitVector model creation
-auto CreateHitVectorModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<HitVector>("HitVector");
-    ROOT::RFieldToken hitToken = hitModel->GetToken("HitVector");
-    return {std::move(hitModel), hitToken};
+    return totalTime;
 }
 
-// Implement WireVector model creation
-auto CreateWireVectorModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireVector>("WireVector");
-    ROOT::RFieldToken wireToken = wireModel->GetToken("WireVector");
-    return {std::move(wireModel), wireToken};
-}
-
-// Implement work function
-double RunHitWireVectorWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
+// Work function for perDataProduct
+double RunAOS_event_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
-
-    TStopwatch t;
-    for (int i = first; i < last; ++i) {
-        HitVector localHit = generateRandomHitVector(i, hitsPerEvent, rng);
-        WireVector localWire = generateRandomWireVector(i, wiresPerEvent, roisPerWire, rng);
-
-        t.Start();
-
-        // Bind and fill hits
-        hitEntry.BindRawPtr(hitToken, &localHit);
-        ROOT::RNTupleFillStatus hitStatus;
-        hitContext.FillNoFlush(hitEntry, hitStatus);
-        if (hitStatus.ShouldFlushCluster()) {
-            hitContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
-        }
-
-        // Bind and fill wires
-        wireEntry.BindRawPtr(wireToken, &localWire);
-        ROOT::RNTupleFillStatus wireStatus;
-        wireContext.FillNoFlush(wireEntry, wireStatus);
-        if (wireStatus.ShouldFlushCluster()) {
-            wireContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-        }
-
-        t.Stop();
-    }
-    return t.RealTime();
-} 
-
-// Implement HoriSpill hit model creation
-auto CreateHoriSpillHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID = hitModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = hitModel->GetToken("EventID");
-    auto spilID = hitModel->MakeField<int>("SpilID");
-    ROOT::RFieldToken tSpilID = hitModel->GetToken("SpilID");
-    auto ch = hitModel->MakeField<std::vector<unsigned int>>("Channel");
-    ROOT::RFieldToken tChannel = hitModel->GetToken("Channel");
-    auto view = hitModel->MakeField<std::vector<int>>("View");
-    ROOT::RFieldToken tView = hitModel->GetToken("View");
-    auto sTick = hitModel->MakeField<std::vector<int>>("StartTick");
-    ROOT::RFieldToken tStartTick = hitModel->GetToken("StartTick");
-    auto eTick = hitModel->MakeField<std::vector<int>>("EndTick");
-    ROOT::RFieldToken tEndTick = hitModel->GetToken("EndTick");
-    auto peak = hitModel->MakeField<std::vector<float>>("PeakTime");
-    ROOT::RFieldToken tPeakTime = hitModel->GetToken("PeakTime");
-    auto sigmaPeak = hitModel->MakeField<std::vector<float>>("SigmaPeakTime");
-    ROOT::RFieldToken tSigmaPeakTime = hitModel->GetToken("SigmaPeakTime");
-    auto rms = hitModel->MakeField<std::vector<float>>("RMS");
-    ROOT::RFieldToken tRMS = hitModel->GetToken("RMS");
-    auto amp = hitModel->MakeField<std::vector<float>>("PeakAmplitude");
-    ROOT::RFieldToken tPeakAmplitude = hitModel->GetToken("PeakAmplitude");
-    auto sigmaAmp = hitModel->MakeField<std::vector<float>>("SigmaPeakAmplitude");
-    ROOT::RFieldToken tSigmaPeakAmplitude = hitModel->GetToken("SigmaPeakAmplitude");
-    auto roiADC = hitModel->MakeField<std::vector<float>>("ROISummedADC");
-    ROOT::RFieldToken tROISummedADC = hitModel->GetToken("ROISummedADC");
-    auto hitADC = hitModel->MakeField<std::vector<float>>("HitSummedADC");
-    ROOT::RFieldToken tHitSummedADC = hitModel->GetToken("HitSummedADC");
-    auto integ = hitModel->MakeField<std::vector<float>>("Integral");
-    ROOT::RFieldToken tIntegral = hitModel->GetToken("Integral");
-    auto sigmaInt = hitModel->MakeField<std::vector<float>>("SigmaIntegral");
-    ROOT::RFieldToken tSigmaIntegral = hitModel->GetToken("SigmaIntegral");
-    auto mult = hitModel->MakeField<std::vector<short int>>("Multiplicity");
-    ROOT::RFieldToken tMultiplicity = hitModel->GetToken("Multiplicity");
-    auto locIdx = hitModel->MakeField<std::vector<short int>>("LocalIndex");
-    ROOT::RFieldToken tLocalIndex = hitModel->GetToken("LocalIndex");
-    auto gof = hitModel->MakeField<std::vector<float>>("GoodnessOfFit");
-    ROOT::RFieldToken tGoodnessOfFit = hitModel->GetToken("GoodnessOfFit");
-    auto ndf = hitModel->MakeField<std::vector<int>>("NDF");
-    ROOT::RFieldToken tNDF = hitModel->GetToken("NDF");
-    auto sigType = hitModel->MakeField<std::vector<int>>("SignalType");
-    ROOT::RFieldToken tSignalType = hitModel->GetToken("SignalType");
-    auto cryo = hitModel->MakeField<std::vector<int>>("WireID_Cryostat");
-    ROOT::RFieldToken tWireID_Cryostat = hitModel->GetToken("WireID_Cryostat");
-    auto tpc = hitModel->MakeField<std::vector<int>>("WireID_TPC");
-    ROOT::RFieldToken tWireID_TPC = hitModel->GetToken("WireID_TPC");
-    auto plane = hitModel->MakeField<std::vector<int>>("WireID_Plane");
-    ROOT::RFieldToken tWireID_Plane = hitModel->GetToken("WireID_Plane");
-    auto wire = hitModel->MakeField<std::vector<int>>("WireID_Wire");
-    ROOT::RFieldToken tWireID_Wire = hitModel->GetToken("WireID_Wire");
-
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"SpilID", tSpilID},
-        {"Channel", tChannel},
-        {"View", tView},
-        {"StartTick", tStartTick},
-        {"EndTick", tEndTick},
-        {"PeakTime", tPeakTime},
-        {"SigmaPeakTime", tSigmaPeakTime},
-        {"RMS", tRMS},
-        {"PeakAmplitude", tPeakAmplitude},
-        {"SigmaPeakAmplitude", tSigmaPeakAmplitude},
-        {"ROISummedADC", tROISummedADC},
-        {"HitSummedADC", tHitSummedADC},
-        {"Integral", tIntegral},
-        {"SigmaIntegral", tSigmaIntegral},
-        {"Multiplicity", tMultiplicity},
-        {"LocalIndex", tLocalIndex},
-        {"GoodnessOfFit", tGoodnessOfFit},
-        {"NDF", tNDF},
-        {"SignalType", tSignalType},
-        {"WireID_Cryostat", tWireID_Cryostat},
-        {"WireID_TPC", tWireID_TPC},
-        {"WireID_Plane", tWireID_Plane},
-        {"WireID_Wire", tWireID_Wire}
-    };
-    return {std::move(hitModel), tokens};
-}
-
-// Implement work function
-double RunHoriSpillWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-) {
-    std::mt19937 rng(seed);
-    int th = first / (totalEntries / nThreads);
-
     TStopwatch sw;
-    for (int idx = first; idx < last; ++idx) {
-        int evt = idx / numHoriSpills;
-        int spil = idx % numHoriSpills;
-        long long uid = static_cast<long long>(evt) * 10000 + spil;
-        HitVector localHit = generateRandomHitVector(uid, adjustedHitsPerEvent, rng);
-        WireVector localWire = generateRandomWireVector(uid, adjustedWiresPerEvent, roisPerWire, rng);
+    double totalTime = 0.0;
+    for (int evt = first; evt < last; ++evt) {
+        auto hits = generateEventHits(evt, hitsPerEvent, rng);
+        auto wires = generateEventWires(evt, wiresPerEvent, roisPerWire, rng);
         sw.Start();
-
-        // Declare locals
-        long long localEventID = localHit.EventID;
-        int localSpilID = spil;
-        auto localChannel = std::move(localHit.getChannel());
-        auto localView = std::move(localHit.getView());
-        auto localStartTick = std::move(localHit.getStartTick());
-        auto localEndTick = std::move(localHit.getEndTick());
-        auto localPeakTime = std::move(localHit.getPeakTime());
-        auto localSigmaPeakTime = std::move(localHit.getSigmaPeakTime());
-        auto localRMS = std::move(localHit.getRMS());
-        auto localPeakAmplitude = std::move(localHit.getPeakAmplitude());
-        auto localSigmaPeakAmplitude = std::move(localHit.getSigmaPeakAmplitude());
-        auto localROISummedADC = std::move(localHit.getROISummedADC());
-        auto localHitSummedADC = std::move(localHit.getHitSummedADC());
-        auto localIntegral = std::move(localHit.getIntegral());
-        auto localSigmaIntegral = std::move(localHit.getSigmaIntegral());
-        auto localMultiplicity = std::move(localHit.getMultiplicity());
-        auto localLocalIndex = std::move(localHit.getLocalIndex());
-        auto localGoodnessOfFit = std::move(localHit.getGoodnessOfFit());
-        auto localNDF = std::move(localHit.getNDF());
-        auto localSignalType = std::move(localHit.getSignalType());
-        auto localWireID_Cryostat = std::move(localHit.getWireID_Cryostat());
-        auto localWireID_TPC = std::move(localHit.getWireID_TPC());
-        auto localWireID_Plane = std::move(localHit.getWireID_Plane());
-        auto localWireID_Wire = std::move(localHit.getWireID_Wire());
-
-        // Bind hit fields
-        hitEntry.BindRawPtr(hitTokens.at("EventID"), &localEventID);
-        hitEntry.BindRawPtr(hitTokens.at("SpilID"), &localSpilID);
-        hitEntry.BindRawPtr(hitTokens.at("Channel"), &localChannel);
-        hitEntry.BindRawPtr(hitTokens.at("View"), &localView);
-        hitEntry.BindRawPtr(hitTokens.at("StartTick"), &localStartTick);
-        hitEntry.BindRawPtr(hitTokens.at("EndTick"), &localEndTick);
-        hitEntry.BindRawPtr(hitTokens.at("PeakTime"), &localPeakTime);
-        hitEntry.BindRawPtr(hitTokens.at("SigmaPeakTime"), &localSigmaPeakTime);
-        hitEntry.BindRawPtr(hitTokens.at("RMS"), &localRMS);
-        hitEntry.BindRawPtr(hitTokens.at("PeakAmplitude"), &localPeakAmplitude);
-        hitEntry.BindRawPtr(hitTokens.at("SigmaPeakAmplitude"), &localSigmaPeakAmplitude);
-        hitEntry.BindRawPtr(hitTokens.at("ROISummedADC"), &localROISummedADC);
-        hitEntry.BindRawPtr(hitTokens.at("HitSummedADC"), &localHitSummedADC);
-        hitEntry.BindRawPtr(hitTokens.at("Integral"), &localIntegral);
-        hitEntry.BindRawPtr(hitTokens.at("SigmaIntegral"), &localSigmaIntegral);
-        hitEntry.BindRawPtr(hitTokens.at("Multiplicity"), &localMultiplicity);
-        hitEntry.BindRawPtr(hitTokens.at("LocalIndex"), &localLocalIndex);
-        hitEntry.BindRawPtr(hitTokens.at("GoodnessOfFit"), &localGoodnessOfFit);
-        hitEntry.BindRawPtr(hitTokens.at("NDF"), &localNDF);
-        hitEntry.BindRawPtr(hitTokens.at("SignalType"), &localSignalType);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_Cryostat"), &localWireID_Cryostat);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_TPC"), &localWireID_TPC);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_Plane"), &localWireID_Plane);
-        hitEntry.BindRawPtr(hitTokens.at("WireID_Wire"), &localWireID_Wire);
-        ROOT::RNTupleFillStatus hitStatus;
-        hitContext.FillNoFlush(hitEntry, hitStatus);
-        if (hitStatus.ShouldFlushCluster()) {
-            hitContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+        // Fill hits
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
         }
-
-        // Bind and fill wires
-        wireEntry.BindRawPtr(wireToken, &localWire);
-        ROOT::RNTupleFillStatus wireStatus;
-        wireContext.FillNoFlush(wireEntry, wireStatus);
-        if (wireStatus.ShouldFlushCluster()) {
-            wireContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
+        // Fill wires
+        wiresEntry.BindRawPtr(wiresToken, &wires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
         }
-
-        sw.Stop();
+        totalTime += sw.RealTime();
     }
-    return sw.RealTime();
-} 
-
-// Implement individual hit model creation
-auto CreateIndividualHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID = hitModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = hitModel->GetToken("EventID");
-    auto fChannel = hitModel->MakeField<unsigned int>("Channel");
-    ROOT::RFieldToken tChannel = hitModel->GetToken("Channel");
-    auto view = hitModel->MakeField<int>("View");
-    ROOT::RFieldToken tView = hitModel->GetToken("View");
-    auto sTick = hitModel->MakeField<int>("StartTick");
-    ROOT::RFieldToken tStartTick = hitModel->GetToken("StartTick");
-    auto eTick = hitModel->MakeField<int>("EndTick");
-    ROOT::RFieldToken tEndTick = hitModel->GetToken("EndTick");
-    auto peak = hitModel->MakeField<float>("PeakTime");
-    ROOT::RFieldToken tPeakTime = hitModel->GetToken("PeakTime");
-    auto sigmaPeak = hitModel->MakeField<float>("SigmaPeakTime");
-    ROOT::RFieldToken tSigmaPeakTime = hitModel->GetToken("SigmaPeakTime");
-    auto rms = hitModel->MakeField<float>("RMS");
-    ROOT::RFieldToken tRMS = hitModel->GetToken("RMS");
-    auto amp = hitModel->MakeField<float>("PeakAmplitude");
-    ROOT::RFieldToken tPeakAmplitude = hitModel->GetToken("PeakAmplitude");
-    auto sigmaAmp = hitModel->MakeField<float>("SigmaPeakAmplitude");
-    ROOT::RFieldToken tSigmaPeakAmplitude = hitModel->GetToken("SigmaPeakAmplitude");
-    auto roiADC = hitModel->MakeField<float>("ROISummedADC");
-    ROOT::RFieldToken tROISummedADC = hitModel->GetToken("ROISummedADC");
-    auto hitADC = hitModel->MakeField<float>("HitSummedADC");
-    ROOT::RFieldToken tHitSummedADC = hitModel->GetToken("HitSummedADC");
-    auto integ = hitModel->MakeField<float>("Integral");
-    ROOT::RFieldToken tIntegral = hitModel->GetToken("Integral");
-    auto sigmaInt = hitModel->MakeField<float>("SigmaIntegral");
-    ROOT::RFieldToken tSigmaIntegral = hitModel->GetToken("SigmaIntegral");
-    auto mult = hitModel->MakeField<short int>("Multiplicity");
-    ROOT::RFieldToken tMultiplicity = hitModel->GetToken("Multiplicity");
-    auto locIdx = hitModel->MakeField<short int>("LocalIndex");
-    ROOT::RFieldToken tLocalIndex = hitModel->GetToken("LocalIndex");
-    auto gof = hitModel->MakeField<float>("GoodnessOfFit");
-    ROOT::RFieldToken tGoodnessOfFit = hitModel->GetToken("GoodnessOfFit");
-    auto ndf = hitModel->MakeField<int>("NDF");
-    ROOT::RFieldToken tNDF = hitModel->GetToken("NDF");
-    auto sigType = hitModel->MakeField<int>("SignalType");
-    ROOT::RFieldToken tSignalType = hitModel->GetToken("SignalType");
-    auto cryo = hitModel->MakeField<int>("WireID_Cryostat");
-    ROOT::RFieldToken tWireID_Cryostat = hitModel->GetToken("WireID_Cryostat");
-    auto tpc = hitModel->MakeField<int>("WireID_TPC");
-    ROOT::RFieldToken tWireID_TPC = hitModel->GetToken("WireID_TPC");
-    auto plane = hitModel->MakeField<int>("WireID_Plane");
-    ROOT::RFieldToken tWireID_Plane = hitModel->GetToken("WireID_Plane");
-    auto wire = hitModel->MakeField<int>("WireID_Wire");
-    ROOT::RFieldToken tWireID_Wire = hitModel->GetToken("WireID_Wire");
-
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"Channel", tChannel},
-        {"View", tView},
-        {"StartTick", tStartTick},
-        {"EndTick", tEndTick},
-        {"PeakTime", tPeakTime},
-        {"SigmaPeakTime", tSigmaPeakTime},
-        {"RMS", tRMS},
-        {"PeakAmplitude", tPeakAmplitude},
-        {"SigmaPeakAmplitude", tSigmaPeakAmplitude},
-        {"ROISummedADC", tROISummedADC},
-        {"HitSummedADC", tHitSummedADC},
-        {"Integral", tIntegral},
-        {"SigmaIntegral", tSigmaIntegral},
-        {"Multiplicity", tMultiplicity},
-        {"LocalIndex", tLocalIndex},
-        {"GoodnessOfFit", tGoodnessOfFit},
-        {"NDF", tNDF},
-        {"SignalType", tSignalType},
-        {"WireID_Cryostat", tWireID_Cryostat},
-        {"WireID_TPC", tWireID_TPC},
-        {"WireID_Plane", tWireID_Plane},
-        {"WireID_Wire", tWireID_Wire}
-    };
-    return {std::move(hitModel), tokens};
+    return totalTime;
 }
 
-// Implement individual wire model creation
-auto CreateIndividualWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireIndividual>("WireIndividual");
-    ROOT::RFieldToken wireToken = wireModel->GetToken("WireIndividual");
-    return {std::move(wireModel), wireToken};
-}
-
-// Implement work function
-double RunIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
+// Work function for perGroup
+double RunAOS_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
-
-    TStopwatch storageTimer;
-    for (int eventIndex = first; eventIndex < last; ++eventIndex) {
-        // Hits loop
-        for (int hitIndex = 0; hitIndex < hitsPerEvent; ++hitIndex) {
-            HitIndividual localHit = generateRandomHitIndividual(eventIndex, rng);
-            storageTimer.Start();
-            // Bind hit fields
-            hitEntry.BindRawPtr(hitTokens.at("EventID"), &localHit.EventID);
-            hitEntry.BindRawPtr(hitTokens.at("Channel"), &localHit.fChannel);
-            hitEntry.BindRawPtr(hitTokens.at("View"), &localHit.fView);
-            hitEntry.BindRawPtr(hitTokens.at("StartTick"), &localHit.fStartTick);
-            hitEntry.BindRawPtr(hitTokens.at("EndTick"), &localHit.fEndTick);
-            hitEntry.BindRawPtr(hitTokens.at("PeakTime"), &localHit.fPeakTime);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaPeakTime"), &localHit.fSigmaPeakTime);
-            hitEntry.BindRawPtr(hitTokens.at("RMS"), &localHit.fRMS);
-            hitEntry.BindRawPtr(hitTokens.at("PeakAmplitude"), &localHit.fPeakAmplitude);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaPeakAmplitude"), &localHit.fSigmaPeakAmplitude);
-            hitEntry.BindRawPtr(hitTokens.at("ROISummedADC"), &localHit.fROISummedADC);
-            hitEntry.BindRawPtr(hitTokens.at("HitSummedADC"), &localHit.fHitSummedADC);
-            hitEntry.BindRawPtr(hitTokens.at("Integral"), &localHit.fIntegral);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaIntegral"), &localHit.fSigmaIntegral);
-            hitEntry.BindRawPtr(hitTokens.at("Multiplicity"), &localHit.fMultiplicity);
-            hitEntry.BindRawPtr(hitTokens.at("LocalIndex"), &localHit.fLocalIndex);
-            hitEntry.BindRawPtr(hitTokens.at("GoodnessOfFit"), &localHit.fGoodnessOfFit);
-            hitEntry.BindRawPtr(hitTokens.at("NDF"), &localHit.fNDF);
-            hitEntry.BindRawPtr(hitTokens.at("SignalType"), &localHit.fSignalType);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Cryostat"), &localHit.fWireID_Cryostat);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_TPC"), &localHit.fWireID_TPC);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Plane"), &localHit.fWireID_Plane);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Wire"), &localHit.fWireID_Wire);
-            ROOT::RNTupleFillStatus hitStatus;
-            hitContext.FillNoFlush(hitEntry, hitStatus);
-            if (hitStatus.ShouldFlushCluster()) {
-                hitContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
-            }
-            storageTimer.Stop();
-        }
-        // Wires loop
-        for (int wireIndex = 0; wireIndex < wiresPerEvent; ++wireIndex) {
-            WireIndividual localWire = generateRandomWireIndividual(eventIndex, roisPerWire, rng);
-            storageTimer.Start();
-            wireEntry.BindRawPtr(wireToken, &localWire);
-            ROOT::RNTupleFillStatus wireStatus;
-            wireContext.FillNoFlush(wireEntry, wireStatus);
-            if (wireStatus.ShouldFlushCluster()) {
-                wireContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-            }
-            storageTimer.Stop();
-        }
-    }
-    return storageTimer.RealTime();
-} 
-
-// Implement VertiSplit individual hit model creation
-auto CreateVertiSplitIndividualHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto fEventID = hitModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = hitModel->GetToken("EventID");
-    auto fChannel = hitModel->MakeField<unsigned int>("Channel");
-    ROOT::RFieldToken tChannel = hitModel->GetToken("Channel");
-    auto fView = hitModel->MakeField<int>("View");
-    ROOT::RFieldToken tView = hitModel->GetToken("View");
-    auto fStartTick = hitModel->MakeField<int>("StartTick");
-    ROOT::RFieldToken tStartTick = hitModel->GetToken("StartTick");
-    auto fEndTick = hitModel->MakeField<int>("EndTick");
-    ROOT::RFieldToken tEndTick = hitModel->GetToken("EndTick");
-    auto fPeakTime = hitModel->MakeField<float>("PeakTime");
-    ROOT::RFieldToken tPeakTime = hitModel->GetToken("PeakTime");
-    auto fSigmaPeakTime = hitModel->MakeField<float>("SigmaPeakTime");
-    ROOT::RFieldToken tSigmaPeakTime = hitModel->GetToken("SigmaPeakTime");
-    auto fRMS = hitModel->MakeField<float>("RMS");
-    ROOT::RFieldToken tRMS = hitModel->GetToken("RMS");
-    auto fPeakAmplitude = hitModel->MakeField<float>("PeakAmplitude");
-    ROOT::RFieldToken tPeakAmplitude = hitModel->GetToken("PeakAmplitude");
-    auto fSigmaPeakAmplitude = hitModel->MakeField<float>("SigmaPeakAmplitude");
-    ROOT::RFieldToken tSigmaPeakAmplitude = hitModel->GetToken("SigmaPeakAmplitude");
-    auto fROISummedADC = hitModel->MakeField<float>("ROISummedADC");
-    ROOT::RFieldToken tROISummedADC = hitModel->GetToken("ROISummedADC");
-    auto fHitSummedADC = hitModel->MakeField<float>("HitSummedADC");
-    ROOT::RFieldToken tHitSummedADC = hitModel->GetToken("HitSummedADC");
-    auto fIntegral = hitModel->MakeField<float>("Integral");
-    ROOT::RFieldToken tIntegral = hitModel->GetToken("Integral");
-    auto fSigmaIntegral = hitModel->MakeField<float>("SigmaIntegral");
-    ROOT::RFieldToken tSigmaIntegral = hitModel->GetToken("SigmaIntegral");
-    auto fMultiplicity = hitModel->MakeField<short int>("Multiplicity");
-    ROOT::RFieldToken tMultiplicity = hitModel->GetToken("Multiplicity");
-    auto fLocalIndex = hitModel->MakeField<short int>("LocalIndex");
-    ROOT::RFieldToken tLocalIndex = hitModel->GetToken("LocalIndex");
-    auto fGoodnessOfFit = hitModel->MakeField<float>("GoodnessOfFit");
-    ROOT::RFieldToken tGoodnessOfFit = hitModel->GetToken("GoodnessOfFit");
-    auto fNDF = hitModel->MakeField<int>("NDF");
-    ROOT::RFieldToken tNDF = hitModel->GetToken("NDF");
-    auto fSignalType = hitModel->MakeField<int>("SignalType");
-    ROOT::RFieldToken tSignalType = hitModel->GetToken("SignalType");
-    auto fWireID_Cryostat = hitModel->MakeField<int>("WireID_Cryostat");
-    ROOT::RFieldToken tWireID_Cryostat = hitModel->GetToken("WireID_Cryostat");
-    auto fWireID_TPC = hitModel->MakeField<int>("WireID_TPC");
-    ROOT::RFieldToken tWireID_TPC = hitModel->GetToken("WireID_TPC");
-    auto fWireID_Plane = hitModel->MakeField<int>("WireID_Plane");
-    ROOT::RFieldToken tWireID_Plane = hitModel->GetToken("WireID_Plane");
-    auto fWireID_Wire = hitModel->MakeField<int>("WireID_Wire");
-    ROOT::RFieldToken tWireID_Wire = hitModel->GetToken("WireID_Wire");
-
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"Channel", tChannel},
-        {"View", tView},
-        {"StartTick", tStartTick},
-        {"EndTick", tEndTick},
-        {"PeakTime", tPeakTime},
-        {"SigmaPeakTime", tSigmaPeakTime},
-        {"RMS", tRMS},
-        {"PeakAmplitude", tPeakAmplitude},
-        {"SigmaPeakAmplitude", tSigmaPeakAmplitude},
-        {"ROISummedADC", tROISummedADC},
-        {"HitSummedADC", tHitSummedADC},
-        {"Integral", tIntegral},
-        {"SigmaIntegral", tSigmaIntegral},
-        {"Multiplicity", tMultiplicity},
-        {"LocalIndex", tLocalIndex},
-        {"GoodnessOfFit", tGoodnessOfFit},
-        {"NDF", tNDF},
-        {"SignalType", tSignalType},
-        {"WireID_Cryostat", tWireID_Cryostat},
-        {"WireID_TPC", tWireID_TPC},
-        {"WireID_Plane", tWireID_Plane},
-        {"WireID_Wire", tWireID_Wire}
-    };
-    return {std::move(hitModel), tokens};
-}
-
-// Implement work function
-double RunVertiSplitIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
-    std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
-
     TStopwatch sw;
+    double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        // Hits loop
-        for (int i = 0; i < hitsPerEvent; ++i) {
-            HitIndividual localHit = generateRandomHitIndividual(evt, rng);
-            sw.Start();
-            // Bind and fill hit
-            hitEntry.BindRawPtr(hitTokens.at("EventID"), &localHit.EventID);
-            hitEntry.BindRawPtr(hitTokens.at("Channel"), &localHit.fChannel);
-            hitEntry.BindRawPtr(hitTokens.at("View"), &localHit.fView);
-            hitEntry.BindRawPtr(hitTokens.at("StartTick"), &localHit.fStartTick);
-            hitEntry.BindRawPtr(hitTokens.at("EndTick"), &localHit.fEndTick);
-            hitEntry.BindRawPtr(hitTokens.at("PeakTime"), &localHit.fPeakTime);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaPeakTime"), &localHit.fSigmaPeakTime);
-            hitEntry.BindRawPtr(hitTokens.at("RMS"), &localHit.fRMS);
-            hitEntry.BindRawPtr(hitTokens.at("PeakAmplitude"), &localHit.fPeakAmplitude);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaPeakAmplitude"), &localHit.fSigmaPeakAmplitude);
-            hitEntry.BindRawPtr(hitTokens.at("ROISummedADC"), &localHit.fROISummedADC);
-            hitEntry.BindRawPtr(hitTokens.at("HitSummedADC"), &localHit.fHitSummedADC);
-            hitEntry.BindRawPtr(hitTokens.at("Integral"), &localHit.fIntegral);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaIntegral"), &localHit.fSigmaIntegral);
-            hitEntry.BindRawPtr(hitTokens.at("Multiplicity"), &localHit.fMultiplicity);
-            hitEntry.BindRawPtr(hitTokens.at("LocalIndex"), &localHit.fLocalIndex);
-            hitEntry.BindRawPtr(hitTokens.at("GoodnessOfFit"), &localHit.fGoodnessOfFit);
-            hitEntry.BindRawPtr(hitTokens.at("NDF"), &localHit.fNDF);
-            hitEntry.BindRawPtr(hitTokens.at("SignalType"), &localHit.fSignalType);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Cryostat"), &localHit.fWireID_Cryostat);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_TPC"), &localHit.fWireID_TPC);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Plane"), &localHit.fWireID_Plane);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Wire"), &localHit.fWireID_Wire);
-            ROOT::RNTupleFillStatus hitStatus;
-            hitContext.FillNoFlush(hitEntry, hitStatus);
-            if (hitStatus.ShouldFlushCluster()) {
-                hitContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
-            }
-            sw.Stop();
+        auto hits = generateEventHits(evt, hitsPerEvent, rng);
+        auto wires = generateEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        auto rois = flattenROIs(wires);
+        std::vector<WireBase> baseWires;
+        for(const auto& w : wires) baseWires.push_back(extractWireBase(w));
+        sw.Start();
+        // Fill hits
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
         }
-        // Wires loop
-        for (int i = 0; i < wiresPerEvent; ++i) {
-            WireIndividual localWire = generateRandomWireIndividual(evt, roisPerWire, rng);
-            sw.Start();
-            // Bind and fill wire
-            wireEntry.BindRawPtr(wireToken, &localWire);
-            ROOT::RNTupleFillStatus wireStatus;
-            wireContext.FillNoFlush(wireEntry, wireStatus);
-            if (wireStatus.ShouldFlushCluster()) {
-                wireContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-            }
-            sw.Stop();
+        // Fill wires (without ROIs? or with empty? Assuming wires still include non-ROI fields)
+        wiresEntry.BindRawPtr(wiresToken, &baseWires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
         }
+        // Fill rois
+        roisEntry.BindRawPtr(roisToken, &rois);
+        ROOT::RNTupleFillStatus roisStatus;
+        roisContext.FillNoFlush(roisEntry, roisStatus);
+        if (roisStatus.ShouldFlushCluster()) {
+            roisContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
     }
-    return sw.RealTime();
+    return totalTime;
 } 
 
-// Implement HoriSpill individual hit model creation
-auto CreateHoriSpillIndividualHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    auto eventID = hitModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = hitModel->GetToken("EventID");
-    auto spilID = hitModel->MakeField<int>("SpilID");
-    ROOT::RFieldToken tSpilID = hitModel->GetToken("SpilID");
-    auto ch = hitModel->MakeField<unsigned int>("Channel");
-    ROOT::RFieldToken tChannel = hitModel->GetToken("Channel");
-    auto view = hitModel->MakeField<int>("View");
-    ROOT::RFieldToken tView = hitModel->GetToken("View");
-    auto sTick = hitModel->MakeField<int>("StartTick");
-    ROOT::RFieldToken tStartTick = hitModel->GetToken("StartTick");
-    auto eTick = hitModel->MakeField<int>("EndTick");
-    ROOT::RFieldToken tEndTick = hitModel->GetToken("EndTick");
-    auto peak = hitModel->MakeField<float>("PeakTime");
-    ROOT::RFieldToken tPeakTime = hitModel->GetToken("PeakTime");
-    auto sigmaPeak = hitModel->MakeField<float>("SigmaPeakTime");
-    ROOT::RFieldToken tSigmaPeakTime = hitModel->GetToken("SigmaPeakTime");
-    auto rms = hitModel->MakeField<float>("RMS");
-    ROOT::RFieldToken tRMS = hitModel->GetToken("RMS");
-    auto amp = hitModel->MakeField<float>("PeakAmplitude");
-    ROOT::RFieldToken tPeakAmplitude = hitModel->GetToken("PeakAmplitude");
-    auto sigmaAmp = hitModel->MakeField<float>("SigmaPeakAmplitude");
-    ROOT::RFieldToken tSigmaPeakAmplitude = hitModel->GetToken("SigmaPeakAmplitude");
-    auto roiADC = hitModel->MakeField<float>("ROISummedADC");
-    ROOT::RFieldToken tROISummedADC = hitModel->GetToken("ROISummedADC");
-    auto hitADC = hitModel->MakeField<float>("HitSummedADC");
-    ROOT::RFieldToken tHitSummedADC = hitModel->GetToken("HitSummedADC");
-    auto integ = hitModel->MakeField<float>("Integral");
-    ROOT::RFieldToken tIntegral = hitModel->GetToken("Integral");
-    auto sigmaInt = hitModel->MakeField<float>("SigmaIntegral");
-    ROOT::RFieldToken tSigmaIntegral = hitModel->GetToken("SigmaIntegral");
-    auto mult = hitModel->MakeField<short int>("Multiplicity");
-    ROOT::RFieldToken tMultiplicity = hitModel->GetToken("Multiplicity");
-    auto locIdx = hitModel->MakeField<short int>("LocalIndex");
-    ROOT::RFieldToken tLocalIndex = hitModel->GetToken("LocalIndex");
-    auto gof = hitModel->MakeField<float>("GoodnessOfFit");
-    ROOT::RFieldToken tGoodnessOfFit = hitModel->GetToken("GoodnessOfFit");
-    auto ndf = hitModel->MakeField<int>("NDF");
-    ROOT::RFieldToken tNDF = hitModel->GetToken("NDF");
-    auto sigType = hitModel->MakeField<int>("SignalType");
-    ROOT::RFieldToken tSignalType = hitModel->GetToken("SignalType");
-    auto cryo = hitModel->MakeField<int>("WireID_Cryostat");
-    ROOT::RFieldToken tWireID_Cryostat = hitModel->GetToken("WireID_Cryostat");
-    auto tpc = hitModel->MakeField<int>("WireID_TPC");
-    ROOT::RFieldToken tWireID_TPC = hitModel->GetToken("WireID_TPC");
-    auto plane = hitModel->MakeField<int>("WireID_Plane");
-    ROOT::RFieldToken tWireID_Plane = hitModel->GetToken("WireID_Plane");
-    auto wire = hitModel->MakeField<int>("WireID_Wire");
-    ROOT::RFieldToken tWireID_Wire = hitModel->GetToken("WireID_Wire");
+// Adjusted generation (can reuse existing with adjusted counts)
+// No change needed if passing adjusted params
 
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"SpilID", tSpilID},
-        {"Channel", tChannel},
-        {"View", tView},
-        {"StartTick", tStartTick},
-        {"EndTick", tEndTick},
-        {"PeakTime", tPeakTime},
-        {"SigmaPeakTime", tSigmaPeakTime},
-        {"RMS", tRMS},
-        {"PeakAmplitude", tPeakAmplitude},
-        {"SigmaPeakAmplitude", tSigmaPeakAmplitude},
-        {"ROISummedADC", tROISummedADC},
-        {"HitSummedADC", tHitSummedADC},
-        {"Integral", tIntegral},
-        {"SigmaIntegral", tSigmaIntegral},
-        {"Multiplicity", tMultiplicity},
-        {"LocalIndex", tLocalIndex},
-        {"GoodnessOfFit", tGoodnessOfFit},
-        {"NDF", tNDF},
-        {"SignalType", tSignalType},
-        {"WireID_Cryostat", tWireID_Cryostat},
-        {"WireID_TPC", tWireID_TPC},
-        {"WireID_Plane", tWireID_Plane},
-        {"WireID_Wire", tWireID_Wire}
-    };
-    return {std::move(hitModel), tokens};
-}
-
-// Implement work function
-double RunHoriSpillIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-) {
+// Work function for spill allDataProduct
+double RunAOS_spill_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (totalEntries / nThreads);
-
     TStopwatch sw;
+    double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
-        int evt = idx / numHoriSpills;
-        int spil = idx % numHoriSpills;
-        long long uid = static_cast<long long>(evt) * 10000 + spil;
-        int localSpilID = spil;
-        // Hits loop
-        for (int h = 0; h < adjustedHitsPerEvent; ++h) {
-            HitIndividual localHit = generateRandomHitIndividual(uid, rng);
+        int evt = idx / numSpills;
+        int spill = idx % numSpills;
+        EventAOS spillData;
+        spillData.hits = generateEventHits(evt * numSpills + spill, adjustedHits, rng); // Use unique ID
+        spillData.wires = generateEventWires(evt * numSpills + spill, adjustedWires, roisPerWire, rng);
+        sw.Start();
+        entry.BindRawPtr(token, &spillData);
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    return totalTime;
+}
+
+// Similar for perDataProduct and perGroup with adjustments
+double RunAOS_spill_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    for (int idx = first; idx < last; ++idx) {
+        int evt = idx / numSpills;
+        int spill = idx % numSpills;
+        auto hits = generateEventHits(evt * numSpills + spill, adjustedHits, rng);
+        auto wires = generateEventWires(evt * numSpills + spill, adjustedWires, roisPerWire, rng);
+        sw.Start();
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        wiresEntry.BindRawPtr(wiresToken, &wires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    return totalTime;
+}
+
+double RunAOS_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    for (int idx = first; idx < last; ++idx) {
+        int evt = idx / numSpills;
+        int spill = idx % numSpills;
+        auto hits = generateEventHits(evt * numSpills + spill, adjustedHits, rng);
+        auto wires = generateEventWires(evt * numSpills + spill, adjustedWires, roisPerWire, rng);
+        auto rois = flattenROIs(wires);
+        std::vector<WireBase> baseWires;
+        for(const auto& w : wires) baseWires.push_back(extractWireBase(w));
+        sw.Start();
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        wiresEntry.BindRawPtr(wiresToken, &baseWires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        roisEntry.BindRawPtr(roisToken, &rois);
+        ROOT::RNTupleFillStatus roisStatus;
+        roisContext.FillNoFlush(roisEntry, roisStatus);
+        if (roisStatus.ShouldFlushCluster()) {
+            roisContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    return totalTime;
+} 
+
+// Single generation functions
+HitIndividual generateSingleHit(long long id, std::mt19937& rng) {
+    return generateRandomHitIndividual(id, rng); // Assume exists
+}
+
+WireIndividual generateSingleWire(long long id, int roisPerWire, std::mt19937& rng) {
+    return generateRandomWireIndividual(id, roisPerWire, rng);
+}
+
+// Struct for topObject allDataProduct (but skipped), for perDataProduct: perhaps pair or separate
+// For 3.2: perDataProduct stores single hit and single wire in separate RNTuples per row
+
+// Work for 3.2
+// Adjust RunAOS_topObject_perDataProductWorkFunc and RunAOS_topObject_perGroupWorkFunc to use REntry: GetPtr, set values, context.Fill(entry)
+
+double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto hitPtr = hitsEntry.GetPtr<HitIndividual>("hit");
+    auto wirePtr = wiresEntry.GetPtr<WireIndividual>("wire");
+    for (int idx = first; idx < last; ++idx) {
+        HitIndividual hit = generateSingleHit(idx, rng);
+        WireIndividual wire = generateSingleWire(idx, roisPerWire, rng);
+        sw.Start();
+        *hitPtr = hit;
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        *wirePtr = wire;
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    { std::lock_guard<std::mutex> lock(mutex);
+      hitsContext.FlushCluster();
+      wiresContext.FlushCluster(); }
+    return totalTime;
+}
+
+double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto hitPtr = hitsEntry.GetPtr<HitIndividual>("hit");
+    auto wirePtr = wiresEntry.GetPtr<WireBase>("wire");
+    auto roisPtr = roisEntry.GetPtr<std::vector<FlatROI>>("rois");
+    for (int idx = first; idx < last; ++idx) {
+        HitIndividual hit = generateSingleHit(idx, rng);
+        WireIndividual fullWire = generateSingleWire(idx, roisPerWire, rng);
+        WireBase wire = extractWireBase(fullWire);
+        auto rois = flattenROIs({fullWire});
+        sw.Start();
+        *hitPtr = hit;
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        *wirePtr = wire;
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        *roisPtr = rois;
+        ROOT::RNTupleFillStatus roisStatus;
+        roisContext.FillNoFlush(roisEntry, roisStatus);
+        if (roisStatus.ShouldFlushCluster()) {
+            roisContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    { std::lock_guard<std::mutex> lock(mutex);
+      hitsContext.FlushCluster();
+      wiresContext.FlushCluster();
+      roisContext.FlushCluster(); }
+    return totalTime;
+}
+
+// For 3.3: perGroup with flattened ROIs (multiple per wire)
+WireBase extractWireBase(const WireIndividual& wire) {
+    WireBase base;
+    base.EventID = wire.EventID;
+    base.fWire_Channel = wire.fWire_Channel;
+    base.fWire_View = wire.fWire_View;
+    return base;
+}
+
+
+
+double RunAOS_element_hitsWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto hitPtr = entry.GetPtr<HitIndividual>("hit");
+    for (int idx = first; idx < last; ++idx) {
+        *hitPtr = generateSingleHit(idx, rng);
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+double RunAOS_element_wireROIWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
+    double totalTime = 0.0;
+    auto wroiPtr = entry.GetPtr<WireROI>("wire_roi");
+    for (int idx = first; idx < last; ++idx) {
+        wroiPtr->EventID = idx / roisPerWire;
+        wroiPtr->fWire_Channel = rng() % 1024;
+        wroiPtr->fWire_View = rng() % 7;
+        wroiPtr->roi.offset = rng() % 500;
+        wroiPtr->roi.data.resize(10);
+        for (auto& val : wroiPtr->roi.data) val = distADC(rng);
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+double RunAOS_element_wiresWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto wirePtr = entry.GetPtr<WireBase>("wire");
+    for (int idx = first; idx < last; ++idx) {
+        wirePtr->EventID = idx;
+        wirePtr->fWire_Channel = rng() % 1024;
+        wirePtr->fWire_View = rng() % 7;
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+double RunAOS_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
+    double totalTime = 0.0;
+    auto roiPtr = entry.GetPtr<FlatROI>("roi");
+    for (int idx = first; idx < last; ++idx) {
+        roiPtr->WireID = idx / roisPerWire;
+        roiPtr->offset = rng() % 500;
+        roiPtr->data.resize(10);
+        for (auto& val : roiPtr->data) val = distADC(rng);
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+// Combined hits + wireROI per-event work function for element_perDataProduct (single pass)
+double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wireROIContext, ROOT::REntry& wireROIEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
+    double totalTime = 0.0;
+
+    auto hitPtr   = hitsEntry.GetPtr<HitIndividual>("hit");
+    auto wroiPtr  = wireROIEntry.GetPtr<WireROI>("wire_roi");
+
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        // hits
+        for (int h = 0; h < hitsPerEvent; ++h) {
+            *hitPtr = generateSingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
             sw.Start();
-            // Bind and fill hit
-            hitEntry.BindRawPtr(hitTokens.at("EventID"), &localHit.EventID);
-            hitEntry.BindRawPtr(hitTokens.at("SpilID"), &localSpilID);
-            hitEntry.BindRawPtr(hitTokens.at("Channel"), &localHit.fChannel);
-            hitEntry.BindRawPtr(hitTokens.at("View"), &localHit.fView);
-            hitEntry.BindRawPtr(hitTokens.at("StartTick"), &localHit.fStartTick);
-            hitEntry.BindRawPtr(hitTokens.at("EndTick"), &localHit.fEndTick);
-            hitEntry.BindRawPtr(hitTokens.at("PeakTime"), &localHit.fPeakTime);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaPeakTime"), &localHit.fSigmaPeakTime);
-            hitEntry.BindRawPtr(hitTokens.at("RMS"), &localHit.fRMS);
-            hitEntry.BindRawPtr(hitTokens.at("PeakAmplitude"), &localHit.fPeakAmplitude);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaPeakAmplitude"), &localHit.fSigmaPeakAmplitude);
-            hitEntry.BindRawPtr(hitTokens.at("ROISummedADC"), &localHit.fROISummedADC);
-            hitEntry.BindRawPtr(hitTokens.at("HitSummedADC"), &localHit.fHitSummedADC);
-            hitEntry.BindRawPtr(hitTokens.at("Integral"), &localHit.fIntegral);
-            hitEntry.BindRawPtr(hitTokens.at("SigmaIntegral"), &localHit.fSigmaIntegral);
-            hitEntry.BindRawPtr(hitTokens.at("Multiplicity"), &localHit.fMultiplicity);
-            hitEntry.BindRawPtr(hitTokens.at("LocalIndex"), &localHit.fLocalIndex);
-            hitEntry.BindRawPtr(hitTokens.at("GoodnessOfFit"), &localHit.fGoodnessOfFit);
-            hitEntry.BindRawPtr(hitTokens.at("NDF"), &localHit.fNDF);
-            hitEntry.BindRawPtr(hitTokens.at("SignalType"), &localHit.fSignalType);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Cryostat"), &localHit.fWireID_Cryostat);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_TPC"), &localHit.fWireID_TPC);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Plane"), &localHit.fWireID_Plane);
-            hitEntry.BindRawPtr(hitTokens.at("WireID_Wire"), &localHit.fWireID_Wire);
             ROOT::RNTupleFillStatus hitStatus;
-            hitContext.FillNoFlush(hitEntry, hitStatus);
+            hitsContext.FillNoFlush(hitsEntry, hitStatus);
             if (hitStatus.ShouldFlushCluster()) {
-                hitContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+                hitsContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
             }
-            sw.Stop();
+            totalTime += sw.RealTime();
         }
-        // Wires loop
-        for (int w = 0; w < adjustedWiresPerEvent; ++w) {
-            WireIndividual localWire = generateRandomWireIndividual(uid, roisPerWire, rng);
+        // wire ROIs: generate wiresPerEvent wires, each with roisPerWire ROIs
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            long long wireGlobalID = static_cast<long long>(evt) * wiresPerEvent + w;
+            for (int r = 0; r < roisPerWire; ++r) {
+                wroiPtr->EventID       = evt;
+                wroiPtr->fWire_Channel = rng() % 1024;
+                wroiPtr->fWire_View    = rng() % 7;
+                wroiPtr->roi.offset    = rng() % 500;
+                wroiPtr->roi.data.resize(10);
+                for (auto& val : wroiPtr->roi.data) val = distADC(rng);
+                sw.Start();
+                ROOT::RNTupleFillStatus wroiStatus;
+                wireROIContext.FillNoFlush(wireROIEntry, wroiStatus);
+                if (wroiStatus.ShouldFlushCluster()) {
+                    wireROIContext.FlushColumns();
+                    { std::lock_guard<std::mutex> lock(mutex); wireROIContext.FlushCluster(); }
+                }
+                totalTime += sw.RealTime();
+            }
+        }
+    }
+    // Flush once per thread to minimise contention
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        hitsContext.FlushCluster();
+        wireROIContext.FlushCluster();
+    }
+    return totalTime;
+}
+
+// Combined hits + wires + ROIs per-event work function for element_perGroup (single pass)
+
+// Combined hits + wireROI per-event work function for SOA_element_perDataProduct (single pass)
+double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wireROIContext, ROOT::REntry& wireROIEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+
+    auto hitPtr  = hitsEntry.GetPtr<SOAHit>("hit");
+    auto wroiPtr = wireROIEntry.GetPtr<SOAWire>("wire_roi");
+
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        for (int h = 0; h < hitsPerEvent; ++h) {
+            *hitPtr = generateSOASingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
             sw.Start();
-            // Bind and fill wire
-            wireEntry.BindRawPtr(wireToken, &localWire);
-            ROOT::RNTupleFillStatus wireStatus;
-            wireContext.FillNoFlush(wireEntry, wireStatus);
-            if (wireStatus.ShouldFlushCluster()) {
-                wireContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-            }
-            sw.Stop();
-        }
-    }
-    return sw.RealTime();
-} 
-
-// Dict-specific model creation for individual hit
-auto CreateDictIndividualHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<HitIndividual>("HitIndividual");
-    ROOT::RFieldToken hitToken = hitModel->GetToken("HitIndividual");
-    return {std::move(hitModel), hitToken};
-}
-
-// Dict-specific model creation for individual wire
-auto CreateDictIndividualWireModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<WireIndividual>("WireIndividual");
-    ROOT::RFieldToken wireToken = wireModel->GetToken("WireIndividual");
-    return {std::move(wireModel), wireToken};
-}
-
-// Dict-specific work function for individual dict
-double RunDictIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
-    std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
-
-    TStopwatch t;
-    for (int evt = first; evt < last; ++evt) {
-        // Hits loop
-        for (int i = 0; i < hitsPerEvent; ++i) {
-            HitIndividual localHit = generateRandomHitIndividual(evt, rng);
-            t.Start();
-            // Bind and fill hit
-            hitEntry.BindRawPtr(hitToken, &localHit);
             ROOT::RNTupleFillStatus hitStatus;
-            hitContext.FillNoFlush(hitEntry, hitStatus);
+            hitsContext.FillNoFlush(hitsEntry, hitStatus);
+            totalTime += sw.RealTime();
             if (hitStatus.ShouldFlushCluster()) {
-                hitContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+                hitsContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
             }
-            t.Stop();
         }
-        // Wires loop
-        for (int i = 0; i < wiresPerEvent; ++i) {
-            WireIndividual localWire = generateRandomWireIndividual(evt, roisPerWire, rng);
-            t.Start();
-            // Bind and fill wire
-            wireEntry.BindRawPtr(wireToken, &localWire);
-            ROOT::RNTupleFillStatus wireStatus;
-            wireContext.FillNoFlush(wireEntry, wireStatus);
-            if (wireStatus.ShouldFlushCluster()) {
-                wireContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            *wroiPtr = generateSOASingleWire(static_cast<long long>(evt) * wiresPerEvent + w, roisPerWire, rng);
+            sw.Start();
+            ROOT::RNTupleFillStatus wroiStatus;
+            wireROIContext.FillNoFlush(wireROIEntry, wroiStatus);
+            totalTime += sw.RealTime();
+            if (wroiStatus.ShouldFlushCluster()) {
+                wireROIContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); wireROIContext.FlushCluster(); }
             }
-            t.Stop();
         }
     }
-    return t.RealTime();
-} 
-
-// Dict-specific verti-split hit model and token (using single class field to match dict expectations)
-auto CreateDictVertiSplitHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<HitVector>("HitVector");
-    ROOT::RFieldToken hitToken = hitModel->GetToken("HitVector");
-    return {std::move(hitModel), hitToken};
-}
-
-// Dict-specific work function for verti-split vector (binding single pointer)
-double RunDictVertiSplitWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
-    std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
-
-    TStopwatch t;
-    for (int evt = first; evt < last; ++evt) {
-        HitVector localHit = generateRandomHitVector(evt, hitsPerEvent, rng);
-        WireVector localWire = generateRandomWireVector(evt, wiresPerEvent, roisPerWire, rng);
-        t.Start();
-
-        // Bind and fill hits
-        hitEntry.BindRawPtr(hitToken, &localHit);
-        ROOT::RNTupleFillStatus hitStatus;
-        hitContext.FillNoFlush(hitEntry, hitStatus);
-        if (hitStatus.ShouldFlushCluster()) {
-            hitContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
-        }
-
-        // Bind and fill wires
-        wireEntry.BindRawPtr(wireToken, &localWire);
-        ROOT::RNTupleFillStatus wireStatus;
-        wireContext.FillNoFlush(wireEntry, wireStatus);
-        if (wireStatus.ShouldFlushCluster()) {
-            wireContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-        }
-
-        t.Stop();
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        hitsContext.FlushCluster();
+        wireROIContext.FlushCluster();
     }
-    return t.RealTime();
-} 
-
-// Dict-specific verti-split individual hit model and token (single class field)
-auto CreateDictVertiSplitIndividualHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<HitIndividual>("HitIndividual");
-    ROOT::RFieldToken hitToken = hitModel->GetToken("HitIndividual");
-    return {std::move(hitModel), hitToken};
+    return totalTime;
 }
 
-// Dict-specific work function for verti-split individual
-double RunDictVertiSplitIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
+// Combined hits + wires + ROIs per-event work function for element_perGroup (single pass)
+double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry,
+    ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
+    TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
+    double totalTime = 0.0;
 
-    TStopwatch t;
-    for (int evt = first; evt < last; ++evt) {
-        // Hits loop
-        for (int i = 0; i < hitsPerEvent; ++i) {
-            HitIndividual localHit = generateRandomHitIndividual(evt, rng);
-            t.Start();
-            hitEntry.BindRawPtr(hitToken, &localHit);
+    auto hitPtr  = hitsEntry.GetPtr<HitIndividual>("hit");
+    auto wirePtr = wiresEntry.GetPtr<WireBase>("wire");
+    auto roiPtr  = roisEntry.GetPtr<FlatROI>("roi");
+
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        // hits
+        for (int h = 0; h < hitsPerEvent; ++h) {
+            *hitPtr = generateSingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
+            sw.Start();
             ROOT::RNTupleFillStatus hitStatus;
-            hitContext.FillNoFlush(hitEntry, hitStatus);
+            hitsContext.FillNoFlush(hitsEntry, hitStatus);
             if (hitStatus.ShouldFlushCluster()) {
-                hitContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+                hitsContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
             }
-            t.Stop();
+            totalTime += sw.RealTime();
         }
-        // Wires loop
-        for (int i = 0; i < wiresPerEvent; ++i) {
-            WireIndividual localWire = generateRandomWireIndividual(evt, roisPerWire, rng);
-            t.Start();
-            wireEntry.BindRawPtr(wireToken, &localWire);
+        // wires & ROIs
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            // base wire
+            wirePtr->EventID = evt;
+            wirePtr->fWire_Channel = rng() % 1024;
+            wirePtr->fWire_View    = rng() % 7;
+            sw.Start();
             ROOT::RNTupleFillStatus wireStatus;
-            wireContext.FillNoFlush(wireEntry, wireStatus);
+            wiresContext.FillNoFlush(wiresEntry, wireStatus);
+            totalTime += sw.RealTime();
             if (wireStatus.ShouldFlushCluster()) {
-                wireContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
+                wiresContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
             }
-            t.Stop();
+
+            // its ROIs
+            for (int r = 0; r < roisPerWire; ++r) {
+                roiPtr->WireID = w;
+                roiPtr->offset = rng() % 500;
+                roiPtr->data.resize(10);
+                for (auto& val : roiPtr->data) val = distADC(rng);
+                sw.Start();
+                ROOT::RNTupleFillStatus roiStatus;
+                roisContext.FillNoFlush(roisEntry, roiStatus);
+                totalTime += sw.RealTime();
+                if (roiStatus.ShouldFlushCluster()) {
+                    roisContext.FlushColumns();
+                    { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+                }
+            }
         }
     }
-    return t.RealTime();
-} 
-
-// Dict-specific hori-spill hit model and token (single class field)
-auto CreateDictHoriSpillHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<HitVector>("HitVector");
-    ROOT::RFieldToken hitToken = hitModel->GetToken("HitVector");
-    return {std::move(hitModel), hitToken};
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        hitsContext.FlushCluster();
+        wiresContext.FlushCluster();
+        roisContext.FlushCluster();
+    }
+    return totalTime;
 }
 
-// Dict-specific work function for hori-spill vector
-double RunDictHoriSpillWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-) {
-    std::mt19937 rng(seed);
-    int th = first / (totalEntries / nThreads);
 
-    TStopwatch t;
+
+// Combined hits + wires + ROIs per-event work function for SOA_element_perGroup (single pass)
+double RunSOA_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
+    ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry,
+    ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
+    std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+
+    auto hitPtr  = hitsEntry.GetPtr<SOAHit>("hit");
+    auto wirePtr = wiresEntry.GetPtr<SOAWireBase>("wire");
+    auto roiPtr  = roisEntry.GetPtr<FlatSOAROI>("roi");
+
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        for (int h = 0; h < hitsPerEvent; ++h) {
+            *hitPtr = generateSOASingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
+            sw.Start();
+            ROOT::RNTupleFillStatus hitStatus;
+            hitsContext.FillNoFlush(hitsEntry, hitStatus);
+            totalTime += sw.RealTime();
+            if (hitStatus.ShouldFlushCluster()) {
+                hitsContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+            }
+        }
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            wirePtr->EventID = evt;
+            wirePtr->Channel = rng() % 1024;
+            wirePtr->View    = rng() % 7;
+            sw.Start();
+            ROOT::RNTupleFillStatus wireStatus;
+            wiresContext.FillNoFlush(wiresEntry, wireStatus);
+            totalTime += sw.RealTime();
+            if (wireStatus.ShouldFlushCluster()) {
+                wiresContext.FlushColumns();
+                { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+            }
+            for (int r = 0; r < roisPerWire; ++r) {
+                *roiPtr = generateSOASingleROI(w, rng);
+                sw.Start();
+                ROOT::RNTupleFillStatus roiStatus;
+                roisContext.FillNoFlush(roisEntry, roiStatus);
+                totalTime += sw.RealTime();
+                if (roiStatus.ShouldFlushCluster()) {
+                    roisContext.FlushColumns();
+                    { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+                }
+            }
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        hitsContext.FlushCluster();
+        wiresContext.FlushCluster();
+        roisContext.FlushCluster();
+    }
+    return totalTime;
+}
+
+// SOA Data Generation
+SOAHitVector generateSOAEventHits(long long eventID, int numHits, std::mt19937& rng) {
+    SOAHitVector hits;
+    hits.EventIDs.resize(numHits, eventID);
+    hits.Channels.resize(numHits);
+    hits.Views.resize(numHits);
+    hits.StartTicks.resize(numHits);
+    hits.EndTicks.resize(numHits);
+    hits.PeakTimes.resize(numHits);
+    hits.SigmaPeakTimes.resize(numHits);
+    hits.RMSs.resize(numHits);
+    hits.PeakAmplitudes.resize(numHits);
+    hits.SigmaPeakAmplitudes.resize(numHits);
+    hits.ROISummedADCs.resize(numHits);
+    hits.HitSummedADCs.resize(numHits);
+    hits.Integrals.resize(numHits);
+    hits.SigmaIntegrals.resize(numHits);
+    hits.Multiplicities.resize(numHits);
+    hits.LocalIndices.resize(numHits);
+    hits.GoodnessOfFits.resize(numHits);
+    hits.NDFs.resize(numHits);
+    hits.SignalTypes.resize(numHits);
+    hits.WireID_Cryostats.resize(numHits);
+    hits.WireID_TPCs.resize(numHits);
+    hits.WireID_Planes.resize(numHits);
+    hits.WireID_Wires.resize(numHits);
+    for (int i = 0; i < numHits; ++i) {
+        HitIndividual temp = generateRandomHitIndividual(eventID, rng);
+        hits.Channels[i] = temp.fChannel;
+        hits.Views[i] = temp.fView;
+        hits.StartTicks[i] = temp.fStartTick;
+        hits.EndTicks[i] = temp.fEndTick;
+        hits.PeakTimes[i] = temp.fPeakTime;
+        hits.SigmaPeakTimes[i] = temp.fSigmaPeakTime;
+        hits.RMSs[i] = temp.fRMS;
+        hits.PeakAmplitudes[i] = temp.fPeakAmplitude;
+        hits.SigmaPeakAmplitudes[i] = temp.fSigmaPeakAmplitude;
+        hits.ROISummedADCs[i] = temp.fROISummedADC;
+        hits.HitSummedADCs[i] = temp.fHitSummedADC;
+        hits.Integrals[i] = temp.fIntegral;
+        hits.SigmaIntegrals[i] = temp.fSigmaIntegral;
+        hits.Multiplicities[i] = temp.fMultiplicity;
+        hits.LocalIndices[i] = temp.fLocalIndex;
+        hits.GoodnessOfFits[i] = temp.fGoodnessOfFit;
+        hits.NDFs[i] = temp.fNDF;
+        hits.SignalTypes[i] = temp.fSignalType;
+        hits.WireID_Cryostats[i] = temp.fWireID_Cryostat;
+        hits.WireID_TPCs[i] = temp.fWireID_TPC;
+        hits.WireID_Planes[i] = temp.fWireID_Plane;
+        hits.WireID_Wires[i] = temp.fWireID_Wire;
+    }
+    return hits;
+}
+
+SOAWireVector generateSOAEventWires(long long eventID, int numWires, int roisPerWire, std::mt19937& rng) {
+    SOAWireVector wires;
+    wires.EventIDs.resize(numWires, eventID);
+    wires.Channels.resize(numWires);
+    wires.Views.resize(numWires);
+    wires.ROIs.resize(numWires);
+    for (int i = 0; i < numWires; ++i) {
+        WireIndividual temp = generateRandomWireIndividual(eventID, roisPerWire, rng);
+        wires.Channels[i] = temp.fWire_Channel;
+        wires.Views[i] = temp.fWire_View;
+        wires.ROIs[i].resize(roisPerWire);
+        for (int j = 0; j < roisPerWire; ++j) {
+            wires.ROIs[i][j].data = temp.getSignalROI()[j].data;
+        }
+    }
+    return wires;
+}
+
+std::vector<SOAROI> flattenSOAROIs(const SOAWireVector& wires) {
+    std::vector<SOAROI> flat;
+    for (const auto& wireROIs : wires.ROIs) {
+        for (const auto& roi : wireROIs) {
+            flat.push_back(roi);
+        }
+    }
+    return flat;
+}
+
+std::vector<SOAWireBase> extractSOABaseWires(const SOAWireVector& wires) {
+    std::vector<SOAWireBase> base(wires.EventIDs.size());
+    for (size_t i = 0; i < wires.EventIDs.size(); ++i) {
+        base[i].EventID = wires.EventIDs[i];
+        base[i].Channel = wires.Channels[i];
+        base[i].View = wires.Views[i];
+    }
+    return base;
+}
+
+// SOA Model Creators
+auto CreateSOAAllDataProductModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<EventSOA>("EventSOA");
+    return {std::move(model), model->GetToken("EventSOA")};
+}
+
+auto CreateSOAHitsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<SOAHitVector>("hits");
+    return {std::move(model), model->GetToken("hits")};
+}
+
+auto CreateSOAWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<SOAWireVector>("wires");
+    return {std::move(model), model->GetToken("wires")};
+}
+
+auto CreateSOAROIsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<std::vector<SOAROI>>("rois");
+    return {std::move(model), model->GetToken("rois")};
+}
+
+auto CreateSOABaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<std::vector<SOAWireBase>>("wires");
+    return {std::move(model), model->GetToken("wires")};
+}
+
+// SOA Work Functions
+double RunSOA_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    for (int evt = first; evt < last; ++evt) {
+        EventSOA eventData;
+        eventData.hits = generateSOAEventHits(evt, hitsPerEvent, rng);
+        eventData.wires = generateSOAEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        sw.Start();
+        entry.BindRawPtr(token, &eventData);
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    return totalTime;
+}
+
+double RunSOA_event_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    for (int evt = first; evt < last; ++evt) {
+        auto hits = generateSOAEventHits(evt, hitsPerEvent, rng);
+        auto wires = generateSOAEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        sw.Start();
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        wiresEntry.BindRawPtr(wiresToken, &wires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    return totalTime;
+}
+
+double RunSOA_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    for (int evt = first; evt < last; ++evt) {
+        auto hits = generateSOAEventHits(evt, hitsPerEvent, rng);
+        auto wires = generateSOAEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        auto rois = flattenSOAROIs(wires);
+        auto baseWires = extractSOABaseWires(wires);
+        sw.Start();
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        wiresEntry.BindRawPtr(wiresToken, &baseWires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        roisEntry.BindRawPtr(roisToken, &rois);
+        ROOT::RNTupleFillStatus roisStatus;
+        roisContext.FillNoFlush(roisEntry, roisStatus);
+        if (roisStatus.ShouldFlushCluster()) {
+            roisContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    return totalTime;
+} 
+
+// Adjusted for spills (reuse with adjusted counts)
+SOAHitVector generateSOASpillHits(long long spillID, int adjustedHits, std::mt19937& rng) {
+    return generateSOAEventHits(spillID, adjustedHits, rng);  // Reuse, but with spillID
+}
+
+SOAWireVector generateSOASpillWires(long long spillID, int adjustedWires, int roisPerWire, std::mt19937& rng) {
+    return generateSOAEventWires(spillID, adjustedWires, roisPerWire, rng);
+}
+
+// Single generation for topObject/element
+SOAHit generateSOASingleHit(long long id, std::mt19937& rng) {
+    HitIndividual temp = generateRandomHitIndividual(id, rng);
+    SOAHit hit;
+    hit.EventID = temp.EventID;
+    hit.Channel = temp.fChannel;
+    hit.View = temp.fView;
+    hit.StartTick = temp.fStartTick;
+    hit.EndTick = temp.fEndTick;
+    hit.PeakTime = temp.fPeakTime;
+    hit.SigmaPeakTime = temp.fSigmaPeakTime;
+    hit.RMS = temp.fRMS;
+    hit.PeakAmplitude = temp.fPeakAmplitude;
+    hit.SigmaPeakAmplitude = temp.fSigmaPeakAmplitude;
+    hit.ROISummedADC = temp.fROISummedADC;
+    hit.HitSummedADC = temp.fHitSummedADC;
+    hit.Integral = temp.fIntegral;
+    hit.SigmaIntegral = temp.fSigmaIntegral;
+    hit.Multiplicity = temp.fMultiplicity;
+    hit.LocalIndex = temp.fLocalIndex;
+    hit.GoodnessOfFit = temp.fGoodnessOfFit;
+    hit.NDF = temp.fNDF;
+    hit.SignalType = temp.fSignalType;
+    hit.WireID_Cryostat = temp.fWireID_Cryostat;
+    hit.WireID_TPC = temp.fWireID_TPC;
+    hit.WireID_Plane = temp.fWireID_Plane;
+    hit.WireID_Wire = temp.fWireID_Wire;
+    return hit;
+}
+
+SOAWire generateSOASingleWire(long long id, int roisPerWire, std::mt19937& rng) {
+    WireIndividual temp = generateRandomWireIndividual(id, roisPerWire, rng);
+    SOAWire wire;
+    wire.EventID = temp.EventID;
+    wire.Channel = temp.fWire_Channel;
+    wire.View = temp.fWire_View;
+    wire.ROIs.resize(roisPerWire);
+    for (int j = 0; j < roisPerWire; ++j) {
+        wire.ROIs[j].data = temp.getSignalROI()[j].data;
+    }
+    return wire;
+}
+
+FlatSOAROI generateSOASingleROI(unsigned int wireID, std::mt19937& rng) {
+    FlatSOAROI roi;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
+    roi.WireID = wireID;
+    roi.data.resize(10);
+    for (auto& val : roi.data) val = distADC(rng);
+    return roi;
+}
+
+std::vector<FlatSOAROI> flattenSOAROIsWithID(const SOAWireVector& wires) {
+    std::vector<FlatSOAROI> flat;
+    for (size_t w = 0; w < wires.Channels.size(); ++w) {
+        for (const auto& roi : wires.ROIs[w]) {
+            FlatSOAROI froi;
+            froi.WireID = wires.Channels[w];
+            froi.data = roi.data;
+            flat.push_back(froi);
+        }
+    }
+    return flat;
+}
+
+// SOA spill work functions (mirror AOS but use SOA gen)
+double RunSOA_spill_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
-        int evt = idx / numHoriSpills;
-        int spil = idx % numHoriSpills;
-        long long uid = static_cast<long long>(evt) * 10000 + spil;
-        HitVector localHit = generateRandomHitVector(uid, adjustedHitsPerEvent, rng);
-        WireVector localWire = generateRandomWireVector(uid, adjustedWiresPerEvent, roisPerWire, rng);
-        t.Start();
-
-        // Bind and fill hits
-        hitEntry.BindRawPtr(hitToken, &localHit);
-        ROOT::RNTupleFillStatus hitStatus;
-        hitContext.FillNoFlush(hitEntry, hitStatus);
-        if (hitStatus.ShouldFlushCluster()) {
-            hitContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+        int evt = idx / numSpills;
+        long long spillID = evt * numSpills + (idx % numSpills);
+        EventSOA spillData;
+        spillData.hits = generateSOASpillHits(spillID, adjustedHits, rng);
+        spillData.wires = generateSOASpillWires(spillID, adjustedWires, roisPerWire, rng);
+        sw.Start();
+        entry.BindRawPtr(token, &spillData);
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
         }
-
-        // Bind and fill wires
-        wireEntry.BindRawPtr(wireToken, &localWire);
-        ROOT::RNTupleFillStatus wireStatus;
-        wireContext.FillNoFlush(wireEntry, wireStatus);
-        if (wireStatus.ShouldFlushCluster()) {
-            wireContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-        }
-
-        t.Stop();
+        totalTime += sw.RealTime();
     }
-    return t.RealTime();
-} 
-
-// Dict-specific hori-spill individual hit model and token (single class field)
-auto CreateDictHoriSpillIndividualHitModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<HitIndividual>("HitIndividual");
-    ROOT::RFieldToken hitToken = hitModel->GetToken("HitIndividual");
-    return {std::move(hitModel), hitToken};
+    return totalTime;
 }
 
-// Dict-specific work function for hori-spill individual
-double RunDictHoriSpillIndividualWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    ROOT::RFieldToken hitToken,
-    ROOT::RFieldToken wireToken,
-    std::mutex& mutex,
-    int totalEntries, int nThreads, int numHoriSpills, int adjustedHitsPerEvent, int adjustedWiresPerEvent, int roisPerWire
-) {
+double RunSOA_spill_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (totalEntries / nThreads);
-
-    TStopwatch t;
+    TStopwatch sw;
+    double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
-        int evt = idx / numHoriSpills;
-        int spil = idx % numHoriSpills;
-        long long uid = static_cast<long long>(evt) * 10000 + spil;
-        // Hits loop
-        for (int h = 0; h < adjustedHitsPerEvent; ++h) {
-            HitIndividual localHit = generateRandomHitIndividual(uid, rng);
-            t.Start();
-            hitEntry.BindRawPtr(hitToken, &localHit);
-            ROOT::RNTupleFillStatus hitStatus;
-            hitContext.FillNoFlush(hitEntry, hitStatus);
-            if (hitStatus.ShouldFlushCluster()) {
-                hitContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
-            }
-            t.Stop();
+        int evt = idx / numSpills;
+        long long spillID = evt * numSpills + (idx % numSpills);
+        auto hits = generateSOASpillHits(spillID, adjustedHits, rng);
+        auto wires = generateSOASpillWires(spillID, adjustedWires, roisPerWire, rng);
+        sw.Start();
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
         }
-        // Wires loop
-        for (int w = 0; w < adjustedWiresPerEvent; ++w) {
-            WireIndividual localWire = generateRandomWireIndividual(uid, roisPerWire, rng);
-            t.Start();
-            wireEntry.BindRawPtr(wireToken, &localWire);
-            ROOT::RNTupleFillStatus wireStatus;
-            wireContext.FillNoFlush(wireEntry, wireStatus);
-            if (wireStatus.ShouldFlushCluster()) {
-                wireContext.FlushColumns();
-                { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
-            }
-            t.Stop();
+        wiresEntry.BindRawPtr(wiresToken, &wires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
         }
+        totalTime += sw.RealTime();
     }
-    return t.RealTime();
-} 
-
-// Model creation for vector-of-individuals hit
-auto CreateVectorOfIndividualsHitModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto hitModel = ROOT::RNTupleModel::Create();
-    hitModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = hitModel->GetToken("EventID");
-    hitModel->MakeField<std::vector<HitIndividual>>("Hits");
-    ROOT::RFieldToken tHits = hitModel->GetToken("Hits");
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"Hits", tHits}
-    };
-    return {std::move(hitModel), tokens};
+    return totalTime;
 }
 
-// Model creation for vector-of-individuals wire
-auto CreateVectorOfIndividualsWireModelAndTokens() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, std::unordered_map<std::string, ROOT::RFieldToken>> {
-    auto wireModel = ROOT::RNTupleModel::Create();
-    wireModel->MakeField<long long>("EventID");
-    ROOT::RFieldToken tEventID = wireModel->GetToken("EventID");
-    wireModel->MakeField<std::vector<WireIndividual>>("Wires");
-    ROOT::RFieldToken tWires = wireModel->GetToken("Wires");
-    std::unordered_map<std::string, ROOT::RFieldToken> tokens = {
-        {"EventID", tEventID},
-        {"Wires", tWires}
-    };
-    return {std::move(wireModel), tokens};
-}
-
-// Work function for vector-of-individuals
-double RunVectorOfIndividualsWorkFunc(
-    int first, int last, unsigned seed,
-    ROOT::Experimental::RNTupleFillContext& hitContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& hitEntry,
-    ROOT::Experimental::RNTupleFillContext& wireContext,
-    ROOT::Experimental::Detail::RRawPtrWriteEntry& wireEntry,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& hitTokens,
-    const std::unordered_map<std::string, ROOT::RFieldToken>& wireTokens,
-    std::mutex& mutex,
-    int numEvents, int nThreads, int hitsPerEvent, int wiresPerEvent, int roisPerWire
-) {
+double RunSOA_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
     std::mt19937 rng(seed);
-    int th = first / (numEvents / nThreads);
-
-    TStopwatch t;
-    for (int evt = first; evt < last; ++evt) {
-        std::vector<HitIndividual> localHits;
-        localHits.reserve(hitsPerEvent);
-        for (int i = 0; i < hitsPerEvent; ++i) localHits.push_back(generateRandomHitIndividual(evt, rng));
-        std::vector<WireIndividual> localWires;
-        localWires.reserve(wiresPerEvent);
-        for (int i = 0; i < wiresPerEvent; ++i) localWires.push_back(generateRandomWireIndividual(evt, roisPerWire, rng));
-        long long localEventID = evt;
-        t.Start();
-        // Bind and fill hits
-        hitEntry.BindRawPtr(hitTokens.at("EventID"), &localEventID);
-        hitEntry.BindRawPtr(hitTokens.at("Hits"), &localHits);
-        ROOT::RNTupleFillStatus hitStatus;
-        hitContext.FillNoFlush(hitEntry, hitStatus);
-        if (hitStatus.ShouldFlushCluster()) {
-            hitContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); hitContext.FlushCluster(); }
+    TStopwatch sw;
+    double totalTime = 0.0;
+    for (int idx = first; idx < last; ++idx) {
+        int evt = idx / numSpills;
+        long long spillID = evt * numSpills + (idx % numSpills);
+        auto hits = generateSOASpillHits(spillID, adjustedHits, rng);
+        auto wires = generateSOASpillWires(spillID, adjustedWires, roisPerWire, rng);
+        auto rois = flattenSOAROIs(wires);
+        auto baseWires = extractSOABaseWires(wires);
+        sw.Start();
+        hitsEntry.BindRawPtr(hitsToken, &hits);
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
         }
-        // Bind and fill wires
-        wireEntry.BindRawPtr(wireTokens.at("EventID"), &localEventID);
-        wireEntry.BindRawPtr(wireTokens.at("Wires"), &localWires);
-        ROOT::RNTupleFillStatus wireStatus;
-        wireContext.FillNoFlush(wireEntry, wireStatus);
-        if (wireStatus.ShouldFlushCluster()) {
-            wireContext.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); wireContext.FlushCluster(); }
+        wiresEntry.BindRawPtr(wiresToken, &baseWires);
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
         }
-        t.Stop();
+        roisEntry.BindRawPtr(roisToken, &rois);
+        ROOT::RNTupleFillStatus roisStatus;
+        roisContext.FillNoFlush(roisEntry, roisStatus);
+        if (roisStatus.ShouldFlushCluster()) {
+            roisContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
     }
-    return t.RealTime();
-} 
+    return totalTime;
+}
+
+// For topObject
+SOAHit generateSOATopHit(long long id, std::mt19937& rng) {
+    return generateSOASingleHit(id, rng);
+}
+
+SOAWire generateSOATopWire(long long id, int roisPerWire, std::mt19937& rng) {
+    return generateSOASingleWire(id, roisPerWire, rng);
+}
+
+double RunSOA_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto hitPtr = hitsEntry.GetPtr<SOAHit>("hit");
+    auto wirePtr = wiresEntry.GetPtr<SOAWire>("wire");
+    for (int idx = first; idx < last; ++idx) {
+        SOAHit hit = generateSOASingleHit(idx, rng);
+        SOAWire wire = generateSOASingleWire(idx, roisPerWire, rng);
+        sw.Start();
+        *hitPtr = hit;
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        *wirePtr = wire;
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    { std::lock_guard<std::mutex> lock(mutex);
+      hitsContext.FlushCluster();
+      wiresContext.FlushCluster(); }
+    return totalTime;
+}
+
+// Add RunSOA_topObject_perGroupWorkFunc similarly, with flattening ROIs to vector<SOAROI> per row (but since per wire, it's the vector in SOAWire; for perGroup, separate base wire and flattened ROIs with WireID).
+
+// For element
+double RunSOA_element_hitsWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto hitPtr = entry.GetPtr<SOAHit>("hit");
+    for (int idx = first; idx < last; ++idx) {
+        *hitPtr = generateSOASingleHit(idx, rng);
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+// Similarly for wires (SOAWireBase), rois (FlatSOAROI or SOAROI with WireID), and wire_roi (SOAWire for perDataProduct).
+
+// TopObject perGroup
+double RunSOA_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto hitPtr = hitsEntry.GetPtr<SOAHit>("hit");
+    auto wirePtr = wiresEntry.GetPtr<SOAWireBase>("wire");
+    auto roisPtr = roisEntry.GetPtr<std::vector<SOAROI>>("rois");
+    for (int idx = first; idx < last; ++idx) {
+        SOAHit hit = generateSOASingleHit(idx, rng);
+        SOAWire fullWire = generateSOASingleWire(idx, roisPerWire, rng);
+        SOAWireBase wireBase;
+        wireBase.EventID = fullWire.EventID;
+        wireBase.Channel = fullWire.Channel;
+        wireBase.View = fullWire.View;
+        auto rois = fullWire.ROIs;
+        sw.Start();
+        *hitPtr = hit;
+        ROOT::RNTupleFillStatus hitsStatus;
+        hitsContext.FillNoFlush(hitsEntry, hitsStatus);
+        if (hitsStatus.ShouldFlushCluster()) {
+            hitsContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); hitsContext.FlushCluster(); }
+        }
+        *wirePtr = wireBase;
+        ROOT::RNTupleFillStatus wiresStatus;
+        wiresContext.FillNoFlush(wiresEntry, wiresStatus);
+        if (wiresStatus.ShouldFlushCluster()) {
+            wiresContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
+        }
+        *roisPtr = rois;
+        ROOT::RNTupleFillStatus roisStatus;
+        roisContext.FillNoFlush(roisEntry, roisStatus);
+        if (roisStatus.ShouldFlushCluster()) {
+            roisContext.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); roisContext.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    { std::lock_guard<std::mutex> lock(mutex);
+      hitsContext.FlushCluster();
+      wiresContext.FlushCluster();
+      roisContext.FlushCluster(); }
+    return totalTime;
+}
+
+// Element work funcs
+double RunSOA_element_wireROIFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto wirePtr = entry.GetPtr<SOAWire>("wire_roi");
+    for (int idx = first; idx < last; ++idx) {
+        *wirePtr = generateSOASingleWire(idx, roisPerWire, rng);
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+double RunSOA_element_wiresWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto wirePtr = entry.GetPtr<SOAWireBase>("wire");
+    for (int idx = first; idx < last; ++idx) {
+        wirePtr->EventID = idx;
+        wirePtr->Channel = rng() % 1024;
+        wirePtr->View = rng() % 7;
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}
+
+double RunSOA_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire) {
+    std::mt19937 rng(seed);
+    TStopwatch sw;
+    double totalTime = 0.0;
+    auto roiPtr = entry.GetPtr<FlatSOAROI>("roi");
+    for (int idx = first; idx < last; ++idx) {
+        *roiPtr = generateSOASingleROI(idx / roisPerWire, rng);
+        sw.Start();
+        ROOT::RNTupleFillStatus status;
+        context.FillNoFlush(entry, status);
+        if (status.ShouldFlushCluster()) {
+            context.FlushColumns();
+            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        }
+        totalTime += sw.RealTime();
+    }
+    std::lock_guard<std::mutex> lock(mutex);
+    context.FlushCluster();
+    return totalTime;
+}

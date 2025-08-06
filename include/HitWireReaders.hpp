@@ -1,26 +1,18 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <utility>
-namespace ROOT  { class RNTupleReader; } 
-#include "Utils.hpp"
-
 #include "ReaderResult.hpp"
 
-std::vector<std::pair<std::size_t, std::size_t>> split_range_by_clusters(ROOT::RNTupleReader* reader, int nChunks);
+double readAOS_event_allDataProduct(const std::string& fileName);
+double readAOS_event_perDataProduct(const std::string& fileName);
+double readAOS_event_perGroup(const std::string& fileName);
+double readAOS_spill_allDataProduct(const std::string& fileName);
+double readAOS_spill_perDataProduct(const std::string& fileName);
+double readAOS_spill_perGroup(const std::string& fileName);
+double readAOS_topObject_perDataProduct(const std::string& fileName);
+double readAOS_topObject_perGroup(const std::string& fileName);
+double readAOS_element_perDataProduct(const std::string& fileName);
+double readAOS_element_perGroup(const std::string& fileName);
 
-std::vector<ReaderResult> in(int nThreads, int iter = 20);
-double read_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_VertiSplit_Hit_Wire_Vector(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_HoriSpill_Hit_Wire_Vector(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_VertiSplit_Hit_Wire_Individual(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_HoriSpill_Hit_Wire_Data_Individual(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_VertiSplit_Hit_Wire_Vector_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_VertiSplit_Hit_Wire_Individual_Dict(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_HoriSpill_Hit_Wire_Vector_Dict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_HoriSpill_Hit_Wire_Individual_Dict(int numEvents, int numSpils, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads);
-double read_Hit_Wire_Vector_Of_Individuals(int numEvents, int hitsPerEvent, int wiresPerEvent, const std::string& fileName, int nThreads); 
-
+std::vector<ReaderResult> updatedInAOS(int nThreads, int iter);
+std::vector<ReaderResult> updatedInSOA(int nThreads, int iter); 
