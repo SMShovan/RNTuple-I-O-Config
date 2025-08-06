@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  6 AUG 2025 15:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  6 AUG 2025 16:08
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1027,11 +1027,6 @@ LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
 (Font)              for symbol `textbraceleft' on input line 129.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 129--129
-\OT1/cmtt/m/n/10 // Columns: EventID[ ], fChannel[
- []
-
-
 
 
 Overfull \hbox (113.811pt too wide) has occurred while \output is active
@@ -1181,7 +1176,7 @@ Overfull \hbox (113.811pt too wide) in paragraph at lines 226--226
 [15
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 248--248
+Overfull \hbox (113.811pt too wide) in paragraph at lines 249--249
 [][]  
  []
 
@@ -1195,7 +1190,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [16
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 272--272
+Overfull \hbox (113.811pt too wide) in paragraph at lines 273--273
 [][]  
  []
 
@@ -1209,7 +1204,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [17
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 276--276
+Overfull \hbox (113.811pt too wide) in paragraph at lines 277--277
 [][]  
  []
 
@@ -1218,14 +1213,14 @@ Overfull \hbox (113.811pt too wide) in paragraph at lines 276--276
 [18
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 281--281
+Overfull \hbox (113.811pt too wide) in paragraph at lines 282--282
 [][]  
  []
 
 <Figures/Challenge.pdf, id=239, 437.71529pt x 202.8378pt>
 File: Figures/Challenge.pdf Graphic file (type pdf)
 <use Figures/Challenge.pdf>
-Package pdftex.def Info: Figures/Challenge.pdf  used on input line 281.
+Package pdftex.def Info: Figures/Challenge.pdf  used on input line 282.
 (pdftex.def)             Requested size: 358.50229pt x 166.13927pt.
 
 
@@ -1237,7 +1232,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [19
 
  <./Figures/Challenge.pdf>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 308--308
+Overfull \hbox (113.811pt too wide) in paragraph at lines 311--311
 [][]  
  []
 
@@ -1251,7 +1246,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [20
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 340--340
+Overfull \hbox (113.811pt too wide) in paragraph at lines 342--342
 [][]  
  []
 
@@ -1265,7 +1260,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [21
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 344--344
+Overfull \hbox (113.811pt too wide) in paragraph at lines 346--346
 [][]  
  []
 
@@ -1274,7 +1269,7 @@ Overfull \hbox (113.811pt too wide) in paragraph at lines 344--344
 [22
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 355--355
+Overfull \hbox (113.811pt too wide) in paragraph at lines 357--357
 [][]  
  []
 
@@ -1288,14 +1283,14 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [23
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 362--362
+Overfull \hbox (113.811pt too wide) in paragraph at lines 364--364
 [][]  
  []
 
 <../experiments/aos_write_times.pdf, id=276, 569.12625pt x 275.0275pt>
 File: ../experiments/aos_write_times.pdf Graphic file (type pdf)
 <use ../experiments/aos_write_times.pdf>
-Package pdftex.def Info: ../experiments/aos_write_times.pdf  used on input line 362.
+Package pdftex.def Info: ../experiments/aos_write_times.pdf  used on input line 364.
 (pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
 
 
@@ -1307,14 +1302,14 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [24
 
  <../experiments/aos_write_times.pdf, page is rotated 90 degrees>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 368--368
+Overfull \hbox (113.811pt too wide) in paragraph at lines 370--370
 [][]  
  []
 
 <../experiments/soa_write_times.pdf, id=326, 569.12625pt x 275.0275pt>
 File: ../experiments/soa_write_times.pdf Graphic file (type pdf)
 <use ../experiments/soa_write_times.pdf>
-Package pdftex.def Info: ../experiments/soa_write_times.pdf  used on input line 368.
+Package pdftex.def Info: ../experiments/soa_write_times.pdf  used on input line 370.
 (pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
 
 
@@ -1326,7 +1321,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [25
 
  <../experiments/soa_write_times.pdf, page is rotated 90 degrees>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 393--393
+Overfull \hbox (113.811pt too wide) in paragraph at lines 395--395
 [][]  
  []
 
@@ -1340,14 +1335,14 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [26
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 399--399
+Overfull \hbox (113.811pt too wide) in paragraph at lines 401--401
 [][]  
  []
 
 <../experiments/comparison_cold_times.pdf, id=384, 569.12625pt x 275.0275pt>
 File: ../experiments/comparison_cold_times.pdf Graphic file (type pdf)
 <use ../experiments/comparison_cold_times.pdf>
-Package pdftex.def Info: ../experiments/comparison_cold_times.pdf  used on input line 399.
+Package pdftex.def Info: ../experiments/comparison_cold_times.pdf  used on input line 401.
 (pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
 
 
@@ -1359,14 +1354,14 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [27
 
  <../experiments/comparison_cold_times.pdf, page is rotated 90 degrees>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 405--405
+Overfull \hbox (113.811pt too wide) in paragraph at lines 407--407
 [][]  
  []
 
 <../experiments/comparison_warm_times.pdf, id=433, 569.12625pt x 275.0275pt>
 File: ../experiments/comparison_warm_times.pdf Graphic file (type pdf)
 <use ../experiments/comparison_warm_times.pdf>
-Package pdftex.def Info: ../experiments/comparison_warm_times.pdf  used on input line 405.
+Package pdftex.def Info: ../experiments/comparison_warm_times.pdf  used on input line 407.
 (pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
 
 
@@ -1378,14 +1373,14 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [28
 
  <../experiments/comparison_warm_times.pdf, page is rotated 90 degrees>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 411--411
+Overfull \hbox (113.811pt too wide) in paragraph at lines 413--413
 [][]  
  []
 
 <../experiments/aos_file_sizes.pdf, id=482, 569.12625pt x 275.0275pt>
 File: ../experiments/aos_file_sizes.pdf Graphic file (type pdf)
 <use ../experiments/aos_file_sizes.pdf>
-Package pdftex.def Info: ../experiments/aos_file_sizes.pdf  used on input line 411.
+Package pdftex.def Info: ../experiments/aos_file_sizes.pdf  used on input line 413.
 (pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
 
 
@@ -1397,14 +1392,14 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [29
 
  <../experiments/aos_file_sizes.pdf, page is rotated 90 degrees>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 417--417
+Overfull \hbox (113.811pt too wide) in paragraph at lines 419--419
 [][]  
  []
 
 <../experiments/soa_file_sizes.pdf, id=532, 569.12625pt x 275.0275pt>
 File: ../experiments/soa_file_sizes.pdf Graphic file (type pdf)
 <use ../experiments/soa_file_sizes.pdf>
-Package pdftex.def Info: ../experiments/soa_file_sizes.pdf  used on input line 417.
+Package pdftex.def Info: ../experiments/soa_file_sizes.pdf  used on input line 419.
 (pdftex.def)             Requested size: 358.50229pt x 173.25145pt.
 
 
@@ -1416,12 +1411,12 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [30
 
  <../experiments/soa_file_sizes.pdf, page is rotated 90 degrees>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 446--446
+Overfull \hbox (113.811pt too wide) in paragraph at lines 448--448
 [][]  
  []
 
 
-Overfull \hbox (12.43137pt too wide) in paragraph at lines 446--446
+Overfull \hbox (12.43137pt too wide) in paragraph at lines 448--448
 [][]  
  []
 
@@ -1435,7 +1430,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [31
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 451--451
+Overfull \hbox (113.811pt too wide) in paragraph at lines 453--453
 [][]  
  []
 
@@ -1444,7 +1439,7 @@ Overfull \hbox (113.811pt too wide) in paragraph at lines 451--451
 [32
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 454--454
+Overfull \hbox (113.811pt too wide) in paragraph at lines 456--456
 [][]  
  []
 
@@ -1458,7 +1453,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [33
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 468--468
+Overfull \hbox (113.811pt too wide) in paragraph at lines 470--470
 [][]  
  []
 
@@ -1472,7 +1467,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [34
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 475--475
+Overfull \hbox (113.811pt too wide) in paragraph at lines 477--477
 [][]  
  []
 
@@ -1486,7 +1481,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [35
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 481--481
+Overfull \hbox (113.811pt too wide) in paragraph at lines 483--483
  [][] 
  []
 
@@ -1509,7 +1504,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 \tf@snm=\write9
 \openout9 = `presentation.snm'.
 
-runsystem(latexminted cleantemp  --timestamp 20250806152907 2486923A98E77FD0740381D01ACD1782)...executed safely (allowed).
+runsystem(latexminted cleantemp  --timestamp 20250806160837 2486923A98E77FD0740381D01ACD1782)...executed safely (allowed).
 
  (./presentation.aux)
  ***********
@@ -1532,7 +1527,7 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  128i,15n,123p,1993b,1034s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1095.pfb>
-Output written on presentation.pdf (36 pages, 422123 bytes).
+Output written on presentation.pdf (36 pages, 422046 bytes).
 PDF statistics:
  693 PDF objects out of 1000 (max. 8388607)
  430 compressed objects within 5 object streams
