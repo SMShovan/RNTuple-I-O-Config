@@ -41,7 +41,7 @@ double readAOS_event_allDataProduct(const std::string& fileName, int nThreads) {
     sw.Start();
     processNtuple<EventAOS>(fileName, "aos_events", "EventAOS", nThreads);
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_event_perDataProduct(const std::string& fileName, int nThreads) {
@@ -52,7 +52,7 @@ double readAOS_event_perDataProduct(const std::string& fileName, int nThreads) {
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_event_perGroup(const std::string& fileName, int nThreads) {
@@ -65,7 +65,7 @@ double readAOS_event_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_spill_allDataProduct(const std::string& fileName, int nThreads) {
@@ -73,7 +73,7 @@ double readAOS_spill_allDataProduct(const std::string& fileName, int nThreads) {
     sw.Start();
     processNtuple<EventAOS>(fileName, "aos_spills", "EventAOS", nThreads);
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_spill_perDataProduct(const std::string& fileName, int nThreads) {
@@ -84,7 +84,7 @@ double readAOS_spill_perDataProduct(const std::string& fileName, int nThreads) {
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_spill_perGroup(const std::string& fileName, int nThreads) {
@@ -97,7 +97,7 @@ double readAOS_spill_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_topObject_perDataProduct(const std::string& fileName, int nThreads) {
@@ -108,7 +108,7 @@ double readAOS_topObject_perDataProduct(const std::string& fileName, int nThread
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_topObject_perGroup(const std::string& fileName, int nThreads) {
@@ -121,7 +121,7 @@ double readAOS_topObject_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_element_perDataProduct(const std::string& fileName, int nThreads) {
@@ -132,7 +132,7 @@ double readAOS_element_perDataProduct(const std::string& fileName, int nThreads)
     hitsFuture.get();
     wireROIFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readAOS_element_perGroup(const std::string& fileName, int nThreads) {
@@ -145,7 +145,7 @@ double readAOS_element_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 // Define missing SOA structs
@@ -214,7 +214,7 @@ double readSOA_event_allDataProduct(const std::string& fileName, int nThreads) {
     sw.Start();
     processNtuple<EventSOA>(fileName, "soa_events", "EventSOA", nThreads);
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readSOA_event_perDataProduct(const std::string& fileName, int nThreads) {
@@ -225,7 +225,7 @@ double readSOA_event_perDataProduct(const std::string& fileName, int nThreads) {
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readSOA_event_perGroup(const std::string& fileName, int nThreads) {
@@ -238,7 +238,7 @@ double readSOA_event_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 // Group 2 readers
@@ -247,7 +247,7 @@ double readSOA_spill_allDataProduct(const std::string& fileName, int nThreads) {
     sw.Start();
     processNtuple<EventSOA>(fileName, "soa_spill_all", "EventSOA", nThreads);
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 // Define missing readers
@@ -259,7 +259,7 @@ double readSOA_spill_perDataProduct(const std::string& fileName, int nThreads) {
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readSOA_spill_perGroup(const std::string& fileName, int nThreads) {
@@ -272,7 +272,7 @@ double readSOA_spill_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 // Traverse already covers EventSOA, SOAHitVector, etc.
@@ -286,7 +286,7 @@ double readSOA_topObject_perDataProduct(const std::string& fileName, int nThread
     hitsFuture.get();
     wiresFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 // Add readSOA_topObject_perGroup with three futures.
@@ -318,7 +318,7 @@ double readSOA_element_perDataProduct(const std::string& fileName, int nThreads)
     hitsFuture.get();
     wireROIFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 // Add readSOA_element_perGroup with three futures for hit, wire, roi.
@@ -346,7 +346,7 @@ double readSOA_topObject_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
 double readSOA_element_perGroup(const std::string& fileName, int nThreads) {
@@ -360,22 +360,21 @@ double readSOA_element_perGroup(const std::string& fileName, int nThreads) {
     wiresFuture.get();
     roisFuture.get();
     sw.Stop();
-    return sw.RealTime() * 1000;
+    return sw.RealTime();
 }
 
-std::vector<ReaderResult> updatedIn(int nThreads, int iter) {
+std::vector<ReaderResult> updatedInAOS(int nThreads, int iter) {
     std::vector<ReaderResult> results;
     
     // Create progressive table printer
     ProgressiveTablePrinter<ReaderResult> tablePrinter(
-        "AOS/SOA Reader Benchmarks (Progressive Results)",
-        {"Reader", "Cold (ms)", "Warm Avg (ms)", "Warm StdDev (ms)"},
-        {32, 16, 16, 16}
+        "AOS Reader Benchmarks (Progressive Results)",
+        {"Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)", "Cold Itr 1", "Cold Itr 2", "Cold Itr 3"},
+        {32, 16, 16, 16, 12, 12, 12}
     );
     
     auto benchmark = [&](const std::string& label, auto readerFunc, const std::string& file) {
-        std::cout << "Running " << label << "..." << std::flush;
-        ReaderResult result = {label, 0.0, 0.0, 0.0, false, ""};
+        ReaderResult result = {label, 0.0, 0.0, 0.0, {}, {}, false, ""};
         
         try {
             std::vector<double> coldTimes, warmTimes;
@@ -392,15 +391,16 @@ std::vector<ReaderResult> updatedIn(int nThreads, int iter) {
             result.cold = coldAvg;
             result.warmAvg = warmAvg;
             result.warmStddev = warmStddev;
-            std::cout << " DONE" << std::endl;
+            result.coldTimes = coldTimes; // Store individual cold times
+            result.warmTimes = warmTimes; // Store individual warm times
         } catch (const std::exception& e) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = e.what();
-            std::cout << " FAILED" << std::endl;
         } catch (...) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = "Unknown error occurred";
-            std::cout << " FAILED" << std::endl;
         }
         
         results.push_back(result);
@@ -417,15 +417,15 @@ std::vector<ReaderResult> updatedIn(int nThreads, int iter) {
     benchmark("AOS_topObject_perGroup", readAOS_topObject_perGroup, kOutputDir + "/aos_topObject_perGroup.root");
     benchmark("AOS_element_perDataProduct", readAOS_element_perDataProduct, kOutputDir + "/aos_element_perData.root");
     benchmark("AOS_element_perGroup", readAOS_element_perGroup, kOutputDir + "/aos_element_perGroup.root");
-    benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
-    benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, kOutputDir + "/soa_event_perData.root");
-    benchmark("SOA_event_perGroup", readSOA_event_perGroup, kOutputDir + "/soa_event_perGroup.root");
-    benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
-    benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, kOutputDir + "/soa_spill_perData.root");
-    benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
-    benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
-    benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
-    benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
+    // benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
+    // benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, kOutputDir + "/soa_event_perData.root");
+    // benchmark("SOA_event_perGroup", readSOA_event_perGroup, kOutputDir + "/soa_event_perGroup.root");
+    // benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
+    // benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, kOutputDir + "/soa_spill_perData.root");
+    // benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
+    // benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
+    // benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
+    // benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
 
     tablePrinter.printFooter();
     return results;
@@ -437,13 +437,12 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
     // Create progressive table printer
     ProgressiveTablePrinter<ReaderResult> tablePrinter(
         "SOA Reader Benchmarks (Progressive Results)",
-        {"SOA Reader", "Cold (ms)", "Warm Avg (ms)", "Warm StdDev (ms)"},
-        {32, 16, 16, 16}
+        {"SOA Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)", "Cold Itr 1", "Cold Itr 2", "Cold Itr 3"},
+        {32, 16, 16, 16, 12, 12, 12}
     );
     
     auto benchmark = [&](const std::string& label, auto readerFunc, const std::string& file) {
-        std::cout << "Running " << label << "..." << std::flush;
-        ReaderResult result = {label, 0.0, 0.0, 0.0, false, ""};
+        ReaderResult result = {label, 0.0, 0.0, 0.0, {}, {}, false, ""};
         
         try {
             std::vector<double> coldTimes, warmTimes;
@@ -460,15 +459,16 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
             result.cold = coldAvg;
             result.warmAvg = warmAvg;
             result.warmStddev = warmStddev;
-            std::cout << " DONE" << std::endl;
+            result.coldTimes = coldTimes; // Store individual cold times
+            result.warmTimes = warmTimes; // Store individual warm times
         } catch (const std::exception& e) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = e.what();
-            std::cout << " FAILED" << std::endl;
         } catch (...) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = "Unknown error occurred";
-            std::cout << " FAILED" << std::endl;
         }
         
         results.push_back(result);

@@ -33,7 +33,7 @@ int main() {
     // Test WriterResult table with some failures
     ProgressiveTablePrinter<WriterResult> writerTable(
         "Writer Benchmarks with Error Handling Demo",
-        {"Writer", "Average (ms)", "StdDev (ms)"},
+        {"Writer", "Average (s)", "StdDev (s)"},
         {32, 16, 16}
     );
     

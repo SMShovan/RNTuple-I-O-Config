@@ -9,6 +9,8 @@ struct ReaderResult {
     double cold;
     double warmAvg;
     double warmStddev;
+    std::vector<double> coldTimes; // Store individual cold iteration times
+    std::vector<double> warmTimes; // Store individual warm iteration times
     bool failed = false;
     std::string errorMessage = "";
 };

@@ -8,6 +8,7 @@ struct WriterResult {
     std::string label;
     double avg;
     double stddev;
+    std::vector<double> iterationTimes; // Store individual iteration times
     bool failed = false;
     std::string errorMessage = "";
 };

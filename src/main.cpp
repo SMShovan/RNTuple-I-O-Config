@@ -27,7 +27,7 @@ int main() {
     gSystem->Load("libWireDict");
     
     // Add AOS visualization - use separate AOS-only functions
-    auto aos_writer_results = updatedOut(nThreads, 3);
+    auto aos_writer_results = updatedOutAOS(nThreads, 3);
     // Filter to get only AOS results
     std::vector<WriterResult> aos_only_writer_results;
     for (const auto& result : aos_writer_results) {
@@ -37,7 +37,7 @@ int main() {
     }
     visualize_aos_writer_results(aos_only_writer_results);
     
-    auto aos_reader_results = updatedIn(nThreads, 3);
+    auto aos_reader_results = updatedInAOS(nThreads, 3);
     // Filter to get only AOS results
     std::vector<ReaderResult> aos_only_reader_results;
     for (const auto& result : aos_reader_results) {

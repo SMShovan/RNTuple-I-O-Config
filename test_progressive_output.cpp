@@ -11,7 +11,7 @@ int main() {
     // Test WriterResult table with simulated benchmarks
     ProgressiveTablePrinter<WriterResult> writerTable(
         "Writer Benchmarks Demo (Progressive Results)",
-        {"Writer", "Average (ms)", "StdDev (ms)"},
+        {"Writer", "Average (s)", "StdDev (s)"},
         {32, 16, 16}
     );
     
@@ -35,7 +35,7 @@ int main() {
     // Test ReaderResult table
     ProgressiveTablePrinter<ReaderResult> readerTable(
         "Reader Benchmarks Demo (Progressive Results)",
-        {"Reader", "Cold (ms)", "Warm Avg (ms)", "Warm StdDev (ms)"},
+        {"Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)"},
         {32, 16, 16, 16}
     );
     

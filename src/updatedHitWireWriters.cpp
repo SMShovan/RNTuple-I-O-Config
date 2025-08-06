@@ -83,7 +83,7 @@ double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
 
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
 
     auto [model, token] = CreateAOSAllDataProductModelAndToken();
     auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_events", *file, options);
@@ -102,7 +102,7 @@ double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
     };
 
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // Implementation for perDataProduct
@@ -112,7 +112,7 @@ double AOS_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateAOSHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateAOSWiresModelAndToken();
@@ -131,7 +131,7 @@ double AOS_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
         return RunAOS_event_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // Implementation for perGroup (similar, with added rois writer)
@@ -141,7 +141,7 @@ double AOS_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, in
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateAOSHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateAOSBaseWiresModelAndToken();
@@ -166,7 +166,7 @@ double AOS_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, in
         return RunAOS_event_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // SOA_event_allDataProduct
@@ -176,7 +176,7 @@ double SOA_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [model, token] = CreateSOAAllDataProductModelAndToken();
     auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "soa_events", *file, options);
     std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
@@ -189,7 +189,7 @@ double SOA_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
         return RunSOA_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // SOA_event_perDataProduct
@@ -199,7 +199,7 @@ double SOA_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateSOAWiresModelAndToken();
@@ -218,7 +218,7 @@ double SOA_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
         return RunSOA_event_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // SOA_event_perGroup
@@ -228,7 +228,7 @@ double SOA_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, in
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateSOABaseWiresModelAndToken();
@@ -253,7 +253,7 @@ double SOA_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, in
         return RunSOA_event_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // Add any shared helpers here, e.g., executeInParallel from existing code (duplicated to avoid changes)
@@ -267,7 +267,7 @@ double AOS_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [model, token] = CreateAOSAllDataProductModelAndToken();
     auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_spills", *file, options);
     std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
@@ -280,7 +280,7 @@ double AOS_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
         return RunAOS_spill_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // Similarly implement AOS_spill_perDataProduct and AOS_spill_perGroup 
@@ -294,7 +294,7 @@ double AOS_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateAOSHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_spill_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateAOSWiresModelAndToken();
@@ -313,7 +313,7 @@ double AOS_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
         return RunAOS_spill_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -325,7 +325,7 @@ double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateAOSHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_spill_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateAOSBaseWiresModelAndToken();
@@ -350,7 +350,7 @@ double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
         return RunAOS_spill_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 } 
 
 
@@ -361,7 +361,7 @@ double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<HitIndividual>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_top_hits", *file, options);
@@ -380,7 +380,7 @@ double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
         return RunAOS_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 
@@ -391,7 +391,7 @@ double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<HitIndividual>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "aos_top_hits", *file, options);
@@ -415,7 +415,7 @@ double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
         return RunAOS_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 } 
 
 double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -424,7 +424,7 @@ double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
 
     // Hits model and writer
     auto hitsModel = ROOT::RNTupleModel::Create();
@@ -459,7 +459,7 @@ double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
                                                              mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -468,7 +468,7 @@ double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
 
     // Hits model and writer (single HitIndividual per row)
     auto hitsModel = ROOT::RNTupleModel::Create();
@@ -507,10 +507,10 @@ double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
                                                        mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 } 
 
-std::vector<WriterResult> updatedOut(int nThreads, int iter) {
+std::vector<WriterResult> updatedOutAOS(int nThreads, int iter) {
     int numEvents = 1000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 100;
@@ -520,14 +520,13 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     
     // Create progressive table printer
     ProgressiveTablePrinter<WriterResult> tablePrinter(
-        "AOS/SOA Writer Benchmarks (Progressive Results)",
-        {"Writer", "Average (ms)", "StdDev (ms)"},
-        {32, 16, 16}
+        "AOS Writer Benchmarks (Progressive Results)",
+        {"Writer", "Average (s)", "StdDev (s)", "Itr 1 (s)", "Itr 2 (s)", "Itr 3 (s)"},
+        {32, 16, 16, 12, 12, 12}
     );
     
     auto benchmark = [&](const std::string& label, auto func, auto&&... args) {
-        std::cout << "Running " << label << "..." << std::flush;
-        WriterResult result = {label, 0.0, 0.0, false, ""};
+        WriterResult result = {label, 0.0, 0.0, {}, false, ""};
         
         try {
             std::vector<double> times;
@@ -540,15 +539,15 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
             double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
             result.avg = avg;
             result.stddev = stddev;
-            std::cout << " DONE" << std::endl;
+            result.iterationTimes = times; // Store individual iteration times
         } catch (const std::exception& e) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = e.what();
-            std::cout << " FAILED" << std::endl;
         } catch (...) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = "Unknown error occurred";
-            std::cout << " FAILED" << std::endl;
         }
         
         results.push_back(result);
@@ -557,9 +556,9 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_all.root", nThreads);
     benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perData.root", nThreads);
     benchmark("AOS_event_perGroup", AOS_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perGroup.root", nThreads);
-    benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
-    benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
-    benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perGroup.root", nThreads);
+    //benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
+    //benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
+    //benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perGroup.root", nThreads);
     benchmark("AOS_spill_allDataProduct", AOS_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_all.root", nThreads);
     benchmark("AOS_spill_perDataProduct", AOS_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_perData.root", nThreads);
     benchmark("AOS_spill_perGroup", AOS_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_perGroup.root", nThreads);
@@ -567,13 +566,13 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_topObject_perGroup.root", nThreads);
     benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_element_perData.root", nThreads);
     benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_element_perGroup.root", nThreads);
-    benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_all.root", nThreads);
-    benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perData.root", nThreads);
-    benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perGroup.root", nThreads);
-    benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
-    benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
-    benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
-    benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
+    //benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_all.root", nThreads);
+    //benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perData.root", nThreads);
+    //benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perGroup.root", nThreads);
+    //benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
+    //benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
+    //benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
+    //benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;
@@ -584,7 +583,7 @@ std::map<std::string, std::vector<std::pair<int, double>>> benchmarkAOSScaling(i
     std::map<std::string, std::vector<std::pair<int, double>>> data;
     for (int threads : threadCounts) {
         ROOT::EnableImplicitMT(threads);
-        auto results = updatedOut(threads, iter);
+        auto results = updatedOutAOS(threads, iter);
         for (const auto& res : results) {
             data[res.label].emplace_back(threads, res.avg);
         }
@@ -603,7 +602,7 @@ double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_spill_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateSOAWiresModelAndToken();
@@ -622,7 +621,7 @@ double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
         return RunSOA_spill_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -634,7 +633,7 @@ double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [hitsModel, hitsToken] = CreateSOAHitsModelAndToken();
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_spill_hits", *file, options);
     auto [wiresModel, wiresToken] = CreateSOABaseWiresModelAndToken();
@@ -655,7 +654,7 @@ double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
         return RunSOA_spill_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], hitsToken, *wiresContexts[th], *wiresEntries[th], wiresToken, *roisContexts[th], *roisEntries[th], roisToken, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // Group 3: Complete topObject perGroup
@@ -666,7 +665,7 @@ double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<SOAHit>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_top_hits", *file, options);
@@ -690,7 +689,7 @@ double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
         return RunSOA_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 // Group 4: Complete element perData and perGroup
@@ -700,7 +699,7 @@ double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<SOAHit>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_element_hits", *file, options);
@@ -724,7 +723,7 @@ double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
                                                              mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -733,7 +732,7 @@ double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<SOAHit>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_element_hits", *file, options);
@@ -765,7 +764,7 @@ double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
             mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 } 
 
 double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -777,7 +776,7 @@ double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto [model, token] = CreateSOAAllDataProductModelAndToken();
     auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "soa_spill_all", *file, options);
     std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
@@ -790,7 +789,7 @@ double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
         return RunSOA_spill_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, numSpills, adjustedHits, adjustedWires, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 }
 
 double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -800,7 +799,7 @@ double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
     options.SetUseBufferedWrite(true);
-    options.SetApproxZippedClusterSize(2 * 1024 * 1024);
+    
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<SOAHit>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_top_hits", *file, options);
@@ -821,7 +820,7 @@ double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
         return RunSOA_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
-    return totalTime * 1000;
+    return totalTime;
 } 
 
 std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
@@ -835,13 +834,12 @@ std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
     // Create progressive table printer
     ProgressiveTablePrinter<WriterResult> tablePrinter(
         "SOA Writer Benchmarks (Progressive Results)",
-        {"SOA Writer", "Average (ms)", "StdDev (ms)"},
-        {32, 16, 16}
+        {"SOA Writer", "Average (s)", "StdDev (s)", "Itr 1 (s)", "Itr 2 (s)", "Itr 3 (s)"},
+        {32, 16, 16, 12, 12, 12}
     );
     
     auto benchmark = [&](const std::string& label, auto func, auto&&... args) {
-        std::cout << "Running " << label << "..." << std::flush;
-        WriterResult result = {label, 0.0, 0.0, false, ""};
+        WriterResult result = {label, 0.0, 0.0, {}, false, ""};
         
         try {
             std::vector<double> times;
@@ -854,15 +852,15 @@ std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
             double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
             result.avg = avg;
             result.stddev = stddev;
-            std::cout << " DONE" << std::endl;
+            result.iterationTimes = times; // Store individual iteration times
         } catch (const std::exception& e) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = e.what();
-            std::cout << " FAILED" << std::endl;
         } catch (...) {
+            std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
             result.errorMessage = "Unknown error occurred";
-            std::cout << " FAILED" << std::endl;
         }
         
         results.push_back(result);

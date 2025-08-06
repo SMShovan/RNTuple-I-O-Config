@@ -86,7 +86,7 @@ void visualize_aos_writer_results(const std::vector<WriterResult>& results) {
     auto sortedResults = sortWriterResults(results);
 
     // Write times bar plot with error bars
-    auto hWrite = make_unique<TH1F>("hWriteAOS", "AOS Write Times;;Time (ms)", sortedResults.size(), 0, sortedResults.size());
+    auto hWrite = make_unique<TH1F>("hWriteAOS", "AOS Write Times;;Time (s)", sortedResults.size(), 0, sortedResults.size());
     hWrite->SetFillColor(kRed - 2); // Red color for AOS
     hWrite->SetStats(0);
     hWrite->SetBarWidth(0.6);
@@ -129,7 +129,7 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
     auto sortedResults = sortReaderResults(results);
 
     // Cold times bar plot
-    auto hCold = make_unique<TH1F>("hColdAOS", "AOS Cold Read Times;;Time (ms)", sortedResults.size(), 0, sortedResults.size());
+    auto hCold = make_unique<TH1F>("hColdAOS", "AOS Cold Read Times;;Time (s)", sortedResults.size(), 0, sortedResults.size());
     hCold->SetFillColor(kRed - 2); // Red color for AOS
     hCold->SetStats(0);
     hCold->SetBarWidth(0.6);
@@ -163,7 +163,7 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
     cCold->SaveAs("../experiments/aos_cold_times.pdf");
 
     // Warm times bar plot with error bars
-    auto hWarm = make_unique<TH1F>("hWarmAOS", "AOS Warm Read Times;;Time (ms)", sortedResults.size(), 0, sortedResults.size());
+    auto hWarm = make_unique<TH1F>("hWarmAOS", "AOS Warm Read Times;;Time (s)", sortedResults.size(), 0, sortedResults.size());
     hWarm->SetFillColor(kRed - 2); // Red color for AOS
     hWarm->SetStats(0);
     hWarm->SetBarWidth(0.6);
@@ -268,7 +268,7 @@ void visualize_aos_scaling(const std::map<std::string, std::vector<std::pair<int
         }
         graph->SetTitle(("AOS " + label).c_str());
         graph->GetXaxis()->SetTitle("Number of Threads");
-        graph->GetYaxis()->SetTitle("Average Time (ms)");
+        graph->GetYaxis()->SetTitle("Average Time (s)");
         graph->Draw("ALP");
         graph->SetMarkerStyle(20);
         graph->SetLineWidth(2);
@@ -289,7 +289,7 @@ void visualize_soa_writer_results(const std::vector<WriterResult>& results) {
     auto sortedResults = sortWriterResults(results);
 
     // Write times bar plot with error bars
-    auto hWrite = make_unique<TH1F>("hWriteSOA", "SOA Write Times;;Time (ms)", sortedResults.size(), 0, sortedResults.size());
+    auto hWrite = make_unique<TH1F>("hWriteSOA", "SOA Write Times;;Time (s)", sortedResults.size(), 0, sortedResults.size());
     hWrite->SetFillColor(kBlue - 2); // Blue color for SOA
     hWrite->SetStats(0);
     hWrite->SetBarWidth(0.6);
@@ -332,7 +332,7 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
     auto sortedResults = sortReaderResults(results);
 
     // Cold times bar plot
-    auto hCold = make_unique<TH1F>("hColdSOA", "SOA Cold Read Times;;Time (ms)", sortedResults.size(), 0, sortedResults.size());
+    auto hCold = make_unique<TH1F>("hColdSOA", "SOA Cold Read Times;;Time (s)", sortedResults.size(), 0, sortedResults.size());
     hCold->SetFillColor(kBlue - 2); // Blue color for SOA
     hCold->SetStats(0);
     hCold->SetBarWidth(0.6);
@@ -366,7 +366,7 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
     cCold->SaveAs("../experiments/soa_cold_times.pdf");
 
     // Warm times bar plot with error bars
-    auto hWarm = make_unique<TH1F>("hWarmSOA", "SOA Warm Read Times;;Time (ms)", sortedResults.size(), 0, sortedResults.size());
+    auto hWarm = make_unique<TH1F>("hWarmSOA", "SOA Warm Read Times;;Time (s)", sortedResults.size(), 0, sortedResults.size());
     hWarm->SetFillColor(kBlue - 2); // Blue color for SOA
     hWarm->SetStats(0);
     hWarm->SetBarWidth(0.6);
@@ -471,7 +471,7 @@ void visualize_soa_scaling(const std::map<std::string, std::vector<std::pair<int
         }
         graph->SetTitle(("SOA " + label).c_str());
         graph->GetXaxis()->SetTitle("Number of Threads");
-        graph->GetYaxis()->SetTitle("Average Time (ms)");
+        graph->GetYaxis()->SetTitle("Average Time (s)");
         graph->Draw("ALP");
         graph->SetMarkerStyle(20);
         graph->SetLineWidth(2);
@@ -493,7 +493,7 @@ void visualize_comparison_writer_results(const std::vector<WriterResult>& aosRes
     auto sortedSoaResults = sortWriterResults(soaResults);
 
     // Create comparison plot
-    auto hWrite = make_unique<TH1F>("hWriteComp", "AOS vs SOA Write Times;;Time (ms)", sortedAosResults.size(), 0, sortedAosResults.size());
+    auto hWrite = make_unique<TH1F>("hWriteComp", "AOS vs SOA Write Times;;Time (s)", sortedAosResults.size(), 0, sortedAosResults.size());
     hWrite->SetStats(0);
     hWrite->SetBarWidth(0.35);
     hWrite->SetBarOffset(0.1);
@@ -549,7 +549,7 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
     auto sortedSoaResults = sortReaderResults(soaResults);
 
     // Cold times comparison
-    auto hCold = make_unique<TH1F>("hColdComp", "AOS vs SOA Cold Read Times;;Time (ms)", sortedAosResults.size(), 0, sortedAosResults.size());
+    auto hCold = make_unique<TH1F>("hColdComp", "AOS vs SOA Cold Read Times;;Time (s)", sortedAosResults.size(), 0, sortedAosResults.size());
     hCold->SetStats(0);
     hCold->SetBarWidth(0.35);
     hCold->SetBarOffset(0.1);
@@ -591,7 +591,7 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
     cCold->SaveAs("../experiments/comparison_cold_times.pdf");
 
     // Warm times comparison
-    auto hWarm = make_unique<TH1F>("hWarmComp", "AOS vs SOA Warm Read Times;;Time (ms)", sortedAosResults.size(), 0, sortedAosResults.size());
+    auto hWarm = make_unique<TH1F>("hWarmComp", "AOS vs SOA Warm Read Times;;Time (s)", sortedAosResults.size(), 0, sortedAosResults.size());
     hWarm->SetStats(0);
     hWarm->SetBarWidth(0.35);
     hWarm->SetBarOffset(0.1);

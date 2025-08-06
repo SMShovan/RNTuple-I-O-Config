@@ -11,9 +11,23 @@ void ProgressiveTablePrinter<WriterResult>::printRow(const WriterResult& result)
     if (result.failed) {
         std::cout << std::setw(columnWidths[1]) << "FAILED"
                   << std::setw(columnWidths[2]) << "-";
+        // Fill remaining columns with "-" if there are iteration columns
+        for (size_t i = 3; i < columnWidths.size(); ++i) {
+            std::cout << std::setw(columnWidths[i]) << "-";
+        }
     } else {
         std::cout << std::setw(columnWidths[1]) << result.avg
                   << std::setw(columnWidths[2]) << result.stddev;
+        
+        // Print individual iteration times if available
+        for (size_t i = 0; i < result.iterationTimes.size() && i + 3 < columnWidths.size(); ++i) {
+            std::cout << std::setw(columnWidths[i + 3]) << result.iterationTimes[i];
+        }
+        
+        // Fill remaining columns with "-" if we have fewer iterations than columns
+        for (size_t i = result.iterationTimes.size() + 3; i < columnWidths.size(); ++i) {
+            std::cout << std::setw(columnWidths[i]) << "-";
+        }
     }
     std::cout << std::endl;
     
@@ -34,6 +48,10 @@ void ProgressiveTablePrinter<ReaderResult>::printRow(const ReaderResult& result)
         std::cout << std::setw(columnWidths[1]) << "FAILED"
                   << std::setw(columnWidths[2]) << "-"
                   << std::setw(columnWidths[3]) << "-";
+        // Fill remaining columns with "-" if there are iteration columns
+        for (size_t i = 4; i < columnWidths.size(); ++i) {
+            std::cout << std::setw(columnWidths[i]) << "-";
+        }
     } else {
         std::cout << std::setw(columnWidths[1]) << result.cold;
         if (result.warmAvg > 0) {
@@ -42,6 +60,17 @@ void ProgressiveTablePrinter<ReaderResult>::printRow(const ReaderResult& result)
         } else {
             std::cout << std::setw(columnWidths[2]) << "-"
                       << std::setw(columnWidths[3]) << "-";
+        }
+        
+        // Print individual iteration times if available
+        // For reader results, we'll display cold times first
+        for (size_t i = 0; i < result.coldTimes.size() && i + 4 < columnWidths.size(); ++i) {
+            std::cout << std::setw(columnWidths[i + 4]) << result.coldTimes[i];
+        }
+        
+        // Fill remaining columns with "-" if we have fewer iterations than columns
+        for (size_t i = result.coldTimes.size() + 4; i < columnWidths.size(); ++i) {
+            std::cout << std::setw(columnWidths[i]) << "-";
         }
     }
     std::cout << std::endl;
