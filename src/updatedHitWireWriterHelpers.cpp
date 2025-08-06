@@ -377,6 +377,7 @@ double RunAOS_element_hitsWorkFunc(int first, int last, unsigned seed, ROOT::Exp
 double RunAOS_element_wireROIWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire) {
     std::mt19937 rng(seed);
     TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     double totalTime = 0.0;
     auto wroiPtr = entry.GetPtr<WireROI>("wire_roi");
     for (int idx = first; idx < last; ++idx) {
@@ -385,7 +386,7 @@ double RunAOS_element_wireROIWorkFunc(int first, int last, unsigned seed, ROOT::
         wroiPtr->fWire_View = rng() % 7;
         wroiPtr->roi.offset = rng() % 500;
         wroiPtr->roi.data.resize(10);
-        for (auto& val : wroiPtr->roi.data) val = static_cast<float>(rng() % 100);
+        for (auto& val : wroiPtr->roi.data) val = distADC(rng);
         sw.Start();
         context.Fill(entry);
         totalTime += sw.RealTime();
@@ -416,13 +417,14 @@ double RunAOS_element_wiresWorkFunc(int first, int last, unsigned seed, ROOT::Ex
 double RunAOS_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire) {
     std::mt19937 rng(seed);
     TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     double totalTime = 0.0;
     auto roiPtr = entry.GetPtr<FlatROI>("roi");
     for (int idx = first; idx < last; ++idx) {
         roiPtr->WireID = idx / roisPerWire;
         roiPtr->offset = rng() % 500;
         roiPtr->data.resize(10);
-        for (auto& val : roiPtr->data) val = static_cast<float>(rng() % 100);
+        for (auto& val : roiPtr->data) val = distADC(rng);
         sw.Start();
         context.Fill(entry);
         totalTime += sw.RealTime();
@@ -439,6 +441,7 @@ double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
     std::mt19937 rng(seed);
     TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     double totalTime = 0.0;
 
     auto hitPtr   = hitsEntry.GetPtr<HitIndividual>("hit");
@@ -461,7 +464,7 @@ double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
                 wroiPtr->fWire_View    = rng() % 7;
                 wroiPtr->roi.offset    = rng() % 500;
                 wroiPtr->roi.data.resize(10);
-                for (auto& val : wroiPtr->roi.data) val = static_cast<float>(rng() % 100);
+                for (auto& val : wroiPtr->roi.data) val = distADC(rng);
                 sw.Start();
                 wireROIContext.Fill(wireROIEntry);
                 totalTime += sw.RealTime();
@@ -531,6 +534,7 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
     std::mt19937 rng(seed);
     TStopwatch sw;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     double totalTime = 0.0;
 
     auto hitPtr  = hitsEntry.GetPtr<HitIndividual>("hit");
@@ -565,7 +569,7 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
                 roiPtr->WireID = w;
                 roiPtr->offset = rng() % 500;
                 roiPtr->data.resize(10);
-                for (auto& val : roiPtr->data) val = static_cast<float>(rng() % 100);
+                for (auto& val : roiPtr->data) val = distADC(rng);
                 sw.Start();
                 ROOT::RNTupleFillStatus roiStatus;
                 roisContext.FillNoFlush(roisEntry, roiStatus);
@@ -910,9 +914,10 @@ SOAWire generateSOASingleWire(long long id, int roisPerWire, std::mt19937& rng) 
 
 FlatSOAROI generateSOASingleROI(unsigned int wireID, std::mt19937& rng) {
     FlatSOAROI roi;
+    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     roi.WireID = wireID;
     roi.data.resize(10);
-    for (auto& val : roi.data) val = static_cast<float>(rng() % 100);
+    for (auto& val : roi.data) val = distADC(rng);
     return roi;
 }
 
