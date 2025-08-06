@@ -9,6 +9,8 @@ struct ReaderResult {
     double cold;
     double warmAvg;
     double warmStddev;
+    bool failed = false;
+    std::string errorMessage = "";
 };
 
 std::vector<ReaderResult> in(int nThreads, int iter);

@@ -18,8 +18,10 @@
 #include <iomanip>
 #include <map>
 #include <utility>
-#include <functional>
+#include "ProgressiveTablePrinter.hpp"
 #include "WriterResult.hpp"
+#include <functional>
+#include <exception>
 #include <TROOT.h>
 
 // Add forward declarations
@@ -515,16 +517,42 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     int roisPerWire = 10;
     int numSpills = 10;
     std::vector<WriterResult> results;
+    
+    // Create progressive table printer
+    ProgressiveTablePrinter<WriterResult> tablePrinter(
+        "AOS/SOA Writer Benchmarks (Progressive Results)",
+        {"Writer", "Average (ms)", "StdDev (ms)"},
+        {32, 16, 16}
+    );
+    
     auto benchmark = [&](const std::string& label, auto func, auto&&... args) {
-        std::vector<double> times;
-        for (int i = 0; i < iter; ++i) {
-            double t = func(args...);
-            times.push_back(t);
+        std::cout << "Running " << label << "..." << std::flush;
+        WriterResult result = {label, 0.0, 0.0, false, ""};
+        
+        try {
+            std::vector<double> times;
+            for (int i = 0; i < iter; ++i) {
+                double t = func(args...);
+                times.push_back(t);
+            }
+            double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+            double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
+            double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
+            result.avg = avg;
+            result.stddev = stddev;
+            std::cout << " DONE" << std::endl;
+        } catch (const std::exception& e) {
+            result.failed = true;
+            result.errorMessage = e.what();
+            std::cout << " FAILED" << std::endl;
+        } catch (...) {
+            result.failed = true;
+            result.errorMessage = "Unknown error occurred";
+            std::cout << " FAILED" << std::endl;
         }
-        double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
-        double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-        double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
-        results.push_back({label, avg, stddev});
+        
+        results.push_back(result);
+        tablePrinter.addRow(result);
     };
     benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_all.root", nThreads);
     benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perData.root", nThreads);
@@ -547,10 +575,7 @@ std::vector<WriterResult> updatedOut(int nThreads, int iter) {
     benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
     benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
 
-    std::cout << std::left << std::setw(32) << "Writer" << std::setw(16) << "Average (ms)" << std::setw(16) << "StdDev (ms)" << std::endl;
-    for (const auto& res : results) {
-        std::cout << std::left << std::setw(32) << res.label << std::setw(16) << res.avg << std::setw(16) << res.stddev << std::endl;
-    }
+    tablePrinter.printFooter();
     return results;
 } 
 
@@ -806,16 +831,42 @@ std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
     int roisPerWire = 10;
     int numSpills = 10;
     std::vector<WriterResult> results;
+    
+    // Create progressive table printer
+    ProgressiveTablePrinter<WriterResult> tablePrinter(
+        "SOA Writer Benchmarks (Progressive Results)",
+        {"SOA Writer", "Average (ms)", "StdDev (ms)"},
+        {32, 16, 16}
+    );
+    
     auto benchmark = [&](const std::string& label, auto func, auto&&... args) {
-        std::vector<double> times;
-        for (int i = 0; i < iter; ++i) {
-            double t = func(args...);
-            times.push_back(t);
+        std::cout << "Running " << label << "..." << std::flush;
+        WriterResult result = {label, 0.0, 0.0, false, ""};
+        
+        try {
+            std::vector<double> times;
+            for (int i = 0; i < iter; ++i) {
+                double t = func(args...);
+                times.push_back(t);
+            }
+            double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+            double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
+            double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
+            result.avg = avg;
+            result.stddev = stddev;
+            std::cout << " DONE" << std::endl;
+        } catch (const std::exception& e) {
+            result.failed = true;
+            result.errorMessage = e.what();
+            std::cout << " FAILED" << std::endl;
+        } catch (...) {
+            result.failed = true;
+            result.errorMessage = "Unknown error occurred";
+            std::cout << " FAILED" << std::endl;
         }
-        double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
-        double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-        double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
-        results.push_back({label, avg, stddev});
+        
+        results.push_back(result);
+        tablePrinter.addRow(result);
     };
     benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
     benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
@@ -828,9 +879,6 @@ std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
     benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
     benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
 
-    std::cout << std::left << std::setw(32) << "SOA Writer" << std::setw(16) << "Average (ms)" << std::setw(16) << "StdDev (ms)" << std::endl;
-    for (const auto& res : results) {
-        std::cout << std::left << std::setw(32) << res.label << std::setw(16) << res.avg << std::setw(16) << res.stddev << std::endl;
-    }
+    tablePrinter.printFooter();
     return results;
 } 

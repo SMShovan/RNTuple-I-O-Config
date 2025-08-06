@@ -56,6 +56,7 @@ add_executable(hitwire
     src/updatedHitWireReaders.cpp
     src/updatedHitWireWriterHelpers.cpp
     src/updatedVisualization.cpp
+    src/ProgressiveTablePrinter.cpp
 )
 
 target_compile_options(hitwire PRIVATE ${ROOT_CFLAGS})

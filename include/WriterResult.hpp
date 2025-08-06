@@ -8,6 +8,8 @@ struct WriterResult {
     std::string label;
     double avg;
     double stddev;
+    bool failed = false;
+    std::string errorMessage = "";
 };
 
 #endif 
