@@ -77,7 +77,7 @@ static double executeInParallel(int totalEvents, int nThreads, const std::functi
 
 // One-pass implementation with single EventAOS ntuple (matches reader expectations)
 double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
 
@@ -107,7 +107,7 @@ double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
 
 // Implementation for perDataProduct
 double AOS_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -136,7 +136,7 @@ double AOS_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
 
 // Implementation for perGroup (similar, with added rois writer)
 double AOS_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -171,7 +171,7 @@ double AOS_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, in
 
 // SOA_event_allDataProduct
 double SOA_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -194,7 +194,7 @@ double SOA_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
 
 // SOA_event_perDataProduct
 double SOA_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -223,7 +223,7 @@ double SOA_event_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
 
 // SOA_event_perGroup
 double SOA_event_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -262,7 +262,7 @@ double AOS_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
     int totalEntries = numEvents * numSpills;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -289,7 +289,7 @@ double AOS_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
     int totalEntries = numEvents * numSpills;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -320,7 +320,7 @@ double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
     int totalEntries = numEvents * numSpills;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -356,7 +356,7 @@ double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
 
 double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int totalEntries = numEvents * hitsPerEvent;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -386,7 +386,7 @@ double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
 
 double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int totalEntries = numEvents * hitsPerEvent;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -419,7 +419,7 @@ double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
 } 
 
 double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -463,7 +463,7 @@ double AOS_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
 }
 
 double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -553,26 +553,26 @@ std::vector<WriterResult> updatedOutAOS(int nThreads, int iter) {
         results.push_back(result);
         tablePrinter.addRow(result);
     };
-    benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_all.root", nThreads);
-    benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perData.root", nThreads);
-    benchmark("AOS_event_perGroup", AOS_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_event_perGroup.root", nThreads);
-    //benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
-    //benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
-    //benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perGroup.root", nThreads);
-    benchmark("AOS_spill_allDataProduct", AOS_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_all.root", nThreads);
-    benchmark("AOS_spill_perDataProduct", AOS_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_perData.root", nThreads);
-    benchmark("AOS_spill_perGroup", AOS_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_spill_perGroup.root", nThreads);
-    benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_topObject_perData.root", nThreads);
-    benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_topObject_perGroup.root", nThreads);
-    benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_element_perData.root", nThreads);
-    benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/aos_element_perGroup.root", nThreads);
-    //benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_all.root", nThreads);
-    //benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perData.root", nThreads);
-    //benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perGroup.root", nThreads);
-    //benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
-    //benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
-    //benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
-    //benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
+    benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_all.root", nThreads);
+    benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_perData.root", nThreads);
+    benchmark("AOS_event_perGroup", AOS_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_perGroup.root", nThreads);
+    //benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_all.root", nThreads);
+    //benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perData.root", nThreads);
+    //benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perGroup.root", nThreads);
+    benchmark("AOS_spill_allDataProduct", AOS_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_all.root", nThreads);
+    benchmark("AOS_spill_perDataProduct", AOS_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_perData.root", nThreads);
+    benchmark("AOS_spill_perGroup", AOS_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_perGroup.root", nThreads);
+    benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_topObject_perData.root", nThreads);
+    benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_topObject_perGroup.root", nThreads);
+    benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_element_perData.root", nThreads);
+    benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_element_perGroup.root", nThreads);
+    //benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_all.root", nThreads);
+    //benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perData.root", nThreads);
+    //benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perGroup.root", nThreads);
+    //benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perData.root", nThreads);
+    //benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perGroup.root", nThreads);
+    //benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perData.root", nThreads);
+    //benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;
@@ -597,7 +597,7 @@ double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
     int totalEntries = numEvents * numSpills;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -628,7 +628,7 @@ double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
     int totalEntries = numEvents * numSpills;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -660,7 +660,7 @@ double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
 // Group 3: Complete topObject perGroup
 double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int totalEntries = numEvents * hitsPerEvent;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -694,7 +694,7 @@ double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
 
 // Group 4: Complete element perData and perGroup
 double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -727,7 +727,7 @@ double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
 }
 
 double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -771,7 +771,7 @@ double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
     int totalEntries = numEvents * numSpills;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -794,7 +794,7 @@ double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
 
 double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int totalEntries = numEvents * hitsPerEvent;
-    std::filesystem::create_directories("./output");
+    std::filesystem::create_directories("/scratch/smshovan/output2");
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -866,16 +866,16 @@ std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
         results.push_back(result);
         tablePrinter.addRow(result);
     };
-    benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_all.root", nThreads);
-    benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perData.root", nThreads);
-    benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_event_perGroup.root", nThreads);
-    benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_all.root", nThreads);
-    benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perData.root", nThreads);
-    benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_spill_perGroup.root", nThreads);
-    benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perData.root", nThreads);
-    benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_topObject_perGroup.root", nThreads);
-    benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perData.root", nThreads);
-    benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "./output/soa_element_perGroup.root", nThreads);
+    benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_all.root", nThreads);
+    benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perData.root", nThreads);
+    benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perGroup.root", nThreads);
+    benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_all.root", nThreads);
+    benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perData.root", nThreads);
+    benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perGroup.root", nThreads);
+    benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perData.root", nThreads);
+    benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perGroup.root", nThreads);
+    benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perData.root", nThreads);
+    benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;

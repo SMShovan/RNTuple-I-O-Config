@@ -34,16 +34,16 @@ int main() {
     // Collect AOS file sizes
     std::vector<std::pair<std::string, double>> aos_file_sizes;
     std::vector<std::string> aos_files = {
-        "./output/aos_event_all.root",
-        "./output/aos_event_perData.root",
-        "./output/aos_event_perGroup.root",
-        "./output/aos_spill_all.root",
-        "./output/aos_spill_perData.root",
-        "./output/aos_spill_perGroup.root",
-        "./output/aos_topObject_perData.root",
-        "./output/aos_topObject_perGroup.root",
-        "./output/aos_element_perData.root",
-        "./output/aos_element_perGroup.root"
+        "/scratch/smshovan/output2/aos_event_all.root",
+        "/scratch/smshovan/output2/aos_event_perData.root",
+        "/scratch/smshovan/output2/aos_event_perGroup.root",
+        "/scratch/smshovan/output2/aos_spill_all.root",
+        "/scratch/smshovan/output2/aos_spill_perData.root",
+        "/scratch/smshovan/output2/aos_spill_perGroup.root",
+        "/scratch/smshovan/output2/aos_topObject_perData.root",
+        "/scratch/smshovan/output2/aos_topObject_perGroup.root",
+        "/scratch/smshovan/output2/aos_element_perData.root",
+        "/scratch/smshovan/output2/aos_element_perGroup.root"
     };
     for (const auto& f : aos_files) {
         auto tfile = TFile::Open(f.c_str(), "READ");
@@ -64,16 +64,16 @@ int main() {
     // Collect SOA file sizes
     std::vector<std::pair<std::string, double>> soa_file_sizes;
     std::vector<std::string> soa_files = {
-        "./output/soa_event_all.root",
-        "./output/soa_event_perData.root",
-        "./output/soa_event_perGroup.root",
-        "./output/soa_spill_all.root",
-        "./output/soa_spill_perData.root",
-        "./output/soa_spill_perGroup.root",
-        "./output/soa_topObject_perData.root",
-        "./output/soa_topObject_perGroup.root",
-        "./output/soa_element_perData.root",
-        "./output/soa_element_perGroup.root"
+        "/scratch/smshovan/output2/soa_event_all.root",
+        "/scratch/smshovan/output2/soa_event_perData.root",
+        "/scratch/smshovan/output2/soa_event_perGroup.root",
+        "/scratch/smshovan/output2/soa_spill_all.root",
+        "/scratch/smshovan/output2/soa_spill_perData.root",
+        "/scratch/smshovan/output2/soa_spill_perGroup.root",
+        "/scratch/smshovan/output2/soa_topObject_perData.root",
+        "/scratch/smshovan/output2/soa_topObject_perGroup.root",
+        "/scratch/smshovan/output2/soa_element_perData.root",
+        "/scratch/smshovan/output2/soa_element_perGroup.root"
     };
     for (const auto& f : soa_files) {
         auto tfile = TFile::Open(f.c_str(), "READ");

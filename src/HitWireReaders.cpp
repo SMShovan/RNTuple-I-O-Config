@@ -12,7 +12,7 @@
 #include "ProgressiveTablePrinter.hpp"
 #include <exception>
 
-const std::string kOutputDir = "./output";
+const std::string kOutputDir = "/scratch/smshovan/output2";
 
 template <typename ViewType>
 void processNtupleRange(const std::string& fileName, const std::string& ntupleName, const std::string& fieldName, const std::pair<std::size_t, std::size_t>& chunk) {
