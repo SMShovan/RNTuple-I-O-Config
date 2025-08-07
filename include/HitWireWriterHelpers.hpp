@@ -13,10 +13,11 @@
 #include <TStopwatch.h>
 
 struct FlatROI {
-    unsigned int WireID;
-    std::size_t offset;
+    unsigned int EventID;   // parent event
+    unsigned int WireID;    // row index / channel within event
+    std::size_t  offset;
     std::vector<float> data;
-    ClassDef(FlatROI, 1);
+    ClassDef(FlatROI, 2);
 };
 
 std::vector<HitIndividual> generateEventHits(long long eventID, int numHits, std::mt19937& rng);
@@ -95,7 +96,7 @@ SOAWireVector generateSOASpillWires(long long spillID, int adjustedWires, int ro
 // Single for topObject/element
 SOAHit generateSOASingleHit(long long id, std::mt19937& rng);
 SOAWire generateSOASingleWire(long long id, int roisPerWire, std::mt19937& rng);
-FlatSOAROI generateSOASingleROI(unsigned int wireID, std::mt19937& rng);
+FlatSOAROI generateSOASingleROI(unsigned int eventID, unsigned int wireID, std::mt19937& rng);
 std::vector<FlatSOAROI> flattenSOAROIsWithID(const SOAWireVector& wires);
 
 // SOA spill work funcs

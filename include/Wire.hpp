@@ -104,9 +104,10 @@ struct SOAWireBase {
 
 // For flattened ROI with WireID in element
 struct FlatSOAROI {
-    unsigned int WireID;
+    unsigned int EventID;   // Parent event identifier
+    unsigned int WireID;    // Row index (or channel) of the parent wire within the event
     std::vector<float> data;
-    ClassDef(FlatSOAROI, 1);
+    ClassDef(FlatSOAROI, 2);
 };
 
 struct SOAWireVector {

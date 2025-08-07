@@ -325,6 +325,8 @@ double readSOA_element_perDataProduct(const std::string& fileName, int nThreads)
 
 // Add traverse for FlatSOAROI if used
 void traverse(const FlatSOAROI& roi) {
+    volatile unsigned int sinkID = roi.EventID; (void)sinkID;
+    volatile unsigned int sinkWire = roi.WireID; (void)sinkWire;
     if (!roi.data.empty()) {
         volatile float sink = roi.data[0]; (void)sink;
     }
@@ -340,7 +342,7 @@ double readSOA_topObject_perGroup(const std::string& fileName, int nThreads) {
     TStopwatch sw;
     sw.Start();
     auto hitsFuture = std::async(std::launch::async, processNtuple<SOAHit>, fileName, "soa_top_hits", "hit", nThreads);
-    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWire>, fileName, "soa_top_wires", "wire", nThreads);
+    auto wiresFuture = std::async(std::launch::async, processNtuple<SOAWireBase>, fileName, "soa_top_wires", "wire", nThreads);
     auto roisFuture = std::async(std::launch::async, processNtuple<std::vector<SOAROI>>, fileName, "soa_top_rois", "rois", nThreads);
     hitsFuture.get();
     wiresFuture.get();
@@ -481,7 +483,9 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
     benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
     benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, kOutputDir + "/soa_spill_perData.root");
     benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
+    benchmark("SOA_topObject_perGroup", readSOA_topObject_perGroup, kOutputDir + "/soa_topObject_perGroup.root");
     benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
+    benchmark("SOA_topObject_perGroup", readSOA_topObject_perGroup, kOutputDir + "/soa_topObject_perGroup.root");
     benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
     benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
 
@@ -552,6 +556,8 @@ void traverse(const WireBase& wire) {
 }
 
 void traverse(const FlatROI& roi) {
+    volatile unsigned int sinkEvt  = roi.EventID; (void)sinkEvt;
+    volatile unsigned int sinkWire = roi.WireID; (void)sinkWire;
     if (!roi.data.empty()) {
         volatile float sink = roi.data[0]; (void)sink;
     }

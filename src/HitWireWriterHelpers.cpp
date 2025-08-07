@@ -37,7 +37,8 @@ std::vector<FlatROI> flattenROIs(const std::vector<WireIndividual>& wires) {
         unsigned int wireID = wire.fWire_Channel;
         for (const auto& roi : wire.getSignalROI()) {
             FlatROI flat;
-            flat.WireID = wireID;
+            flat.EventID = wire.EventID;
+            flat.WireID  = wireID;
             flat.offset = roi.offset;
             flat.data = roi.data;
             flatROIs.push_back(flat);
@@ -461,8 +462,11 @@ double RunAOS_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Exp
     double totalTime = 0.0;
     auto roiPtr = entry.GetPtr<FlatROI>("roi");
     for (int idx = first; idx < last; ++idx) {
-        roiPtr->WireID = idx / roisPerWire;
-        roiPtr->offset = rng() % 500;
+        unsigned int eventID = idx / (roisPerWire * 1000); // rough grouping; adjust as needed
+        unsigned int wireIdx = (idx / roisPerWire) % 1000;
+        roiPtr->EventID = eventID;
+        roiPtr->WireID  = wireIdx;
+        roiPtr->offset  = rng() % 500;
         roiPtr->data.resize(10);
         for (auto& val : roiPtr->data) val = distADC(rng);
         sw.Start();
@@ -626,7 +630,8 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
 
             // its ROIs
             for (int r = 0; r < roisPerWire; ++r) {
-                roiPtr->WireID = w;
+                roiPtr->EventID = evt;
+                roiPtr->WireID  = w;
                 roiPtr->offset = rng() % 500;
                 roiPtr->data.resize(10);
                 for (auto& val : roiPtr->data) val = distADC(rng);
@@ -691,7 +696,7 @@ double RunSOA_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
                 { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
             }
             for (int r = 0; r < roisPerWire; ++r) {
-                *roiPtr = generateSOASingleROI(w, rng);
+                *roiPtr = generateSOASingleROI(evt, w, rng);
                 sw.Start();
                 ROOT::RNTupleFillStatus roiStatus;
                 roisContext.FillNoFlush(roisEntry, roiStatus);
@@ -972,10 +977,11 @@ SOAWire generateSOASingleWire(long long id, int roisPerWire, std::mt19937& rng) 
     return wire;
 }
 
-FlatSOAROI generateSOASingleROI(unsigned int wireID, std::mt19937& rng) {
+FlatSOAROI generateSOASingleROI(unsigned int eventID, unsigned int wireID, std::mt19937& rng) {
     FlatSOAROI roi;
     std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
-    roi.WireID = wireID;
+    roi.EventID = eventID;
+    roi.WireID  = wireID;
     roi.data.resize(10);
     for (auto& val : roi.data) val = distADC(rng);
     return roi;
@@ -986,8 +992,9 @@ std::vector<FlatSOAROI> flattenSOAROIsWithID(const SOAWireVector& wires) {
     for (size_t w = 0; w < wires.Channels.size(); ++w) {
         for (const auto& roi : wires.ROIs[w]) {
             FlatSOAROI froi;
-            froi.WireID = wires.Channels[w];
-            froi.data = roi.data;
+            froi.EventID = wires.EventIDs[w];
+            froi.WireID  = wires.Channels[w];
+            froi.data    = roi.data;
             flat.push_back(froi);
         }
     }
@@ -1250,7 +1257,11 @@ double RunSOA_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Exp
     double totalTime = 0.0;
     auto roiPtr = entry.GetPtr<FlatSOAROI>("roi");
     for (int idx = first; idx < last; ++idx) {
-        *roiPtr = generateSOASingleROI(idx / roisPerWire, rng);
+        {
+            unsigned int eventID = idx / (roisPerWire); // approximate mapping when standalone
+            unsigned int wireIdx = idx % roisPerWire;   // assuming sequential order within event
+            *roiPtr = generateSOASingleROI(eventID, wireIdx, rng);
+        }
         sw.Start();
         ROOT::RNTupleFillStatus status;
         context.FillNoFlush(entry, status);
