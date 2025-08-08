@@ -30,7 +30,7 @@ protected:
 
     void SetUp() override {
         // Generate a temp file with defaults; override in specific tests if needed
-        GenerateTestNTuple(tempFilePath, 1000, 1024, 4);
+        GenerateTestNTuple(tempFilePath, 1000000, 1024, 4);
     }
 
     void TearDown() override {
@@ -46,7 +46,7 @@ TEST_F(NTupleClusterTest, RealROOTFile) {
 
     ASSERT_EQ(chunks.size(), 2);
     EXPECT_EQ(chunks[0], std::make_pair(0ul, 512ul));
-    EXPECT_EQ(chunks[1], std::make_pair(512ul, 1000ul));
+    EXPECT_EQ(chunks[1], std::make_pair(512ul, 1000000ul));
 }
 
 TEST_F(NTupleClusterTest, SingleClusterSmallData) {
@@ -72,7 +72,7 @@ TEST_F(NTupleClusterTest, NoEntriesEmptyFile) {
 }
 
 TEST_F(NTupleClusterTest, InvalidClusterSizeZero) {
-    GenerateTestNTuple(tempFilePath, 1000, 0, 4);
+    GenerateTestNTuple(tempFilePath, 1000000, 0, 4);
     auto clusters = GetClusterBoundaries(tempFilePath, "hits");
     EXPECT_GE(clusters.size(), 1);  // Expect at least one cluster (ROOT default)
 
@@ -116,7 +116,7 @@ TEST_F(NTupleClusterTest, MinimalNonEmpty) {
 
 TEST_F(NTupleClusterTest, NegativeClusterSize) {
     // Negative size should be handled as unsigned (large value) or default; test for at least one cluster
-    GenerateTestNTuple(tempFilePath, 1000, static_cast<std::size_t>(-1), 4);  // Cast to simulate invalid
+    GenerateTestNTuple(tempFilePath, 1000000, static_cast<std::size_t>(-1), 4);  // Cast to simulate invalid
     auto clusters = GetClusterBoundaries(tempFilePath, "hits");
     EXPECT_GE(clusters.size(), 1);
 
@@ -128,7 +128,7 @@ TEST_F(NTupleClusterTest, NegativeClusterSize) {
 TEST_F(NTupleClusterTest, MultiFieldModel) {
     // Assuming GenerateTestNTuple updated to support multi-field (e.g., add string field)
     // Generate with multi-field for variable-size testing
-    GenerateTestNTuple(tempFilePath, 1000, 1024, 4);  // Update call if param added
+    GenerateTestNTuple(tempFilePath, 1000000, 1024, 4);  // Update call if param added
     auto clusters = GetClusterBoundaries(tempFilePath, "hits");
     EXPECT_GT(clusters.size(), 1);  // Expect multiple with varied sizes
 

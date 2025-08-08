@@ -29,6 +29,6 @@ void GenerateTestNTuple(const std::string& filePath, int numEntries, std::size_t
 }
 
 int main() {
-    GenerateTestNTuple("test_file.root", 1000, 1024, 4);
+    GenerateTestNTuple("test_file.root", 1000000, 1024, 4);
     return 0;
 }

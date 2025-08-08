@@ -46,7 +46,7 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
 
 double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
     ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
-    ROOT::Experimental::RNTupleFillContext& wireROIContext, ROOT::REntry& wireROIEntry,
+    ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
 
 double RunSOA_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
@@ -511,7 +511,7 @@ double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
 } 
 
 std::vector<WriterResult> updatedOutAOS(int nThreads, int iter) {
-    int numEvents = 1000;
+    int numEvents = 1000000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 100;
     int roisPerWire = 10;
@@ -553,26 +553,16 @@ std::vector<WriterResult> updatedOutAOS(int nThreads, int iter) {
         results.push_back(result);
         tablePrinter.addRow(result);
     };
-    benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_all.root", nThreads);
-    benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_perData.root", nThreads);
-    benchmark("AOS_event_perGroup", AOS_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_perGroup.root", nThreads);
-    //benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_all.root", nThreads);
-    //benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perData.root", nThreads);
-    //benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perGroup.root", nThreads);
-    benchmark("AOS_spill_allDataProduct", AOS_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_all.root", nThreads);
-    benchmark("AOS_spill_perDataProduct", AOS_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_perData.root", nThreads);
-    benchmark("AOS_spill_perGroup", AOS_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_perGroup.root", nThreads);
-    benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_topObject_perData.root", nThreads);
-    benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_topObject_perGroup.root", nThreads);
-    benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_element_perData.root", nThreads);
-    benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_element_perGroup.root", nThreads);
-    //benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_all.root", nThreads);
-    //benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perData.root", nThreads);
-    //benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perGroup.root", nThreads);
-    //benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perData.root", nThreads);
-    //benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perGroup.root", nThreads);
-    //benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perData.root", nThreads);
-    //benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perGroup.root", nThreads);
+    // benchmark("AOS_event_allDataProduct", AOS_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_all.root", nThreads);
+    // benchmark("AOS_event_perDataProduct", AOS_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_perData.root", nThreads);
+    // benchmark("AOS_event_perGroup", AOS_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_event_perGroup.root", nThreads);
+    // benchmark("AOS_spill_allDataProduct", AOS_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_all.root", nThreads);
+    // benchmark("AOS_spill_perDataProduct", AOS_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_perData.root", nThreads);
+    // benchmark("AOS_spill_perGroup", AOS_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_spill_perGroup.root", nThreads);
+    // benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_topObject_perData.root", nThreads);
+    // benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_topObject_perGroup.root", nThreads);
+    // benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_element_perData.root", nThreads);
+    // benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/aos_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;
@@ -703,23 +693,23 @@ double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
     auto hitsModel = ROOT::RNTupleModel::Create();
     hitsModel->MakeField<SOAHit>("hit");
     auto hitsWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(hitsModel), "soa_element_hits", *file, options);
-    auto wireROIModel = ROOT::RNTupleModel::Create();
-    wireROIModel->MakeField<SOAWire>("wire_roi");
-    auto wireROIWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(wireROIModel), "soa_element_wire_rois", *file, options);
+    auto roisModel = ROOT::RNTupleModel::Create();
+    roisModel->MakeField<FlatSOAROI>("roi");
+    auto roisWriter = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(roisModel), "soa_element_rois", *file, options);
     std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> hitsContexts(nThreads);
     std::vector<std::unique_ptr<ROOT::REntry>> hitsEntries(nThreads);
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> wireROIContexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::REntry>> wireROIEntries(nThreads);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> roisContexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::REntry>> roisEntries(nThreads);
     for (int th = 0; th < nThreads; ++th) {
         hitsContexts[th] = hitsWriter->CreateFillContext();
         hitsEntries[th] = hitsContexts[th]->CreateEntry();
-        wireROIContexts[th] = wireROIWriter->CreateFillContext();
-        wireROIEntries[th] = wireROIContexts[th]->CreateEntry();
+        roisContexts[th] = roisWriter->CreateFillContext();
+        roisEntries[th] = roisContexts[th]->CreateEntry();
     }
     auto workFunc = [&](int firstEvt, int lastEvt, unsigned seed, int th) -> double {
         return RunSOA_element_perDataProductCombinedWorkFunc(firstEvt, lastEvt, seed,
                                                              *hitsContexts[th], *hitsEntries[th],
-                                                             *wireROIContexts[th], *wireROIEntries[th],
+                                                             *roisContexts[th], *roisEntries[th],
                                                              mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(numEvents, nThreads, workFunc);
@@ -824,7 +814,7 @@ double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
 } 
 
 std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
-    int numEvents = 1000;
+    int numEvents = 1000000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 100;
     int roisPerWire = 10;
@@ -866,16 +856,16 @@ std::vector<WriterResult> updatedOutSOA(int nThreads, int iter) {
         results.push_back(result);
         tablePrinter.addRow(result);
     };
-    benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_all.root", nThreads);
-    benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perData.root", nThreads);
-    benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perGroup.root", nThreads);
-    benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_all.root", nThreads);
-    benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perData.root", nThreads);
-    benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perGroup.root", nThreads);
-    benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perData.root", nThreads);
-    benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perGroup.root", nThreads);
+    // benchmark("SOA_event_allDataProduct", SOA_event_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_all.root", nThreads);
+    // benchmark("SOA_event_perDataProduct", SOA_event_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perData.root", nThreads);
+    // benchmark("SOA_event_perGroup", SOA_event_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_event_perGroup.root", nThreads);
+    // benchmark("SOA_spill_allDataProduct", SOA_spill_allDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_all.root", nThreads);
+    // benchmark("SOA_spill_perDataProduct", SOA_spill_perDataProduct, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perData.root", nThreads);
+    // benchmark("SOA_spill_perGroup", SOA_spill_perGroup, numEvents, numSpills, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_spill_perGroup.root", nThreads);
+    // benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perData.root", nThreads);
+    // benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_topObject_perGroup.root", nThreads);
     benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perData.root", nThreads);
-    benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perGroup.root", nThreads);
+    // benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, "/scratch/smshovan/output2/soa_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;

@@ -1,39 +1,19 @@
-Started at: Thu Aug  7 12:00:48 PM CDT 2025
-
-AOS Writer Benchmarks (Progressive Results)
-Writer                          Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
-----------------------------------------------------------------------------------------------------
-AOS_event_allDataProduct        1.26572         0.418588        1.74171     1.10047     0.954982    
-AOS_event_perDataProduct        0.760671        0.0127405       0.762071    0.772654    0.747288    
-AOS_event_perGroup              0.762371        0.0332048       0.800321    0.738658    0.748135    
-AOS_spill_allDataProduct        0.757563        0.0097218       0.765365    0.760651    0.746672    
-AOS_spill_perDataProduct        0.796441        0.0279784       0.825055    0.769145    0.795124    
-AOS_spill_perGroup              0.776744        0.00399621      0.778957    0.779144    0.772131    
-AOS_topObject_perDataProduct    1.51887         0.218391        1.42513     1.36299     1.76848     
-AOS_topObject_perGroup          1.88777         0.0691505       1.80793     1.92837     1.92702     
-AOS_element_perDataProduct      8.58068         0.444631        8.30148     8.34714     9.09342     
-AOS_element_perGroup            10.3243         0.549863        9.91661     10.1066     10.9497     
-----------------------------------------------------------------------------------------------------
-
+Started at: Fri Aug  8 09:31:09 AM CDT 2025
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Warning in <TAxis::Sort>: Cannot sort. No labels
+Error in <TCanvas::Range>: illegal world coordinates range: x1=0.000000, y1=-0.525000, x2=0.000000, y2=1.225000
+Error in <TCanvas::RangeAxis>: illegal axis coordinates range: xmin=0.000000, ymin=0.000000, xmax=0.000000, ymax=1.050000
 Info in <TCanvas::Print>: pdf file ../experiments/aos_write_times.pdf has been created
 AOS Write times plot saved to ../experiments/aos_write_times.pdf
-
-AOS Reader Benchmarks (Progressive Results)
-Reader                          Cold (s)        Warm Avg (s)    Warm StdDev (s) Cold Itr 1  Cold Itr 2  Cold Itr 3  
---------------------------------------------------------------------------------------------------------------------
-AOS_event_allDataProduct        0.118691        0.0912991       0.0246173       0.156914    0.120335    0.078824    
-AOS_event_perDataProduct        0.118867        0.130249        0.0137198       0.131348    0.0959601   0.129294    
-AOS_event_perGroup              0.148627        0.196955        0.0081006       0.129517    0.143945    0.172419    
-AOS_spill_allDataProduct        0.06973         0.0833899       0.0163481       0.080322    0.056803    0.0720649   
-AOS_spill_perDataProduct        0.100761        0.111726        0.0265525       0.0980759   0.105534    0.0986738   
-AOS_spill_perGroup              0.13656         0.138487        0.0313327       0.132273    0.159665    0.117743    
-AOS_topObject_perDataProduct    0.0918078       0.0625377       0.00542288      0.104776    0.094903    0.0757442   
-AOS_topObject_perGroup          0.0699449       0.0631061       0.00655102      0.0736129   0.0696149   0.066607    
-AOS_element_perDataProduct      0.0467944       0.0466053       0.00556902      0.0485981   0.0501101   0.0416751   
-AOS_element_perGroup            0.0492659       0.0567573       0.0060148       0.048131    0.0506299   0.049037    
---------------------------------------------------------------------------------------------------------------------
-
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Warning in <TAxis::Sort>: Cannot sort. No labels
+Error in <TCanvas::Range>: illegal world coordinates range: x1=0.000000, y1=-0.525000, x2=0.000000, y2=1.225000
+Error in <TCanvas::RangeAxis>: illegal axis coordinates range: xmin=0.000000, ymin=0.000000, xmax=0.000000, ymax=1.050000
 Info in <TCanvas::Print>: pdf file ../experiments/aos_cold_times.pdf has been created
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Warning in <TAxis::Sort>: Cannot sort. No labels
+Error in <TCanvas::Range>: illegal world coordinates range: x1=0.000000, y1=-0.525000, x2=0.000000, y2=1.225000
+Error in <TCanvas::RangeAxis>: illegal axis coordinates range: xmin=0.000000, ymin=0.000000, xmax=0.000000, ymax=1.050000
 Info in <TCanvas::Print>: pdf file ../experiments/aos_warm_times.pdf has been created
 AOS Read times plots saved to ../experiments/aos_cold_times.pdf and ../experiments/aos_warm_times.pdf
 Info in <TCanvas::Print>: pdf file ../experiments/aos_file_sizes.pdf has been created
@@ -42,16 +22,7 @@ AOS File sizes plot saved to ../experiments/aos_file_sizes.pdf
 SOA Writer Benchmarks (Progressive Results)
 SOA Writer                      Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 ----------------------------------------------------------------------------------------------------
-SOA_event_allDataProduct        0.794678        0.200635        1.02526     0.659923    0.698853    
-SOA_event_perDataProduct        0.716917        0.0420737       0.685121    0.764627    0.701004    
-SOA_event_perGroup              0.726398        0.0693951       0.682789    0.806421    0.689985    
-SOA_spill_allDataProduct        0.874842        0.190397        0.751272    0.779152    1.0941      
-SOA_spill_perDataProduct        0.773321        0.0216147       0.794128    0.75098     0.774854    
-SOA_spill_perGroup              0.733782        0.0212805       0.741725    0.709672    0.749948    
-SOA_topObject_perDataProduct    1.54315         0.0330512       1.57967     1.53451     1.51528     
-SOA_topObject_perGroup          1.51502         0.0268063       1.53358     1.48429     1.52719     
-SOA_element_perDataProduct      1.77215         0.235408        1.60297     2.041       1.67249     
-SOA_element_perGroup            8.762           0.0720089       8.81596     8.68023     8.7898      
+SOA_element_perDataProduct      8135.5          5.49216         8141.07     8135.35     8130.09     
 ----------------------------------------------------------------------------------------------------
 
 Info in <TCanvas::Print>: pdf file ../experiments/soa_write_times.pdf has been created
@@ -60,15 +31,7 @@ SOA Write times plot saved to ../experiments/soa_write_times.pdf
 SOA Reader Benchmarks (Progressive Results)
 SOA Reader                      Cold (s)        Warm Avg (s)    Warm StdDev (s) Cold Itr 1  Cold Itr 2  Cold Itr 3  
 --------------------------------------------------------------------------------------------------------------------
-SOA_event_allDataProduct        0.0477396       0.0455726       0.00278095      0.048383    0.0443158   0.0505199   
-SOA_event_perDataProduct        0.0395547       0.0460564       0.00461724      0.041544    0.0367491   0.0403709   
-SOA_event_perGroup              0.048604        0.047619        0.00395538      0.0466499   0.039649    0.0595131   
-SOA_spill_allDataProduct        0.0524208       0.0510007       0.00171011      0.0536592   0.0455141   0.058089    
-SOA_spill_perDataProduct        0.0405333       0.0417274       0.00332105      0.036062    0.0482988   0.0372391   
-SOA_spill_perGroup              0.0471923       0.0529017       0.00741884      0.047529    0.0431559   0.0508921   
-SOA_topObject_perDataProduct    0.0353473       0.034359        0.0020755       0.034508    0.0362599   0.035274    
-SOA_element_perDataProduct      0.0361933       0.0450461       0.00320915      0.033087    0.035459    0.0400338   
-SOA_element_perGroup            0.042618        0.0382886       0.00418751      0.0374579   0.0495021   0.0408938   
+SOA_element_perDataProduct      14.8285         15.0538         0.437523        15.083      14.6519     14.7506     
 --------------------------------------------------------------------------------------------------------------------
 
 Info in <TCanvas::Print>: pdf file ../experiments/soa_cold_times.pdf has been created
@@ -76,9 +39,24 @@ Info in <TCanvas::Print>: pdf file ../experiments/soa_warm_times.pdf has been cr
 SOA Read times plots saved to ../experiments/soa_cold_times.pdf and ../experiments/soa_warm_times.pdf
 Info in <TCanvas::Print>: pdf file ../experiments/soa_file_sizes.pdf has been created
 SOA File sizes plot saved to ../experiments/soa_file_sizes.pdf
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Warning in <TAxis::Sort>: Cannot sort. No labels
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Error in <TCanvas::Range>: illegal world coordinates range: x1=0.000000, y1=-0.525000, x2=0.000000, y2=1.225000
+Error in <TCanvas::RangeAxis>: illegal axis coordinates range: xmin=0.000000, ymin=0.000000, xmax=0.000000, ymax=1.050000
 Info in <TCanvas::Print>: pdf file ../experiments/comparison_write_times.pdf has been created
 Comparison write times plot saved to ../experiments/comparison_write_times.pdf
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Warning in <TAxis::Sort>: Cannot sort. No labels
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Error in <TCanvas::Range>: illegal world coordinates range: x1=0.000000, y1=-0.525000, x2=0.000000, y2=1.225000
+Error in <TCanvas::RangeAxis>: illegal axis coordinates range: xmin=0.000000, ymin=0.000000, xmax=0.000000, ymax=1.050000
 Info in <TCanvas::Print>: pdf file ../experiments/comparison_cold_times.pdf has been created
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Warning in <TAxis::Sort>: Cannot sort. No labels
+Warning in <TH1::TH1>: nbins is <=0 - set to nbins = 1
+Error in <TCanvas::Range>: illegal world coordinates range: x1=0.000000, y1=-0.525000, x2=0.000000, y2=1.225000
+Error in <TCanvas::RangeAxis>: illegal axis coordinates range: xmin=0.000000, ymin=0.000000, xmax=0.000000, ymax=1.050000
 Info in <TCanvas::Print>: pdf file ../experiments/comparison_warm_times.pdf has been created
 Comparison read times plots saved to ../experiments/comparison_cold_times.pdf and ../experiments/comparison_warm_times.pdf
 Info in <TCanvas::Print>: pdf file ../experiments/comparison_file_sizes.pdf has been created
