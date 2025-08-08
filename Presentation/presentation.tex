@@ -46,8 +46,8 @@
 \begin{frame}{Introduction}
   \begin{itemize}
     \item The Deep Underground Neutrino Experiment (DUNE) is projected to record roughly 30~PB of liquid‑argon TPC data per year\,[1]—far beyond the scale of previous neutrino experiments.
-    \item DUNE’s \textbf{Phlex} stands for \textbf{P}arallel, \textbf{h}ierarchical, and \textbf{l}ayered \textbf{ex}ecution of data-processing algorithms.
-    \item ROOT’s new \texttt{RNTuple} backend is a candidate for the long‑term DUNE data model, promising faster compression, cluster‑aware reads, and thread‑safe writes.
+    \item DUNE is developing a new framework: \textbf{Phlex} stands for \textbf{P}arallel, \textbf{h}ierarchical, and \textbf{l}ayered \textbf{ex}ecution of data-processing algorithms.
+    \item ROOT’s new \texttt{RNTuple} storage container is a candidate for the long‑term DUNE data model, promising faster compression, cluster‑aware reads, and thread‑safe writes.
     \item This study benchmarks alternative RNTuple \emph{persistent layouts} (AOS/SOA, vertical splits, granularity levels) for realistic data products.
     \item Focus data products: \texttt{recob::Hit} (charge deposits) and \texttt{recob::Wire} (ROI‑compressed waveforms).
   \end{itemize}
@@ -69,7 +69,7 @@
     
     \vspace{2em}
 
-    \item How does vertical splitting such as one RNTuple for all data products interact with horizontal granularities (event, spill, element)?
+    \item How does vertical splitting such as one RNTuple for all data products or one of each data products interact with horizontal granularities (event, spill, element)?
 
     \vspace{2em}
 
@@ -120,7 +120,7 @@
       \hspace*{1.5em} \texttt{vector<unsigned int> fChannel; }\\
       \hspace*{1.5em} \texttt{vector<float> fPeakTime; }\\
       \texttt{\}; }\\
-      \texttt{// Columns: EventID[ ], \\fChannel[ ], fPeakTime[ ], ...}
+      \texttt{// Columns: EventID[ ], \\ //fChannel[ ], fPeakTime[ ], ...}
     }}
     \vspace{0.5em}
     \textbf{Example}: Hits, Wires (per-event vectors).
@@ -235,7 +235,7 @@ Element‑wise    & --                                   & \texttt{element\_perD
     \hspace*{1.0em} \texttt{    int first = th * chunkSize; }\\
     \hspace*{1.0em} \texttt{    int last = std::min(first + chunkSize, totalEvents); }\\
     \hspace*{1.0em} \texttt{    futures.emplace\_back(std::async( }\\
-    \hspace*{1.0em} \texttt{        std::launch::async, thinWorkFunc, first, last, seeds[th], th ));}\\
+    \hspace*{3.0em} \texttt{        std::launch::async, thinWorkFunc, first, last, seeds[th], th ));}\\
     \texttt{\} }
   }}
   \vspace{0.5em}
