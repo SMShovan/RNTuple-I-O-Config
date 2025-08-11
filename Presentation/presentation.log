@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  10 AUG 2025 22:37
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  11 AUG 2025 15:45
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1452,17 +1452,8 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [31
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 474--474
+Overfull \hbox (113.811pt too wide) in paragraph at lines 479--479
 [][]  
- []
-
-<../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf, id=711, 722.7pt x 433.62pt>
-File: ../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf Graphic file (type pdf)
-<use ../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf>
-Package pdftex.def Info: ../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf  used on input line 474.
-(pdftex.def)             Requested size: 318.67209pt x 191.20361pt.
-
-Overfull \vbox (7.2711pt too high) detected at line 474
  []
 
 
@@ -1474,18 +1465,18 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 
 [32
 
- <../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf>]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 480--480
+]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 485--485
 [][]  
  []
 
-<../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf, id=792, 722.7pt x 433.62pt>
-File: ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf Graphic file (type pdf)
-<use ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf>
-Package pdftex.def Info: ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf  used on input line 480.
+<../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf, id=716, 722.7pt x 433.62pt>
+File: ../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf Graphic file (type pdf)
+<use ../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf>
+Package pdftex.def Info: ../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf  used on input line 485.
 (pdftex.def)             Requested size: 318.67209pt x 191.20361pt.
 
-Overfull \vbox (7.2711pt too high) detected at line 480
+Overfull \vbox (7.2711pt too high) detected at line 485
  []
 
 
@@ -1497,15 +1488,20 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 
 [33
 
- <../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf>]
+ <../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf>]
 Overfull \hbox (113.811pt too wide) in paragraph at lines 491--491
 [][]  
  []
 
+<../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf, id=797, 722.7pt x 433.62pt>
 File: ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf Graphic file (type pdf)
 <use ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf>
 Package pdftex.def Info: ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf  used on input line 491.
-(pdftex.def)             Requested size: 199.1693pt x 119.5006pt.
+(pdftex.def)             Requested size: 318.67209pt x 191.20361pt.
+
+Overfull \vbox (7.2711pt too high) detected at line 491
+ []
+
 
 
 
@@ -1515,11 +1511,15 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 
 [34
 
-]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 511--511
+ <../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf>]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 502--502
 [][]  
  []
 
+File: ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf Graphic file (type pdf)
+<use ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf>
+Package pdftex.def Info: ../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf  used on input line 502.
+(pdftex.def)             Requested size: 199.1693pt x 119.5006pt.
 
 
 
@@ -1530,7 +1530,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [35
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 518--518
+Overfull \hbox (113.811pt too wide) in paragraph at lines 522--522
 [][]  
  []
 
@@ -1544,8 +1544,8 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [36
 
 ]
-Overfull \hbox (113.811pt too wide) in paragraph at lines 524--524
- [][] 
+Overfull \hbox (113.811pt too wide) in paragraph at lines 529--529
+[][]  
  []
 
 
@@ -1558,6 +1558,20 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 [37
 
 ]
+Overfull \hbox (113.811pt too wide) in paragraph at lines 535--535
+ [][] 
+ []
+
+
+
+
+Overfull \hbox (113.811pt too wide) has occurred while \output is active
+[][] 
+ []
+
+[38
+
+]
 \tf@nav=\write7
 \openout7 = `presentation.nav'.
 
@@ -1567,7 +1581,7 @@ Overfull \hbox (113.811pt too wide) has occurred while \output is active
 \tf@snm=\write9
 \openout9 = `presentation.snm'.
 
-runsystem(latexminted cleantemp  --timestamp 20250810223757 2486923A98E77FD0740381D01ACD1782)...executed safely (allowed).
+runsystem(latexminted cleantemp  --timestamp 20250811154521 2486923A98E77FD0740381D01ACD1782)...executed safely (allowed).
 
  (./presentation.aux)
  ***********
@@ -1582,18 +1596,18 @@ Package rerunfilecheck Info: File `presentation.out' has not changed.
 (rerunfilecheck)             Checksum: 5599FB5102737358FAAACBA0E73E0DB8;566.
  ) 
 Here is how much of TeX's memory you used:
- 30552 strings out of 473190
- 648350 string characters out of 5715801
+ 30556 strings out of 473190
+ 648385 string characters out of 5715801
  1104097 words of memory out of 5000000
- 53160 multiletter control sequences out of 15000+600000
+ 53162 multiletter control sequences out of 15000+600000
  573117 words of font info for 87 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,15n,123p,1993b,1034s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1095.pfb>
-Output written on presentation.pdf (37 pages, 672249 bytes).
+Output written on presentation.pdf (38 pages, 673491 bytes).
 PDF statistics:
- 975 PDF objects out of 1000 (max. 8388607)
- 386 compressed objects within 4 object streams
- 80 named destinations out of 1000 (max. 500000)
+ 980 PDF objects out of 1000 (max. 8388607)
+ 390 compressed objects within 4 object streams
+ 82 named destinations out of 1000 (max. 500000)
  168 words of extra memory for PDF output out of 10000 (max. 10000000)
 

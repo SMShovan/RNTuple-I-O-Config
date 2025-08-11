@@ -467,6 +467,17 @@ Element‑wise    & --                                   & \texttt{element\_perD
   \end{itemize}
 \end{frame}
 
+\begin{frame}{Fields Read in Benchmarks}
+\small
+\begin{itemize}
+  \item \textbf{Hits}: \texttt{PeakAmplitude}.
+  \item \textbf{Wires}: \texttt{Channel}.
+  \item \textbf{ROIs}: ROI data vector \texttt{data}.
+  \vspace{1.5em}
+  \item \textbf{Note}: We do not reconstruct full objects from the fields; we only read the fields through RNTuple views, using \texttt{volatile} to prevent the compiler optimization.
+\end{itemize}
+\end{frame}
+
 \begin{frame}{AOS vs SOA: Cold Read Performance Comparison}
 \centering
 \includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf}

@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1754883477.20234 "/Users/smshovan/Documents/RNTuple 4/RNTuple-I-O-Config/Presentation/presentation.tex" "presentation.pdf" "presentation" 1754883479.33535 0
+["pdflatex"] 1754945121.06238 "/Users/smshovan/Documents/RNTuple 4/RNTuple-I-O-Config/Presentation/presentation.tex" "presentation.pdf" "presentation" 1754945123.41023 0
   "../experiments/Seaborn/AOSWriter_blue_shaded.pdf" 1754876112.75745 41129 62fd1658f8da77e1e80c47224a8d4040 ""
   "../experiments/Seaborn/AOS_FileSize_Heatmap_softblue_nogrid.pdf" 1754875635 39740 270e99f4d1615398192e6475f228f31b ""
   "../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf" 1754880266.57093 63085 44962a689b05b257bc99934e741ffd83 ""
@@ -7,7 +7,7 @@
   "../experiments/Seaborn/AOS_SOA_Writer_grouped_with_gaps.pdf" 1754876093.62917 66622 f78c6d7e8b6a4ba9f2b3972011caa063 ""
   "../experiments/Seaborn/SOAWriter_shaded.pdf" 1754876105.26814 41009 1f94ca955922943d9764f8cdf18fa0c9 ""
   "../experiments/Seaborn/SOA_FileSize_Heatmap_merun_white.pdf" 1754883425.05398 58960 8ded48c4aeea09c301f66f9c6460e205 ""
-  "/Users/smshovan/Documents/RNTuple 4/RNTuple-I-O-Config/Presentation/presentation.tex" 1754883368.69196 19563 167798829d16f1c7f7f275500388633f ""
+  "/Users/smshovan/Documents/RNTuple 4/RNTuple-I-O-Config/Presentation/presentation.tex" 1754945120.83996 19998 a7dc04410c04f17524ac4924bfe4a7c8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcss1000.tfm" 1136768653 1536 293044035fd171bb1d18cf655049b101 ""
@@ -256,11 +256,11 @@
   "Figures/Vertical1.pdf" 1754581078.2564 14009 af39785121652303662a161a24c1b5c7 ""
   "Figures/Vertical2.pdf" 1754581078.25651 14159 9d12dbf27c2187ed43ac998a8ccc3b98 ""
   "Figures/Vertical3.pdf" 1754581078.25662 14094 d07c7e5eecb0ef7950c88af359e0b34d ""
-  "presentation.aux" 1754883479.21684 6420 76fd6415f68d2de2599606fa67bdeb8c "pdflatex"
-  "presentation.nav" 1754883479.21829 4228 0248ce7ff0cdb89a199f59f1b3e25428 "pdflatex"
-  "presentation.out" 1754883479.21805 566 5599fb5102737358faaacba0e73e0db8 "pdflatex"
-  "presentation.tex" 1754883368.69196 19563 167798829d16f1c7f7f275500388633f ""
-  "presentation.toc" 1754883479.21833 252 e0b90a85e9fffeba84879834cd5f4535 "pdflatex"
+  "presentation.aux" 1754945123.28681 6549 8a863cac4d2c86789ad7f841c13b1076 "pdflatex"
+  "presentation.nav" 1754945123.28831 4321 2f053082c0555d05e81a7f90b76ef7f2 "pdflatex"
+  "presentation.out" 1754945123.28806 566 5599fb5102737358faaacba0e73e0db8 "pdflatex"
+  "presentation.tex" 1754945120.83996 19998 a7dc04410c04f17524ac4924bfe4a7c8 ""
+  "presentation.toc" 1754945123.28836 252 e0b90a85e9fffeba84879834cd5f4535 "pdflatex"
   (generated)
   "presentation.aux"
   "presentation.log"
