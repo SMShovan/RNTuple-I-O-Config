@@ -372,7 +372,7 @@ std::vector<ReaderResult> updatedInAOS(int nThreads, int iter) {
     // Create progressive table printer
     ProgressiveTablePrinter<ReaderResult> tablePrinter(
         "AOS Reader Benchmarks (Progressive Results)",
-        {"Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)", "Cold Itr 1", "Cold Itr 2", "Cold Itr 3"},
+        {"Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)", "Itr 1 (s)", "Itr 2 (s)", "Itr 3 (s)"},
         {32, 16, 16, 16, 12, 12, 12}
     );
     
@@ -381,21 +381,28 @@ std::vector<ReaderResult> updatedInAOS(int nThreads, int iter) {
         
         try {
             std::vector<double> coldTimes, warmTimes;
-            for (int i = 0; i < iter; ++i) {
+            if (iter > 0) {
                 double cold = readerFunc(file, nThreads);
                 coldTimes.push_back(cold);
-                double warm = readerFunc(file, nThreads); // Second read for warm
+            }
+            for (int i = 1; i < iter; ++i) {
+                double warm = readerFunc(file, nThreads);
                 warmTimes.push_back(warm);
             }
-            double coldAvg = std::accumulate(coldTimes.begin(), coldTimes.end(), 0.0) / iter;
-            double warmAvg = std::accumulate(warmTimes.begin(), warmTimes.end(), 0.0) / iter;
-            double warmSqSum = std::inner_product(warmTimes.begin(), warmTimes.end(), warmTimes.begin(), 0.0);
-            double warmStddev = std::sqrt((warmSqSum - iter * warmAvg * warmAvg) / (iter - 1));
-            result.cold = coldAvg;
-            result.warmAvg = warmAvg;
-            result.warmStddev = warmStddev;
-            result.coldTimes = coldTimes; // Store individual cold times
-            result.warmTimes = warmTimes; // Store individual warm times
+            result.cold = coldTimes.empty() ? 0.0 : coldTimes.front();
+            if (!warmTimes.empty()) {
+                double warmAvg = std::accumulate(warmTimes.begin(), warmTimes.end(), 0.0) / static_cast<double>(warmTimes.size());
+                double warmSqSum = std::inner_product(warmTimes.begin(), warmTimes.end(), warmTimes.begin(), 0.0);
+                double denom = static_cast<double>(warmTimes.size() > 1 ? (warmTimes.size() - 1) : 1);
+                double warmStddev = std::sqrt(std::max(0.0, (warmSqSum - warmTimes.size() * warmAvg * warmAvg) / denom));
+                result.warmAvg = warmAvg;
+                result.warmStddev = warmStddev;
+            } else {
+                result.warmAvg = 0.0;
+                result.warmStddev = 0.0;
+            }
+            result.coldTimes = coldTimes; // Store individual cold time (first iteration)
+            result.warmTimes = warmTimes; // Store individual warm times (remaining iterations)
         } catch (const std::exception& e) {
             std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
@@ -410,7 +417,7 @@ std::vector<ReaderResult> updatedInAOS(int nThreads, int iter) {
         tablePrinter.addRow(result);
     };
 
-    // benchmark("AOS_event_allDataProduct", readAOS_event_allDataProduct, kOutputDir + "/aos_event_all.root");
+    benchmark("AOS_event_allDataProduct", readAOS_event_allDataProduct, kOutputDir + "/aos_event_all.root");
     // benchmark("AOS_event_perDataProduct", readAOS_event_perDataProduct, kOutputDir + "/aos_event_perData.root");
     // benchmark("AOS_event_perGroup", readAOS_event_perGroup, kOutputDir + "/aos_event_perGroup.root");
     // benchmark("AOS_spill_allDataProduct", readAOS_spill_allDataProduct, kOutputDir + "/aos_spill_all.root");
@@ -431,7 +438,7 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
     // Create progressive table printer
     ProgressiveTablePrinter<ReaderResult> tablePrinter(
         "SOA Reader Benchmarks (Progressive Results)",
-        {"SOA Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)", "Cold Itr 1", "Cold Itr 2", "Cold Itr 3"},
+        {"SOA Reader", "Cold (s)", "Warm Avg (s)", "Warm StdDev (s)", "Itr 1 (s)", "Itr 2 (s)", "Itr 3 (s)"},
         {32, 16, 16, 16, 12, 12, 12}
     );
     
@@ -440,21 +447,28 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
         
         try {
             std::vector<double> coldTimes, warmTimes;
-            for (int i = 0; i < iter; ++i) {
+            if (iter > 0) {
                 double cold = readerFunc(file, nThreads);
                 coldTimes.push_back(cold);
-                double warm = readerFunc(file, nThreads); // Second read for warm
+            }
+            for (int i = 1; i < iter; ++i) {
+                double warm = readerFunc(file, nThreads);
                 warmTimes.push_back(warm);
             }
-            double coldAvg = std::accumulate(coldTimes.begin(), coldTimes.end(), 0.0) / iter;
-            double warmAvg = std::accumulate(warmTimes.begin(), warmTimes.end(), 0.0) / iter;
-            double warmSqSum = std::inner_product(warmTimes.begin(), warmTimes.end(), warmTimes.begin(), 0.0);
-            double warmStddev = std::sqrt((warmSqSum - iter * warmAvg * warmAvg) / (iter - 1));
-            result.cold = coldAvg;
-            result.warmAvg = warmAvg;
-            result.warmStddev = warmStddev;
-            result.coldTimes = coldTimes; // Store individual cold times
-            result.warmTimes = warmTimes; // Store individual warm times
+            result.cold = coldTimes.empty() ? 0.0 : coldTimes.front();
+            if (!warmTimes.empty()) {
+                double warmAvg = std::accumulate(warmTimes.begin(), warmTimes.end(), 0.0) / static_cast<double>(warmTimes.size());
+                double warmSqSum = std::inner_product(warmTimes.begin(), warmTimes.end(), warmTimes.begin(), 0.0);
+                double denom = static_cast<double>(warmTimes.size() > 1 ? (warmTimes.size() - 1) : 1);
+                double warmStddev = std::sqrt(std::max(0.0, (warmSqSum - warmTimes.size() * warmAvg * warmAvg) / denom));
+                result.warmAvg = warmAvg;
+                result.warmStddev = warmStddev;
+            } else {
+                result.warmAvg = 0.0;
+                result.warmStddev = 0.0;
+            }
+            result.coldTimes = coldTimes; // Store individual cold time (first iteration)
+            result.warmTimes = warmTimes; // Store individual warm times (remaining iterations)
         } catch (const std::exception& e) {
             std::cout << "Running " << label << "... FAILED" << std::endl;
             result.failed = true;
@@ -469,7 +483,7 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
         tablePrinter.addRow(result);
     };
 
-    // benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
+    benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
     // benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, kOutputDir + "/soa_event_perData.root");
     // benchmark("SOA_event_perGroup", readSOA_event_perGroup, kOutputDir + "/soa_event_perGroup.root");
     // benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
@@ -477,7 +491,7 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
     // benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
     // benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
     // benchmark("SOA_topObject_perGroup", readSOA_topObject_perGroup, kOutputDir + "/soa_topObject_perGroup.root");
-    benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
+    // benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
     // benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
 
     tablePrinter.printFooter();

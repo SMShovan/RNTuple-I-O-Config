@@ -10,85 +10,135 @@
 
 #include <iostream>
 #include <filesystem>
+#include <iomanip>
 
 #include "HitWireWriters.hpp"
 #include <TFile.h>
 
 
 
+static std::string build_label_from_path(const std::string& filepath) {
+    namespace fs = std::filesystem;
+    fs::path p(filepath);
+    std::string stem = p.stem().string(); // e.g. "aos_event_all"
+
+    // Uppercase prefix (aos/soa)
+    std::string label = stem;
+    auto underscorePos = label.find('_');
+    if (underscorePos != std::string::npos) {
+        for (size_t i = 0; i < underscorePos; ++i) {
+            label[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(label[i])));
+        }
+    }
+
+    // Replace suffixes to match prior naming (…allDataProduct / …perDataProduct)
+    auto replace_suffix = [&](const std::string& suffix, const std::string& replacement) {
+        if (label.size() >= suffix.size() && label.compare(label.size() - suffix.size(), suffix.size(), suffix) == 0) {
+            label.replace(label.size() - suffix.size(), suffix.size(), replacement);
+        }
+    };
+    replace_suffix("_all", "_allDataProduct");
+    replace_suffix("_perData", "_perDataProduct");
+
+    return label;
+}
+
+static void print_file_sizes_table(const std::string& title,
+                                   const std::vector<std::pair<std::string, double>>& fileSizesMB) {
+    const int col1 = 40; // label
+    const int col2 = 16; // size
+
+    std::cout << "\n" << title << std::endl;
+    std::cout << std::left
+              << std::setw(col1) << "File"
+              << std::setw(col2) << "Size (MB)" << std::endl;
+    std::cout << std::string(col1 + col2, '-') << std::endl;
+
+    for (const auto& [path, sizeMB] : fileSizesMB) {
+        std::cout << std::left
+                  << std::setw(col1) << build_label_from_path(path)
+                  << std::setw(col2) << sizeMB
+                  << std::endl;
+    }
+    std::cout << std::string(col1 + col2, '-') << std::endl;
+}
+
 int main() {
     ROOT::EnableThreadSafety();
     int nThreads = std::thread::hardware_concurrency();
+    //int nThreads = 1;
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
     
 
-    auto aos_writer_results = updatedOutAOS(nThreads, 3);
-    
-    visualize_aos_writer_results(aos_writer_results);
-    
+    // Commented: AOS writer/reader benchmarks
+    // auto aos_writer_results = updatedOutAOS(nThreads, 3);
+    // visualize_aos_writer_results(aos_writer_results);
     auto aos_reader_results = updatedInAOS(nThreads, 3);
-    
     visualize_aos_reader_results(aos_reader_results);
 
     // Collect AOS file sizes
-    std::vector<std::pair<std::string, double>> aos_file_sizes;
-    std::vector<std::string> aos_files = {
-        "/scratch/smshovan/output2/aos_event_all.root",
-        "/scratch/smshovan/output2/aos_event_perData.root",
-        "/scratch/smshovan/output2/aos_event_perGroup.root",
-        "/scratch/smshovan/output2/aos_spill_all.root",
-        "/scratch/smshovan/output2/aos_spill_perData.root",
-        "/scratch/smshovan/output2/aos_spill_perGroup.root",
-        "/scratch/smshovan/output2/aos_topObject_perData.root",
-        "/scratch/smshovan/output2/aos_topObject_perGroup.root",
-        "/scratch/smshovan/output2/aos_element_perData.root",
-        "/scratch/smshovan/output2/aos_element_perGroup.root"
-    };
-    for (const auto& f : aos_files) {
-        auto tfile = TFile::Open(f.c_str(), "READ");
-        if (tfile) {
-            double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
-            aos_file_sizes.emplace_back(f, sizeMB);
-            tfile->Close();
-        }
-    }
-    visualize_aos_file_sizes(aos_file_sizes);
+    // std::vector<std::pair<std::string, double>> aos_file_sizes;
+    // std::vector<std::string> aos_files = {
+    //     "/scratch/smshovan/output2/aos_event_all.root",
+    //     "/scratch/smshovan/output2/aos_event_perData.root",
+    //     "/scratch/smshovan/output2/aos_event_perGroup.root",
+    //     "/scratch/smshovan/output2/aos_spill_all.root",
+    //     "/scratch/smshovan/output2/aos_spill_perData.root",
+    //     "/scratch/smshovan/output2/aos_spill_perGroup.root",
+    //     "/scratch/smshovan/output2/aos_topObject_perData.root",
+    //     "/scratch/smshovan/output2/aos_topObject_perGroup.root",
+    //     "/scratch/smshovan/output2/aos_element_perData.root",
+    //     "/scratch/smshovan/output2/aos_element_perGroup.root"
+    // };
+    // for (const auto& f : aos_files) {
+    //     auto tfile = TFile::Open(f.c_str(), "READ");
+    //     if (tfile) {
+    //         double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
+    //         aos_file_sizes.emplace_back(f, sizeMB);
+    //         tfile->Close();
+    //     }
+    // }
+    // // Print AOS file sizes to terminal in a table format
+    // print_file_sizes_table("AOS File Sizes (MB)", aos_file_sizes);
 
     // Add SOA visualization - use separate SOA-only functions
-    auto soa_writer_results = updatedOutSOA(nThreads, 3);
-    visualize_soa_writer_results(soa_writer_results);
+    // Commented: SOA writer/reader benchmarks
+    // auto soa_writer_results = updatedOutSOA(nThreads, 3);
+    // visualize_soa_writer_results(soa_writer_results);
     auto soa_reader_results = updatedInSOA(nThreads, 3);
     visualize_soa_reader_results(soa_reader_results);
 
-    // Collect SOA file sizes
-    std::vector<std::pair<std::string, double>> soa_file_sizes;
-    std::vector<std::string> soa_files = {
-        "/scratch/smshovan/output2/soa_event_all.root",
-        "/scratch/smshovan/output2/soa_event_perData.root",
-        "/scratch/smshovan/output2/soa_event_perGroup.root",
-        "/scratch/smshovan/output2/soa_spill_all.root",
-        "/scratch/smshovan/output2/soa_spill_perData.root",
-        "/scratch/smshovan/output2/soa_spill_perGroup.root",
-        "/scratch/smshovan/output2/soa_topObject_perData.root",
-        "/scratch/smshovan/output2/soa_topObject_perGroup.root",
-        "/scratch/smshovan/output2/soa_element_perData.root",
-        "/scratch/smshovan/output2/soa_element_perGroup.root"
-    };
-    for (const auto& f : soa_files) {
-        auto tfile = TFile::Open(f.c_str(), "READ");
-        if (tfile) {
-            double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
-            soa_file_sizes.emplace_back(f, sizeMB);
-            tfile->Close();
-        }
-    }
-    visualize_soa_file_sizes(soa_file_sizes);
+    // // Collect SOA file sizes
+    // std::vector<std::pair<std::string, double>> soa_file_sizes;
+    // std::vector<std::string> soa_files = {
+    //     "/scratch/smshovan/output2/soa_event_all.root",
+    //     "/scratch/smshovan/output2/soa_event_perData.root",
+    //     "/scratch/smshovan/output2/soa_event_perGroup.root",
+    //     "/scratch/smshovan/output2/soa_spill_all.root",
+    //     "/scratch/smshovan/output2/soa_spill_perData.root",
+    //     "/scratch/smshovan/output2/soa_spill_perGroup.root",
+    //     "/scratch/smshovan/output2/soa_topObject_perData.root",
+    //     "/scratch/smshovan/output2/soa_topObject_perGroup.root",
+    //     "/scratch/smshovan/output2/soa_element_perData.root",
+    //     "/scratch/smshovan/output2/soa_element_perGroup.root"
+    // };
+    // for (const auto& f : soa_files) {
+    //     auto tfile = TFile::Open(f.c_str(), "READ");
+    //     if (tfile) {
+    //         double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
+    //         soa_file_sizes.emplace_back(f, sizeMB);
+    //         tfile->Close();
+    //     }
+    // }
+    // // Print SOA file sizes to terminal in a table format
+    // print_file_sizes_table("SOA File Sizes (MB)", soa_file_sizes);
 
     // Add comparison visualizations
-    visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
+    // Commented: comparison visualizations
+    // visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
     visualize_comparison_reader_results(aos_reader_results, soa_reader_results);
-    visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
+    // visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
 
     // auto aos_scaling = benchmarkAOSScaling(32, 3);
     // visualize_aos_scaling(aos_scaling);

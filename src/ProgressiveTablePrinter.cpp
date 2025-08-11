@@ -53,8 +53,10 @@ void ProgressiveTablePrinter<ReaderResult>::printRow(const ReaderResult& result)
             std::cout << std::setw(columnWidths[i]) << "-";
         }
     } else {
+        // Column 1: cold (first iteration)
         std::cout << std::setw(columnWidths[1]) << result.cold;
-        if (result.warmAvg > 0) {
+        // Column 2-3: warm avg/std
+        if (!result.warmTimes.empty()) {
             std::cout << std::setw(columnWidths[2]) << result.warmAvg
                       << std::setw(columnWidths[3]) << result.warmStddev;
         } else {
@@ -62,14 +64,17 @@ void ProgressiveTablePrinter<ReaderResult>::printRow(const ReaderResult& result)
                       << std::setw(columnWidths[3]) << "-";
         }
         
-        // Print individual iteration times if available
-        // For reader results, we'll display cold times first
-        for (size_t i = 0; i < result.coldTimes.size() && i + 4 < columnWidths.size(); ++i) {
-            std::cout << std::setw(columnWidths[i + 4]) << result.coldTimes[i];
+        // Iteration columns: Itr1 = cold, Itr2.. = warm1, warm2, ...
+        size_t colIndex = 4;
+        if (colIndex < columnWidths.size()) {
+            std::cout << std::setw(columnWidths[colIndex++]) << (result.coldTimes.empty() ? 0.0 : result.coldTimes.front());
+        }
+        for (size_t wi = 0; wi < result.warmTimes.size() && colIndex < columnWidths.size(); ++wi, ++colIndex) {
+            std::cout << std::setw(columnWidths[colIndex]) << result.warmTimes[wi];
         }
         
         // Fill remaining columns with "-" if we have fewer iterations than columns
-        for (size_t i = result.coldTimes.size() + 4; i < columnWidths.size(); ++i) {
+        for (size_t i = colIndex; i < columnWidths.size(); ++i) {
             std::cout << std::setw(columnWidths[i]) << "-";
         }
     }
