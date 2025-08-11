@@ -352,111 +352,152 @@ Element‑wise    & --                                   & \texttt{element\_perD
   \item \textbf{Cold Read Time:} Latency for first access after file creation, reflecting raw I/O.
   \item \textbf{Warm Read Time:} Latency when data is cached, measuring memory locality effects.
   \item \textbf{Compressed File Size:} Total on-disk footprint post-write, accounting for RNTuple's column-wise compression.
-  \item \textbf{Multi-thread Scaling:} Performance variation from 1 to 64 threads for write and read workloads.
 \end{itemize}
 \end{frame}
 
+\begin{frame}{AOS: Write Performance}
+  \centering
+  \includegraphics[width=0.9\linewidth]{../experiments/Seaborn/AOSWriter_blue_shaded.pdf}
+  \captionof{figure}{\scriptsize AOS (Array of Structures) Write performance across different persistent layouts.}
+\end{frame}
 
 \begin{frame}{AOS: Write Performance}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/aos_write_times.pdf}
-\captionof{figure}{\scriptsize AOS (Array of Structures) Write Performance across different data organization strategies.}
+\includegraphics[width=0.5\linewidth]{../experiments/Seaborn/AOSWriter_blue_shaded.pdf}
+
+\textbf{Key Takeaways:}
+\begin{itemize}
+\item Higher granularity leads to slower write performance due to thread contention.
+\item For horizontal persistent layouts, slow down is upto $6.9\times$, although it is marginal for vertical persistent layouts.
+\end{itemize}
 \end{frame}
 
 \begin{frame}{SOA: Write Performance}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/soa_write_times.pdf}
-\captionof{figure}{\scriptsize SOA (Structure of Arrays) Write Performance across different data organization strategies.}
+\includegraphics[width=0.9\linewidth]{../experiments/Seaborn/SOAWriter_shaded.pdf}
+\captionof{figure}{\scriptsize SOA (Structure of Arrays) Write performance across different persistent layouts.}
 \end{frame}
-\begin{frame}[c]{CPU Time Overheads}
-  \small
-  \begin{columns}[c,onlytextwidth]
-    \column{0.55\textwidth}
-    \footnotesize
-    \begin{tabular}{lccc}
-      \toprule
-      Writer & A & B & C\\
-      \midrule
-      \texttt{event\_perGroup}   & \checkmark & \checkmark & \\
-      \texttt{spill\_perGroup}   & \checkmark & \checkmark & \checkmark\\
-      \texttt{element\_perData}  & \checkmark & \checkmark & \\
-      \texttt{topObject\_perData}&   & \checkmark & \\
-      \texttt{event\_perData}    &   & \checkmark & \\
-      \texttt{spill\_perData}    &   & \checkmark & \checkmark\\
-      \bottomrule
-    \end{tabular}
-    \column{0.45\textwidth}\\[0.3em]
-    \begin{itemize}
-      \item \textbf{A – ROI flattening:} dominant for *element* and *perGroup* writers.
-      \item \textbf{B – Multiple NTuples:} extra \texttt{Fill}/Flush cycles \& mutex contention.
-      \item \textbf{C – Spill re-partitioning:} additional work unique to *spill* writers.
-    \end{itemize}
+
+\begin{frame}{SOA: Write Performance}
+  \centering
+  \includegraphics[width=0.5\linewidth]{../experiments/Seaborn/SOAWriter_shaded.pdf}
+  
+  \textbf{Key Takeaway:}
+  \begin{itemize}
+  \item SOA writer performance is overall similar to AOS writer performance.
+
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}{AOS vs SOA: Write Performance}
+  \centering
+  \includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Writer_grouped_with_gaps.pdf}
+  \captionof{figure}{\scriptsize AOS vs SOA write performance across different persistent layouts.}
+\end{frame}
+
+\begin{frame}{AOS vs SOA: Write Performance}
+  \centering
+  \includegraphics[width=0.5\linewidth]{../experiments/Seaborn/AOS_SOA_Writer_grouped_with_gaps.pdf}
+
+  \textbf{Key Takeaway:}
+  \begin{itemize}
+  \item SOA writer is on average $3.65\%$ faster than AOS writer for all persistent layouts.
+
+  \end{itemize}
+\end{frame}
+
+% \begin{frame}[c]{CPU Time Overheads}
+%   \small
+%   \begin{columns}[c,onlytextwidth]
+%     \column{0.55\textwidth}
+%     \footnotesize
+%     \begin{tabular}{lccc}
+%       \toprule
+%       Writer & A & B & C\\
+%       \midrule
+%       \texttt{event\_perGroup}   & \checkmark & \checkmark & \\
+%       \texttt{spill\_perGroup}   & \checkmark & \checkmark & \checkmark\\
+%       \texttt{element\_perData}  & \checkmark & \checkmark & \\
+%       \texttt{topObject\_perData}&   & \checkmark & \\
+%       \texttt{event\_perData}    &   & \checkmark & \\
+%       \texttt{spill\_perData}    &   & \checkmark & \checkmark\\
+%       \bottomrule
+%     \end{tabular}
+%     \column{0.45\textwidth}\\[0.3em]
+%     \begin{itemize}
+%       \item \textbf{A – ROI flattening:} dominant for *element* and *perGroup* writers.
+%       \item \textbf{B – Multiple NTuples:} extra \texttt{Fill}/Flush cycles \& mutex contention.
+%       \item \textbf{C – Spill re-partitioning:} additional work unique to *spill* writers.
+%     \end{itemize}
+%   \end{columns}
+%   \end{frame}
+
+\begin{frame}{File Size Analysis: AOS vs SOA}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.5\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{../experiments/Seaborn/AOS_FileSize_Heatmap_softblue_nogrid.pdf}
+    \captionof{figure}{\scriptsize AOS file size across persistent layouts}
+
+    \column{0.5\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{../experiments/Seaborn/SOA_FileSize_Heatmap_merun_white.pdf}
+    \captionof{figure}{\scriptsize SOA file size across persistent layouts}
   \end{columns}
-  \end{frame}
+\end{frame}
+
+\begin{frame}{File Size Analysis: AOS vs SOA}
+  \centering
+  \makebox[\textwidth]{
+    \begin{minipage}[t]{0.38\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../experiments/Seaborn/AOS_FileSize_Heatmap_softblue_nogrid.pdf}
+    \end{minipage}
+    \hspace{0.04\textwidth}
+    \begin{minipage}[t]{0.38\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../experiments/Seaborn/SOA_FileSize_Heatmap_merun_white.pdf}
+    \end{minipage}
+  }
+  \textbf{Inconclusive observations:}
+  \begin{itemize}
+    \item The variability in file size is higher for AOS than SOA.
+    \item Element\_perDataProduct layout for AOS leads to higher file size due to additional information storage of EventID and WireID. 
+  \end{itemize}
+\end{frame}
 
 \begin{frame}{AOS vs SOA: Cold Read Performance Comparison}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/comparison_cold_times.pdf}
+\includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf}
 \captionof{figure}{\scriptsize Cold Read Performance Comparison: Initial read times for AOS vs SOA implementations.}
 \end{frame}
 
 \begin{frame}{AOS vs SOA: Warm Read Performance Comparison}
 \centering
-\includegraphics[width=0.9\linewidth]{../experiments/comparison_warm_times.pdf}
+\includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf}
 \captionof{figure}{\scriptsize Warm Read Performance Comparison: Subsequent read times for AOS vs SOA implementations.}
 \end{frame}
 
-\begin{frame}{AOS: File Size Analysis}
-\centering
-\includegraphics[width=0.9\linewidth]{../experiments/aos_file_sizes.pdf}
-\captionof{figure}{\scriptsize AOS (Array of Structures) File Size Analysis across different data organization strategies.}
-\end{frame}
-
-\begin{frame}{SOA: File Size Analysis}
-\centering
-\includegraphics[width=0.9\linewidth]{../experiments/soa_file_sizes.pdf}
-\captionof{figure}{\scriptsize SOA (Structure of Arrays) File Size Analysis across different data organization strategies.}
-\end{frame}
-
-% -------- Section: Trade-offs --------
-
-% -------- Concise insight slides automatically inserted --------
-\begin{frame}[c]{File Size Insights}
-\small
-\begin{columns}[c,onlytextwidth]
-  \column{0.50\textwidth}
-  \begin{tabular}{@{}ll@{}}
-  \toprule
-  Writer variant & Size (\% of most)\\
-  \midrule
-  \texttt{aos\_element\_perData.root} & 47\%\\
-  \texttt{soa\_element\_perData.root} & 100\%\\
-  \texttt{aos\_element\_perGroup.root} & 42\%\\
-  \texttt{soa\_element\_perGroup.root} & 39\%\\
-  \texttt{aos\_event\_* / aos\_spill\_*} & $\sim$103\%\\
-  \texttt{soa\_event\_* / soa\_spill\_*} & 100\%\\
-  \bottomrule
-  \end{tabular}
-
-  \column{0.45\textwidth}
-  \textbf{Key Take-aways}\\[0.3em]
+\begin{frame}{AOS vs SOA: Warm Read Performance Comparison}
+  \centering
+  \includegraphics[width=0.5\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf}
+  
+  \textbf{Limitations:}
   \begin{itemize}
-    \item Deep nesting \& high row counts double basket overhead (offset tables, headers, CRC).
-    \item Flattened \texttt{perGroup} writers cut size roughly in half by removing ROI nesting.
+  \item No visible pattern in both cold and warm read performance.
+  \item The StdDev of warm read performance is higher because we are yet to utilize the flushing of cache.
   \end{itemize}
-\end{columns}
-\end{frame}
+  \end{frame}
 
-
-% -------- End of automatically inserted insight slides --------
-
-\section{Trade-offs}
-\begin{frame}{Trade-off Analysis}
-% Add your content here
-\end{frame}
 
 \begin{frame}{Future Considerations}
 \begin{itemize}
+
+  \item \textbf{Uniformity in Data Storage:} Deterministic approach to store exactly same data for each of the root files.
+
+  \vspace{0.5em}
+
   \item \textbf{Thread Scaling Analysis:} Rigorous testing across 1--128 threads to evaluate layout performance scaling and optimal configurations.
   
   \vspace{0.5em}
