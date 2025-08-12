@@ -12,7 +12,7 @@
 #include "ProgressiveTablePrinter.hpp"
 #include <exception>
 
-const std::string kOutputDir = "/scratch/smshovan/output2";
+
 
 template <typename ViewType>
 void processNtupleRange(const std::string& fileName, const std::string& ntupleName, const std::string& fieldName, const std::pair<std::size_t, std::size_t>& chunk) {
@@ -366,7 +366,7 @@ double readSOA_element_perGroup(const std::string& fileName, int nThreads) {
     return sw.RealTime();
 }
 
-std::vector<ReaderResult> updatedInAOS(int nThreads, int iter) {
+std::vector<ReaderResult> updatedInAOS(int nThreads, int iter, const std::string& outputDir) {
     std::vector<ReaderResult> results;
     
     // Create progressive table printer
@@ -417,22 +417,22 @@ std::vector<ReaderResult> updatedInAOS(int nThreads, int iter) {
         tablePrinter.addRow(result);
     };
 
-    benchmark("AOS_event_allDataProduct", readAOS_event_allDataProduct, kOutputDir + "/aos_event_all.root");
-    // benchmark("AOS_event_perDataProduct", readAOS_event_perDataProduct, kOutputDir + "/aos_event_perData.root");
-    // benchmark("AOS_event_perGroup", readAOS_event_perGroup, kOutputDir + "/aos_event_perGroup.root");
-    // benchmark("AOS_spill_allDataProduct", readAOS_spill_allDataProduct, kOutputDir + "/aos_spill_all.root");
-    // benchmark("AOS_spill_perDataProduct", readAOS_spill_perDataProduct, kOutputDir + "/aos_spill_perData.root");
-    // benchmark("AOS_spill_perGroup", readAOS_spill_perGroup, kOutputDir + "/aos_spill_perGroup.root");
-    // benchmark("AOS_topObject_perDataProduct", readAOS_topObject_perDataProduct, kOutputDir + "/aos_topObject_perData.root");
-    // benchmark("AOS_topObject_perGroup", readAOS_topObject_perGroup, kOutputDir + "/aos_topObject_perGroup.root");
-    // benchmark("AOS_element_perDataProduct", readAOS_element_perDataProduct, kOutputDir + "/aos_element_perData.root");
-    // benchmark("AOS_element_perGroup", readAOS_element_perGroup, kOutputDir + "/aos_element_perGroup.root");
+    benchmark("AOS_event_allDataProduct", readAOS_event_allDataProduct, outputDir + "/aos_event_all.root");
+    benchmark("AOS_event_perDataProduct", readAOS_event_perDataProduct, outputDir + "/aos_event_perData.root");
+    benchmark("AOS_event_perGroup", readAOS_event_perGroup, outputDir + "/aos_event_perGroup.root");
+    benchmark("AOS_spill_allDataProduct", readAOS_spill_allDataProduct, outputDir + "/aos_spill_all.root");
+    benchmark("AOS_spill_perDataProduct", readAOS_spill_perDataProduct, outputDir + "/aos_spill_perData.root");
+    benchmark("AOS_spill_perGroup", readAOS_spill_perGroup, outputDir + "/aos_spill_perGroup.root");
+    benchmark("AOS_topObject_perDataProduct", readAOS_topObject_perDataProduct, outputDir + "/aos_topObject_perData.root");
+    benchmark("AOS_topObject_perGroup", readAOS_topObject_perGroup, outputDir + "/aos_topObject_perGroup.root");
+    benchmark("AOS_element_perDataProduct", readAOS_element_perDataProduct, outputDir + "/aos_element_perData.root");
+    benchmark("AOS_element_perGroup", readAOS_element_perGroup, outputDir + "/aos_element_perGroup.root");
 
     tablePrinter.printFooter();
     return results;
 }
 
-std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
+std::vector<ReaderResult> updatedInSOA(int nThreads, int iter, const std::string& outputDir) {
     std::vector<ReaderResult> results;
     
     // Create progressive table printer
@@ -483,16 +483,16 @@ std::vector<ReaderResult> updatedInSOA(int nThreads, int iter) {
         tablePrinter.addRow(result);
     };
 
-    benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, kOutputDir + "/soa_event_all.root");
-    // benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, kOutputDir + "/soa_event_perData.root");
-    // benchmark("SOA_event_perGroup", readSOA_event_perGroup, kOutputDir + "/soa_event_perGroup.root");
-    // benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, kOutputDir + "/soa_spill_all.root");
-    // benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, kOutputDir + "/soa_spill_perData.root");
-    // benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, kOutputDir + "/soa_spill_perGroup.root");
-    // benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, kOutputDir + "/soa_topObject_perData.root");
-    // benchmark("SOA_topObject_perGroup", readSOA_topObject_perGroup, kOutputDir + "/soa_topObject_perGroup.root");
-    // benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, kOutputDir + "/soa_element_perData.root");
-    // benchmark("SOA_element_perGroup", readSOA_element_perGroup, kOutputDir + "/soa_element_perGroup.root");
+    benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, outputDir + "/soa_event_all.root");
+    benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, outputDir + "/soa_event_perData.root");
+    benchmark("SOA_event_perGroup", readSOA_event_perGroup, outputDir + "/soa_event_perGroup.root");
+    benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, outputDir + "/soa_spill_all.root");
+    benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, outputDir + "/soa_spill_perData.root");
+    benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, outputDir + "/soa_spill_perGroup.root");
+    benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, outputDir + "/soa_topObject_perData.root");
+    benchmark("SOA_topObject_perGroup", readSOA_topObject_perGroup, outputDir + "/soa_topObject_perGroup.root");
+    benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, outputDir + "/soa_element_perData.root");
+    benchmark("SOA_element_perGroup", readSOA_element_perGroup, outputDir + "/soa_element_perGroup.root");
 
     tablePrinter.printFooter();
     return results;

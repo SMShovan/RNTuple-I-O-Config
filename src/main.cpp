@@ -70,75 +70,83 @@ int main() {
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
     
+    // Configuration parameters
+    int numEvents = 1000;
+    int hitsPerEvent = 100;
+    int wiresPerEvent = 100;
+    int roisPerWire = 10;
+    int numSpills = 10;
+    const std::string kOutputDir = "./output";
+    
 
     // Commented: AOS writer/reader benchmarks
-    // auto aos_writer_results = updatedOutAOS(nThreads, 3);
-    // visualize_aos_writer_results(aos_writer_results);
-    auto aos_reader_results = updatedInAOS(nThreads, 3);
+    auto aos_writer_results = updatedOutAOS(nThreads, 3, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
+    visualize_aos_writer_results(aos_writer_results);
+    auto aos_reader_results = updatedInAOS(nThreads, 3, kOutputDir);
     visualize_aos_reader_results(aos_reader_results);
 
     // Collect AOS file sizes
-    // std::vector<std::pair<std::string, double>> aos_file_sizes;
-    // std::vector<std::string> aos_files = {
-    //     "/scratch/smshovan/output2/aos_event_all.root",
-    //     "/scratch/smshovan/output2/aos_event_perData.root",
-    //     "/scratch/smshovan/output2/aos_event_perGroup.root",
-    //     "/scratch/smshovan/output2/aos_spill_all.root",
-    //     "/scratch/smshovan/output2/aos_spill_perData.root",
-    //     "/scratch/smshovan/output2/aos_spill_perGroup.root",
-    //     "/scratch/smshovan/output2/aos_topObject_perData.root",
-    //     "/scratch/smshovan/output2/aos_topObject_perGroup.root",
-    //     "/scratch/smshovan/output2/aos_element_perData.root",
-    //     "/scratch/smshovan/output2/aos_element_perGroup.root"
-    // };
-    // for (const auto& f : aos_files) {
-    //     auto tfile = TFile::Open(f.c_str(), "READ");
-    //     if (tfile) {
-    //         double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
-    //         aos_file_sizes.emplace_back(f, sizeMB);
-    //         tfile->Close();
-    //     }
-    // }
-    // // Print AOS file sizes to terminal in a table format
-    // print_file_sizes_table("AOS File Sizes (MB)", aos_file_sizes);
+    std::vector<std::pair<std::string, double>> aos_file_sizes;
+    std::vector<std::string> aos_files = {
+        kOutputDir + "/aos_event_all.root",
+        kOutputDir + "/aos_event_perData.root",
+        kOutputDir + "/aos_event_perGroup.root",
+        kOutputDir + "/aos_spill_all.root",
+        kOutputDir + "/aos_spill_perData.root",
+        kOutputDir + "/aos_spill_perGroup.root",
+        kOutputDir + "/aos_topObject_perData.root",
+        kOutputDir + "/aos_topObject_perGroup.root",
+        kOutputDir + "/aos_element_perData.root",
+        kOutputDir + "/aos_element_perGroup.root"
+    };
+    for (const auto& f : aos_files) {
+        auto tfile = TFile::Open(f.c_str(), "READ");
+        if (tfile) {
+            double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
+            aos_file_sizes.emplace_back(f, sizeMB);
+            tfile->Close();
+        }
+    }
+    // Print AOS file sizes to terminal in a table format
+    print_file_sizes_table("AOS File Sizes (MB)", aos_file_sizes);
 
     // Add SOA visualization - use separate SOA-only functions
     // Commented: SOA writer/reader benchmarks
-    // auto soa_writer_results = updatedOutSOA(nThreads, 3);
-    // visualize_soa_writer_results(soa_writer_results);
-    auto soa_reader_results = updatedInSOA(nThreads, 3);
+    auto soa_writer_results = updatedOutSOA(nThreads, 3, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
+    visualize_soa_writer_results(soa_writer_results);
+    auto soa_reader_results = updatedInSOA(nThreads, 3, kOutputDir);
     visualize_soa_reader_results(soa_reader_results);
 
-    // // Collect SOA file sizes
-    // std::vector<std::pair<std::string, double>> soa_file_sizes;
-    // std::vector<std::string> soa_files = {
-    //     "/scratch/smshovan/output2/soa_event_all.root",
-    //     "/scratch/smshovan/output2/soa_event_perData.root",
-    //     "/scratch/smshovan/output2/soa_event_perGroup.root",
-    //     "/scratch/smshovan/output2/soa_spill_all.root",
-    //     "/scratch/smshovan/output2/soa_spill_perData.root",
-    //     "/scratch/smshovan/output2/soa_spill_perGroup.root",
-    //     "/scratch/smshovan/output2/soa_topObject_perData.root",
-    //     "/scratch/smshovan/output2/soa_topObject_perGroup.root",
-    //     "/scratch/smshovan/output2/soa_element_perData.root",
-    //     "/scratch/smshovan/output2/soa_element_perGroup.root"
-    // };
-    // for (const auto& f : soa_files) {
-    //     auto tfile = TFile::Open(f.c_str(), "READ");
-    //     if (tfile) {
-    //         double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
-    //         soa_file_sizes.emplace_back(f, sizeMB);
-    //         tfile->Close();
-    //     }
-    // }
-    // // Print SOA file sizes to terminal in a table format
-    // print_file_sizes_table("SOA File Sizes (MB)", soa_file_sizes);
+    // Collect SOA file sizes
+    std::vector<std::pair<std::string, double>> soa_file_sizes;
+    std::vector<std::string> soa_files = {
+        kOutputDir + "/soa_event_all.root",
+        kOutputDir + "/soa_event_perData.root",
+        kOutputDir + "/soa_event_perGroup.root",
+        kOutputDir + "/soa_spill_all.root",
+        kOutputDir + "/soa_spill_perData.root",
+        kOutputDir + "/soa_spill_perGroup.root",
+        kOutputDir + "/soa_topObject_perData.root",
+        kOutputDir + "/soa_topObject_perGroup.root",
+        kOutputDir + "/soa_element_perData.root",
+        kOutputDir + "/soa_element_perGroup.root"
+    };
+    for (const auto& f : soa_files) {
+        auto tfile = TFile::Open(f.c_str(), "READ");
+        if (tfile) {
+            double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
+            soa_file_sizes.emplace_back(f, sizeMB);
+            tfile->Close();
+        }
+    }
+    // Print SOA file sizes to terminal in a table format
+    print_file_sizes_table("SOA File Sizes (MB)", soa_file_sizes);
 
     // Add comparison visualizations
     // Commented: comparison visualizations
-    // visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
+    visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
     visualize_comparison_reader_results(aos_reader_results, soa_reader_results);
-    // visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
+    visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
 
     // auto aos_scaling = benchmarkAOSScaling(32, 3);
     // visualize_aos_scaling(aos_scaling);
