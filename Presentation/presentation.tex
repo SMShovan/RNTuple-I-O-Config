@@ -1,5 +1,5 @@
 \documentclass[aspectratio=169]{beamer}
-\usetheme[progressbar=frametitle, numbering=fraction]{metropolis}
+\usetheme[progressbar=frametitle, numbering=none]{metropolis}
  % Modern, minimal theme
 \setbeamertemplate{footline}{
   \leavevmode%
@@ -24,7 +24,7 @@
 
 % Metadata
 \title{I/O Performance trade-offs among RNTuple’s persistent layouts for DUNE Data Products}
-\subtitle{}
+\subtitle{Mentored by Philippe Canal}
 \author{S M Shovan, \textit{FCSI Summer Intern'25}}
 
 \institute{Fermi National Accelerator Laboratory}
@@ -355,6 +355,33 @@ Element‑wise    & --                                   & \texttt{element\_perD
 \end{itemize}
 \end{frame}
 
+% Experimental setup (added after Evaluation Metrics)
+\begin{frame}{Experimental Setup}
+\footnotesize
+\begin{columns}[t,onlytextwidth]
+  \column{0.58\textwidth}
+  \textbf{Hardware}\\
+  \vspace{1em}
+  \begin{tabular}{@{}l p{0.68\linewidth}@{}}
+  CPU & Intel Xeon Silver 4214R @ 2.40\,GHz \\
+  Cores/Threads & 12 cores per socket, 24 threads (HT) \\
+  Memory & 94\,GB RAM \\
+  Storage & SSD: 540\,MB/s read, 520\,MB/s write \\
+  \end{tabular}
+
+  \column{0.40\textwidth}
+  \textbf{Benchmark Parameters}\\
+  \vspace{1em}
+  \begin{tabular}{@{}l r@{}}
+  Events & 1\,M \\
+  Hits per event & 100 \\
+  Wires per event & 100 \\
+  ROIs per wire & 10 \\
+  Spills & 10 \\
+  \end{tabular}
+\end{columns}
+\end{frame}
+
 \begin{frame}{AOS: Write Performance}
   \centering
   \includegraphics[width=0.9\linewidth]{../experiments/Seaborn/AOSWriter_blue_shaded.pdf}
@@ -367,7 +394,7 @@ Element‑wise    & --                                   & \texttt{element\_perD
 
 \textbf{Key Takeaways:}
 \begin{itemize}
-\item Higher granularity leads to slower write performance due to thread contention.
+\item Higher granularity leads to slower write performance, mainly due to thread contention.
 \item For horizontal persistent layouts, slow down is upto $6.9\times$, although it is marginal for vertical persistent layouts.
 \end{itemize}
 \end{frame}
@@ -532,7 +559,7 @@ Element‑wise    & --                                   & \texttt{element\_perD
 \end{frame}
 
 % References Slide
-\begin{frame}[allowframebreaks]{References}
+\begin{frame}{References}
 \small
 [1] DUNE Collaboration, “Deep Underground Neutrino Experiment Technical Design Report– VolumeII: DUNE Physics,” 2020, Sec.2.6.\par
 [2] DUNE Collaboration, “Data Acquisition System for the DUNE Far Detector,” IEEE NSS/MIC Proc., 2023.\\
@@ -540,8 +567,10 @@ Element‑wise    & --                                   & \texttt{element\_perD
 
 % Final Slide
 \begin{frame}[standout]
+\large Source code: \url{https://github.com/Framework-R-D/phlex-io-granularity-test}
+\vspace{3em}\\
 Thank you! \\
-Questions?
+Questions?\\[0.8em]
 \end{frame}
 
 \end{document}
