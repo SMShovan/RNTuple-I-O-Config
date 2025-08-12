@@ -480,24 +480,34 @@ Element‑wise    & --                                   & \texttt{element\_perD
 
 \begin{frame}{AOS vs SOA: Cold Read Performance Comparison}
 \centering
-\includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped.pdf}
+\includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped_progressive.pdf}
 \captionof{figure}{\scriptsize Cold Read Performance Comparison: Initial read times for AOS vs SOA implementations.}
 \end{frame}
 
+\begin{frame}{AOS vs SOA: Cold Read Performance Comparison}
+  \centering
+  \includegraphics[width=0.6\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Cold_grouped_progressive.pdf}
+  
+  \textbf{Inconclusive observations:}
+  \begin{itemize}
+  \item SOA reader is on average $2.34\%$ faster than AOS reader for cold read.
+  \end{itemize}
+  \end{frame}
+
 \begin{frame}{AOS vs SOA: Warm Read Performance Comparison}
 \centering
-\includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf}
+\includegraphics[width=0.8\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped_progressive.pdf}
 \captionof{figure}{\scriptsize Warm Read Performance Comparison: Subsequent read times for AOS vs SOA implementations.}
 \end{frame}
 
 \begin{frame}{AOS vs SOA: Warm Read Performance Comparison}
   \centering
-  \includegraphics[width=0.5\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped.pdf}
+  \includegraphics[width=0.6\linewidth]{../experiments/Seaborn/AOS_SOA_Reader_Warm_grouped_progressive.pdf}
   
-  \textbf{Limitations:}
+  \textbf{Inconclusive observations:}
   \begin{itemize}
-  \item No visible pattern in both cold and warm read performance.
-  \item The StdDev of warm read performance is higher because we are yet to utilize the flushing of cache.
+  \item Average warm read is $4.91\times$ faster than cold read across all persistent layouts.
+  \item SOA reader is on average $11.63\%$ faster than AOS reader for warm read.
   \end{itemize}
   \end{frame}
 
