@@ -35,18 +35,6 @@
 
 ## How to Build
 
-### Basic Build Process
-
-```sh
-cd project
-mkdir -p build
-cd build
-cmake ..
-make
-cd ..
-./build/hitwire
-```
-
 ### Complete Build and Test Process (scisoftbuild02)
 
 ```sh
