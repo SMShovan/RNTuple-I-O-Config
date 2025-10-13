@@ -24,6 +24,14 @@ std::vector<HitIndividual> generateEventHits(long long eventID, int numHits, std
 std::vector<WireIndividual> generateEventWires(long long eventID, int numWires, int roisPerWire, std::mt19937& rng);
 std::vector<FlatROI> flattenROIs(const std::vector<WireIndividual>& wires);
 
+// Deterministic generators (thread/config independent) used by allDataProduct paths
+std::vector<HitIndividual> generateEventHitsDeterministic(long long eventID, int numHits);
+std::vector<WireIndividual> generateEventWiresDeterministic(long long eventID, int numWires, int roisPerWire);
+
+// Deterministic range generators for spill slicing (per event)
+std::vector<HitIndividual> generateEventHitsDeterministicRange(long long eventID, int startIndex, int count);
+std::vector<WireIndividual> generateEventWiresDeterministicRange(long long eventID, int startIndex, int count, int roisPerWire);
+
 struct EventAOS {
     std::vector<HitIndividual> hits;
     std::vector<WireIndividual> wires;
@@ -36,7 +44,8 @@ auto CreateAOSWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleMod
 auto CreateAOSROIsModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
 auto CreateAOSBaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
 
-double RunAOS_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunAOS_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire,
+    double* outDataGen = nullptr, double* outSerialize = nullptr, double* outFlushColumns = nullptr, double* outFlushCluster = nullptr);
 double RunAOS_event_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
 double RunAOS_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire); 
 double RunAOS_spill_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire);

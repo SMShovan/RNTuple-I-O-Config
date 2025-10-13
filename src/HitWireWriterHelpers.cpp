@@ -12,6 +12,7 @@
 #include <vector>
 #include <mutex>
 #include <TStopwatch.h>
+#include "Utils.hpp"
 
 // Data generation (adapt from existing generators)
 std::vector<HitIndividual> generateEventHits(long long eventID, int numHits, std::mt19937& rng) {
@@ -26,6 +27,54 @@ std::vector<WireIndividual> generateEventWires(long long eventID, int numWires, 
     std::vector<WireIndividual> wires;
     for (int i = 0; i < numWires; ++i) {
         wires.push_back(generateRandomWireIndividual(eventID, roisPerWire, rng));
+    }
+    return wires;
+}
+
+// Deterministic per-entry generators (thread/config independent)
+std::vector<HitIndividual> generateEventHitsDeterministic(long long eventID, int numHits) {
+    std::vector<HitIndividual> hits;
+    hits.reserve(numHits);
+    for (int i = 0; i < numHits; ++i) {
+        std::uint32_t seed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(eventID), static_cast<std::uint64_t>(i));
+        std::mt19937 rngLocal(seed);
+        hits.push_back(generateRandomHitIndividual(eventID, rngLocal));
+    }
+    return hits;
+}
+
+std::vector<WireIndividual> generateEventWiresDeterministic(long long eventID, int numWires, int roisPerWire) {
+    std::vector<WireIndividual> wires;
+    wires.reserve(numWires);
+    for (int w = 0; w < numWires; ++w) {
+        std::uint32_t seed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(eventID), static_cast<std::uint64_t>(w));
+        std::mt19937 rngLocal(seed);
+        wires.push_back(generateRandomWireIndividual(eventID, roisPerWire, rngLocal));
+    }
+    return wires;
+}
+
+// Deterministic range variants (useful for spills slicing a single event)
+std::vector<HitIndividual> generateEventHitsDeterministicRange(long long eventID, int startIndex, int count) {
+    std::vector<HitIndividual> hits;
+    hits.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        int idx = startIndex + i;
+        std::uint32_t seed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(eventID), static_cast<std::uint64_t>(idx));
+        std::mt19937 rngLocal(seed);
+        hits.push_back(generateRandomHitIndividual(eventID, rngLocal));
+    }
+    return hits;
+}
+
+std::vector<WireIndividual> generateEventWiresDeterministicRange(long long eventID, int startIndex, int count, int roisPerWire) {
+    std::vector<WireIndividual> wires;
+    wires.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        int idx = startIndex + i;
+        std::uint32_t seed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(eventID), static_cast<std::uint64_t>(idx));
+        std::mt19937 rngLocal(seed);
+        wires.push_back(generateRandomWireIndividual(eventID, roisPerWire, rngLocal));
     }
     return wires;
 }
@@ -95,24 +144,46 @@ auto CreateAOSBaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupl
 }
 
 // Work function for allDataProduct
-double RunAOS_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+double RunAOS_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire,
+    double* outDataGen, double* outSerialize, double* outFlushColumns, double* outFlushCluster) {
     std::mt19937 rng(seed);
     TStopwatch sw;
+    double dataGenTime = 0.0, serializeTime = 0.0, flushColumnsTime = 0.0, flushClusterTime = 0.0;
     double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        EventAOS eventData;
-        eventData.hits = generateEventHits(evt, hitsPerEvent, rng);
-        eventData.wires = generateEventWires(evt, wiresPerEvent, roisPerWire, rng);
-        sw.Start();
-        entry.BindRawPtr(token, &eventData);
-        ROOT::RNTupleFillStatus status;
-        context.FillNoFlush(entry, status);
-        if (status.ShouldFlushCluster()) {
-            context.FlushColumns();
-            { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+        // W1 — Data generation
+        {
+            TStopwatch swPhase; swPhase.Start();
+            EventAOS eventData;
+            eventData.hits = generateEventHitsDeterministic(evt, hitsPerEvent);
+            eventData.wires = generateEventWiresDeterministic(evt, wiresPerEvent, roisPerWire);
+
+            dataGenTime += swPhase.RealTime();
+
+            // W2 — Serialize/fill
+            sw.Start();
+            TStopwatch swSer; swSer.Start();
+            entry.BindRawPtr(token, &eventData);
+            ROOT::RNTupleFillStatus status;
+            context.FillNoFlush(entry, status);
+            serializeTime += swSer.RealTime();
+
+            // W3 — Flush columns (no lock) and W4 — Flush cluster (with lock)
+            if (status.ShouldFlushCluster()) {
+                TStopwatch swFC; swFC.Start();
+                context.FlushColumns();
+                flushColumnsTime += swFC.RealTime();
+                TStopwatch swFCl; swFCl.Start();
+                { std::lock_guard<std::mutex> lock(mutex); context.FlushCluster(); }
+                flushClusterTime += swFCl.RealTime();
+            }
+            totalTime += sw.RealTime();
         }
-        totalTime += sw.RealTime();
     }
+    if (outDataGen) *outDataGen = dataGenTime;
+    if (outSerialize) *outSerialize = serializeTime;
+    if (outFlushColumns) *outFlushColumns = flushColumnsTime;
+    if (outFlushCluster) *outFlushCluster = flushClusterTime;
     return totalTime;
 }
 
@@ -122,8 +193,9 @@ double RunAOS_event_perDataProductWorkFunc(int first, int last, unsigned seed, R
     TStopwatch sw;
     double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        auto hits = generateEventHits(evt, hitsPerEvent, rng);
-        auto wires = generateEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        // Deterministic content independent of thread/config
+        auto hits = generateEventHitsDeterministic(evt, hitsPerEvent);
+        auto wires = generateEventWiresDeterministic(evt, wiresPerEvent, roisPerWire);
         sw.Start();
         // Fill hits
         hitsEntry.BindRawPtr(hitsToken, &hits);
@@ -152,8 +224,9 @@ double RunAOS_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::E
     TStopwatch sw;
     double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        auto hits = generateEventHits(evt, hitsPerEvent, rng);
-        auto wires = generateEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        // Deterministic content independent of thread/config
+        auto hits = generateEventHitsDeterministic(evt, hitsPerEvent);
+        auto wires = generateEventWiresDeterministic(evt, wiresPerEvent, roisPerWire);
         auto rois = flattenROIs(wires);
         std::vector<WireBase> baseWires;
         for(const auto& w : wires) baseWires.push_back(extractWireBase(w));
@@ -198,9 +271,12 @@ double RunAOS_spill_allDataProductWorkFunc(int first, int last, unsigned seed, R
     for (int idx = first; idx < last; ++idx) {
         int evt = idx / numSpills;
         int spill = idx % numSpills;
+        int startHit = spill * adjustedHits;
+        int startWire = spill * adjustedWires;
         EventAOS spillData;
-        spillData.hits = generateEventHits(evt * numSpills + spill, adjustedHits, rng); // Use unique ID
-        spillData.wires = generateEventWires(evt * numSpills + spill, adjustedWires, roisPerWire, rng);
+        // Deterministic slices from the same event content
+        spillData.hits = generateEventHitsDeterministicRange(evt, startHit, adjustedHits);
+        spillData.wires = generateEventWiresDeterministicRange(evt, startWire, adjustedWires, roisPerWire);
         sw.Start();
         entry.BindRawPtr(token, &spillData);
         ROOT::RNTupleFillStatus status;
@@ -216,14 +292,16 @@ double RunAOS_spill_allDataProductWorkFunc(int first, int last, unsigned seed, R
 
 // Similar for perDataProduct and perGroup with adjustments
 double RunAOS_spill_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
         int evt = idx / numSpills;
         int spill = idx % numSpills;
-        auto hits = generateEventHits(evt * numSpills + spill, adjustedHits, rng);
-        auto wires = generateEventWires(evt * numSpills + spill, adjustedWires, roisPerWire, rng);
+        int startHit = spill * adjustedHits;
+        int startWire = spill * adjustedWires;
+        // Deterministic slices from event-level content
+        auto hits = generateEventHitsDeterministicRange(evt, startHit, adjustedHits);
+        auto wires = generateEventWiresDeterministicRange(evt, startWire, adjustedWires, roisPerWire);
         sw.Start();
         hitsEntry.BindRawPtr(hitsToken, &hits);
         ROOT::RNTupleFillStatus hitsStatus;
@@ -299,14 +377,18 @@ WireIndividual generateSingleWire(long long id, int roisPerWire, std::mt19937& r
 // Adjust RunAOS_topObject_perDataProductWorkFunc and RunAOS_topObject_perGroupWorkFunc to use REntry: GetPtr, set values, context.Fill(entry)
 
 double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     auto hitPtr = hitsEntry.GetPtr<HitIndividual>("hit");
     auto wirePtr = wiresEntry.GetPtr<WireIndividual>("wire");
     for (int idx = first; idx < last; ++idx) {
-        HitIndividual hit = generateSingleHit(idx, rng);
-        WireIndividual wire = generateSingleWire(idx, roisPerWire, rng);
+        // Deterministic per-entry generation
+        std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(idx), static_cast<std::uint64_t>(0));
+        std::mt19937 hRng(hSeed);
+        HitIndividual hit = generateRandomHitIndividual(idx, hRng);
+        std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(idx), static_cast<std::uint64_t>(0));
+        std::mt19937 wRng(wSeed);
+        WireIndividual wire = generateRandomWireIndividual(idx, roisPerWire, wRng);
         sw.Start();
         *hitPtr = hit;
         ROOT::RNTupleFillStatus hitsStatus;
@@ -331,15 +413,19 @@ double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned see
 }
 
 double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     auto hitPtr = hitsEntry.GetPtr<HitIndividual>("hit");
     auto wirePtr = wiresEntry.GetPtr<WireBase>("wire");
     auto roisPtr = roisEntry.GetPtr<std::vector<FlatROI>>("rois");
     for (int idx = first; idx < last; ++idx) {
-        HitIndividual hit = generateSingleHit(idx, rng);
-        WireIndividual fullWire = generateSingleWire(idx, roisPerWire, rng);
+        // Deterministic per-entry generation
+        std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(idx), static_cast<std::uint64_t>(0));
+        std::mt19937 hRng(hSeed);
+        HitIndividual hit = generateRandomHitIndividual(idx, hRng);
+        std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(idx), static_cast<std::uint64_t>(0));
+        std::mt19937 wRng(wSeed);
+        WireIndividual fullWire = generateRandomWireIndividual(idx, roisPerWire, wRng);
         WireBase wire = extractWireBase(fullWire);
         auto rois = flattenROIs({fullWire});
         sw.Start();
@@ -488,18 +574,19 @@ double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
     ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
     ROOT::Experimental::RNTupleFillContext& wireROIContext, ROOT::REntry& wireROIEntry,
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
-    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     double totalTime = 0.0;
 
     auto hitPtr   = hitsEntry.GetPtr<HitIndividual>("hit");
     auto wroiPtr  = wireROIEntry.GetPtr<WireROI>("wire_roi");
 
     for (int evt = firstEvt; evt < lastEvt; ++evt) {
-        // hits
+        // hits (deterministic per-entry)
         for (int h = 0; h < hitsPerEvent; ++h) {
-            *hitPtr = generateSingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
+            long long gid = static_cast<long long>(evt) * hitsPerEvent + h;
+            std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(h));
+            std::mt19937 hRng(hSeed);
+            *hitPtr = generateRandomHitIndividual(gid, hRng);
             sw.Start();
             ROOT::RNTupleFillStatus hitStatus;
             hitsContext.FillNoFlush(hitsEntry, hitStatus);
@@ -509,16 +596,18 @@ double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
             }
             totalTime += sw.RealTime();
         }
-        // wire ROIs: generate wiresPerEvent wires, each with roisPerWire ROIs
+        // wire ROIs (deterministic per wire and ROI)
         for (int w = 0; w < wiresPerEvent; ++w) {
-            long long wireGlobalID = static_cast<long long>(evt) * wiresPerEvent + w;
+            // Build deterministic wire to source channel/view and ROI count
+            std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(w));
+            std::mt19937 wRng(wSeed);
+            WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
             for (int r = 0; r < roisPerWire; ++r) {
                 wroiPtr->EventID       = evt;
-                wroiPtr->fWire_Channel = rng() % 1024;
-                wroiPtr->fWire_View    = rng() % 7;
-                wroiPtr->roi.offset    = rng() % 500;
-                wroiPtr->roi.data.resize(10);
-                for (auto& val : wroiPtr->roi.data) val = distADC(rng);
+                wroiPtr->fWire_Channel = wInd.fWire_Channel;
+                wroiPtr->fWire_View    = wInd.fWire_View;
+                wroiPtr->roi.offset    = wInd.getSignalROI()[r].offset;
+                wroiPtr->roi.data      = wInd.getSignalROI()[r].data;
                 sw.Start();
                 ROOT::RNTupleFillStatus wroiStatus;
                 wireROIContext.FillNoFlush(wireROIEntry, wroiStatus);
@@ -546,7 +635,6 @@ double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
     ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
     ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
 
@@ -555,7 +643,35 @@ double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
 
     for (int evt = firstEvt; evt < lastEvt; ++evt) {
         for (int h = 0; h < hitsPerEvent; ++h) {
-            *hitPtr = generateSOASingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
+            long long gid = static_cast<long long>(evt) * hitsPerEvent + h;
+            std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(h));
+            std::mt19937 hRng(hSeed);
+            HitIndividual hInd = generateRandomHitIndividual(gid, hRng);
+            SOAHit hit;
+            hit.EventID = hInd.EventID;
+            hit.Channel = hInd.fChannel;
+            hit.View = hInd.fView;
+            hit.StartTick = hInd.fStartTick;
+            hit.EndTick = hInd.fEndTick;
+            hit.PeakTime = hInd.fPeakTime;
+            hit.SigmaPeakTime = hInd.fSigmaPeakTime;
+            hit.RMS = hInd.fRMS;
+            hit.PeakAmplitude = hInd.fPeakAmplitude;
+            hit.SigmaPeakAmplitude = hInd.fSigmaPeakAmplitude;
+            hit.ROISummedADC = hInd.fROISummedADC;
+            hit.HitSummedADC = hInd.fHitSummedADC;
+            hit.Integral = hInd.fIntegral;
+            hit.SigmaIntegral = hInd.fSigmaIntegral;
+            hit.Multiplicity = hInd.fMultiplicity;
+            hit.LocalIndex = hInd.fLocalIndex;
+            hit.GoodnessOfFit = hInd.fGoodnessOfFit;
+            hit.NDF = hInd.fNDF;
+            hit.SignalType = hInd.fSignalType;
+            hit.WireID_Cryostat = hInd.fWireID_Cryostat;
+            hit.WireID_TPC = hInd.fWireID_TPC;
+            hit.WireID_Plane = hInd.fWireID_Plane;
+            hit.WireID_Wire = hInd.fWireID_Wire;
+            *hitPtr = hit;
             sw.Start();
             ROOT::RNTupleFillStatus hitStatus;
             hitsContext.FillNoFlush(hitsEntry, hitStatus);
@@ -566,8 +682,14 @@ double RunSOA_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, 
             }
         }
         for (int w = 0; w < wiresPerEvent; ++w) {
+            // Deterministic wire/ROI mapping to FlatSOAROI
+            std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(w));
+            std::mt19937 wRng(wSeed);
+            WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
             for (int r = 0; r < roisPerWire; ++r) {
-                *roiPtr = generateSOASingleROI(evt, static_cast<unsigned int>(w), rng);
+                roiPtr->EventID = static_cast<unsigned int>(evt);
+                roiPtr->WireID  = static_cast<unsigned int>(wInd.fWire_Channel);
+                roiPtr->data    = wInd.getSignalROI()[r].data;
                 sw.Start();
                 ROOT::RNTupleFillStatus roiStatus;
                 roisContext.FillNoFlush(roisEntry, roiStatus);
@@ -593,9 +715,7 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
     ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry,
     ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry,
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
-    std::uniform_real_distribution<float> distADC(0.0f, 100.0f);
     double totalTime = 0.0;
 
     auto hitPtr  = hitsEntry.GetPtr<HitIndividual>("hit");
@@ -603,9 +723,12 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
     auto roiPtr  = roisEntry.GetPtr<FlatROI>("roi");
 
     for (int evt = firstEvt; evt < lastEvt; ++evt) {
-        // hits
+        // hits (deterministic per-entry)
         for (int h = 0; h < hitsPerEvent; ++h) {
-            *hitPtr = generateSingleHit(static_cast<long long>(evt) * hitsPerEvent + h, rng);
+            long long gid = static_cast<long long>(evt) * hitsPerEvent + h;
+            std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(h));
+            std::mt19937 hRng(hSeed);
+            *hitPtr = generateRandomHitIndividual(gid, hRng);
             sw.Start();
             ROOT::RNTupleFillStatus hitStatus;
             hitsContext.FillNoFlush(hitsEntry, hitStatus);
@@ -615,12 +738,15 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
             }
             totalTime += sw.RealTime();
         }
-        // wires & ROIs
+        // wires & ROIs (deterministic per wire and ROI)
         for (int w = 0; w < wiresPerEvent; ++w) {
+            std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(w));
+            std::mt19937 wRng(wSeed);
+            WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
             // base wire
             wirePtr->EventID = evt;
-            wirePtr->fWire_Channel = rng() % 1024;
-            wirePtr->fWire_View    = rng() % 7;
+            wirePtr->fWire_Channel = wInd.fWire_Channel;
+            wirePtr->fWire_View    = wInd.fWire_View;
             sw.Start();
             ROOT::RNTupleFillStatus wireStatus;
             wiresContext.FillNoFlush(wiresEntry, wireStatus);
@@ -630,13 +756,12 @@ double RunAOS_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
                 { std::lock_guard<std::mutex> lock(mutex); wiresContext.FlushCluster(); }
             }
 
-            // its ROIs
+            // its ROIs (deterministic)
             for (int r = 0; r < roisPerWire; ++r) {
                 roiPtr->EventID = evt;
-                roiPtr->WireID  = w;
-                roiPtr->offset = rng() % 500;
-                roiPtr->data.resize(10);
-                for (auto& val : roiPtr->data) val = distADC(rng);
+                roiPtr->WireID  = wInd.fWire_Channel;
+                roiPtr->offset  = wInd.getSignalROI()[r].offset;
+                roiPtr->data    = wInd.getSignalROI()[r].data;
                 sw.Start();
                 ROOT::RNTupleFillStatus roiStatus;
                 roisContext.FillNoFlush(roisEntry, roiStatus);
@@ -844,13 +969,81 @@ auto CreateSOABaseWiresModelAndToken() -> std::pair<std::unique_ptr<ROOT::RNTupl
 
 // SOA Work Functions
 double RunSOA_event_allDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry, ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
         EventSOA eventData;
-        eventData.hits = generateSOAEventHits(evt, hitsPerEvent, rng);
-        eventData.wires = generateSOAEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        // Deterministic generation independent of thread/config
+        // Build SOA vectors from deterministic AOS individuals to avoid duplication
+        auto aosHits = generateEventHitsDeterministic(evt, hitsPerEvent);
+        SOAHitVector soaHits;
+        soaHits.EventIDs.resize(hitsPerEvent, evt);
+        soaHits.Channels.resize(hitsPerEvent);
+        soaHits.Views.resize(hitsPerEvent);
+        soaHits.StartTicks.resize(hitsPerEvent);
+        soaHits.EndTicks.resize(hitsPerEvent);
+        soaHits.PeakTimes.resize(hitsPerEvent);
+        soaHits.SigmaPeakTimes.resize(hitsPerEvent);
+        soaHits.RMSs.resize(hitsPerEvent);
+        soaHits.PeakAmplitudes.resize(hitsPerEvent);
+        soaHits.SigmaPeakAmplitudes.resize(hitsPerEvent);
+        soaHits.ROISummedADCs.resize(hitsPerEvent);
+        soaHits.HitSummedADCs.resize(hitsPerEvent);
+        soaHits.Integrals.resize(hitsPerEvent);
+        soaHits.SigmaIntegrals.resize(hitsPerEvent);
+        soaHits.Multiplicities.resize(hitsPerEvent);
+        soaHits.LocalIndices.resize(hitsPerEvent);
+        soaHits.GoodnessOfFits.resize(hitsPerEvent);
+        soaHits.NDFs.resize(hitsPerEvent);
+        soaHits.SignalTypes.resize(hitsPerEvent);
+        soaHits.WireID_Cryostats.resize(hitsPerEvent);
+        soaHits.WireID_TPCs.resize(hitsPerEvent);
+        soaHits.WireID_Planes.resize(hitsPerEvent);
+        soaHits.WireID_Wires.resize(hitsPerEvent);
+        for (int i = 0; i < hitsPerEvent; ++i) {
+            const auto& h = aosHits[i];
+            soaHits.Channels[i] = h.fChannel;
+            soaHits.Views[i] = h.fView;
+            soaHits.StartTicks[i] = h.fStartTick;
+            soaHits.EndTicks[i] = h.fEndTick;
+            soaHits.PeakTimes[i] = h.fPeakTime;
+            soaHits.SigmaPeakTimes[i] = h.fSigmaPeakTime;
+            soaHits.RMSs[i] = h.fRMS;
+            soaHits.PeakAmplitudes[i] = h.fPeakAmplitude;
+            soaHits.SigmaPeakAmplitudes[i] = h.fSigmaPeakAmplitude;
+            soaHits.ROISummedADCs[i] = h.fROISummedADC;
+            soaHits.HitSummedADCs[i] = h.fHitSummedADC;
+            soaHits.Integrals[i] = h.fIntegral;
+            soaHits.SigmaIntegrals[i] = h.fSigmaIntegral;
+            soaHits.Multiplicities[i] = h.fMultiplicity;
+            soaHits.LocalIndices[i] = h.fLocalIndex;
+            soaHits.GoodnessOfFits[i] = h.fGoodnessOfFit;
+            soaHits.NDFs[i] = h.fNDF;
+            soaHits.SignalTypes[i] = h.fSignalType;
+            soaHits.WireID_Cryostats[i] = h.fWireID_Cryostat;
+            soaHits.WireID_TPCs[i] = h.fWireID_TPC;
+            soaHits.WireID_Planes[i] = h.fWireID_Plane;
+            soaHits.WireID_Wires[i] = h.fWireID_Wire;
+        }
+
+        auto aosWires = generateEventWiresDeterministic(evt, wiresPerEvent, roisPerWire);
+        SOAWireVector soaWires;
+        soaWires.EventIDs.resize(wiresPerEvent, evt);
+        soaWires.Channels.resize(wiresPerEvent);
+        soaWires.Views.resize(wiresPerEvent);
+        soaWires.ROIs.resize(wiresPerEvent);
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            const auto& wi = aosWires[w];
+            soaWires.Channels[w] = wi.fWire_Channel;
+            soaWires.Views[w] = wi.fWire_View;
+            soaWires.ROIs[w].resize(static_cast<int>(wi.getSignalROI().size()));
+            for (size_t r = 0; r < wi.getSignalROI().size(); ++r) {
+                soaWires.ROIs[w][r].data = wi.getSignalROI()[r].data;
+            }
+        }
+
+        eventData.hits = std::move(soaHits);
+        eventData.wires = std::move(soaWires);
         sw.Start();
         entry.BindRawPtr(token, &eventData);
         ROOT::RNTupleFillStatus status;
@@ -869,8 +1062,73 @@ double RunSOA_event_perDataProductWorkFunc(int first, int last, unsigned seed, R
     TStopwatch sw;
     double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        auto hits = generateSOAEventHits(evt, hitsPerEvent, rng);
-        auto wires = generateSOAEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        // Deterministic generation by building SOA from deterministic AOS individuals
+        auto aosHits = generateEventHitsDeterministic(evt, hitsPerEvent);
+        SOAHitVector hits;
+        hits.EventIDs.resize(hitsPerEvent, evt);
+        hits.Channels.resize(hitsPerEvent);
+        hits.Views.resize(hitsPerEvent);
+        hits.StartTicks.resize(hitsPerEvent);
+        hits.EndTicks.resize(hitsPerEvent);
+        hits.PeakTimes.resize(hitsPerEvent);
+        hits.SigmaPeakTimes.resize(hitsPerEvent);
+        hits.RMSs.resize(hitsPerEvent);
+        hits.PeakAmplitudes.resize(hitsPerEvent);
+        hits.SigmaPeakAmplitudes.resize(hitsPerEvent);
+        hits.ROISummedADCs.resize(hitsPerEvent);
+        hits.HitSummedADCs.resize(hitsPerEvent);
+        hits.Integrals.resize(hitsPerEvent);
+        hits.SigmaIntegrals.resize(hitsPerEvent);
+        hits.Multiplicities.resize(hitsPerEvent);
+        hits.LocalIndices.resize(hitsPerEvent);
+        hits.GoodnessOfFits.resize(hitsPerEvent);
+        hits.NDFs.resize(hitsPerEvent);
+        hits.SignalTypes.resize(hitsPerEvent);
+        hits.WireID_Cryostats.resize(hitsPerEvent);
+        hits.WireID_TPCs.resize(hitsPerEvent);
+        hits.WireID_Planes.resize(hitsPerEvent);
+        hits.WireID_Wires.resize(hitsPerEvent);
+        for (int i = 0; i < hitsPerEvent; ++i) {
+            const auto& h = aosHits[i];
+            hits.Channels[i] = h.fChannel;
+            hits.Views[i] = h.fView;
+            hits.StartTicks[i] = h.fStartTick;
+            hits.EndTicks[i] = h.fEndTick;
+            hits.PeakTimes[i] = h.fPeakTime;
+            hits.SigmaPeakTimes[i] = h.fSigmaPeakTime;
+            hits.RMSs[i] = h.fRMS;
+            hits.PeakAmplitudes[i] = h.fPeakAmplitude;
+            hits.SigmaPeakAmplitudes[i] = h.fSigmaPeakAmplitude;
+            hits.ROISummedADCs[i] = h.fROISummedADC;
+            hits.HitSummedADCs[i] = h.fHitSummedADC;
+            hits.Integrals[i] = h.fIntegral;
+            hits.SigmaIntegrals[i] = h.fSigmaIntegral;
+            hits.Multiplicities[i] = h.fMultiplicity;
+            hits.LocalIndices[i] = h.fLocalIndex;
+            hits.GoodnessOfFits[i] = h.fGoodnessOfFit;
+            hits.NDFs[i] = h.fNDF;
+            hits.SignalTypes[i] = h.fSignalType;
+            hits.WireID_Cryostats[i] = h.fWireID_Cryostat;
+            hits.WireID_TPCs[i] = h.fWireID_TPC;
+            hits.WireID_Planes[i] = h.fWireID_Plane;
+            hits.WireID_Wires[i] = h.fWireID_Wire;
+        }
+
+        auto aosWires = generateEventWiresDeterministic(evt, wiresPerEvent, roisPerWire);
+        SOAWireVector wires;
+        wires.EventIDs.resize(wiresPerEvent, evt);
+        wires.Channels.resize(wiresPerEvent);
+        wires.Views.resize(wiresPerEvent);
+        wires.ROIs.resize(wiresPerEvent);
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            const auto& wi = aosWires[w];
+            wires.Channels[w] = wi.fWire_Channel;
+            wires.Views[w] = wi.fWire_View;
+            wires.ROIs[w].resize(static_cast<int>(wi.getSignalROI().size()));
+            for (size_t r = 0; r < wi.getSignalROI().size(); ++r) {
+                wires.ROIs[w][r].data = wi.getSignalROI()[r].data;
+            }
+        }
         sw.Start();
         hitsEntry.BindRawPtr(hitsToken, &hits);
         ROOT::RNTupleFillStatus hitsStatus;
@@ -892,12 +1150,76 @@ double RunSOA_event_perDataProductWorkFunc(int first, int last, unsigned seed, R
 }
 
 double RunSOA_event_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     for (int evt = first; evt < last; ++evt) {
-        auto hits = generateSOAEventHits(evt, hitsPerEvent, rng);
-        auto wires = generateSOAEventWires(evt, wiresPerEvent, roisPerWire, rng);
+        // Deterministic generation by building SOA from deterministic AOS individuals
+        auto aosHits = generateEventHitsDeterministic(evt, hitsPerEvent);
+        SOAHitVector hits;
+        hits.EventIDs.resize(hitsPerEvent, evt);
+        hits.Channels.resize(hitsPerEvent);
+        hits.Views.resize(hitsPerEvent);
+        hits.StartTicks.resize(hitsPerEvent);
+        hits.EndTicks.resize(hitsPerEvent);
+        hits.PeakTimes.resize(hitsPerEvent);
+        hits.SigmaPeakTimes.resize(hitsPerEvent);
+        hits.RMSs.resize(hitsPerEvent);
+        hits.PeakAmplitudes.resize(hitsPerEvent);
+        hits.SigmaPeakAmplitudes.resize(hitsPerEvent);
+        hits.ROISummedADCs.resize(hitsPerEvent);
+        hits.HitSummedADCs.resize(hitsPerEvent);
+        hits.Integrals.resize(hitsPerEvent);
+        hits.SigmaIntegrals.resize(hitsPerEvent);
+        hits.Multiplicities.resize(hitsPerEvent);
+        hits.LocalIndices.resize(hitsPerEvent);
+        hits.GoodnessOfFits.resize(hitsPerEvent);
+        hits.NDFs.resize(hitsPerEvent);
+        hits.SignalTypes.resize(hitsPerEvent);
+        hits.WireID_Cryostats.resize(hitsPerEvent);
+        hits.WireID_TPCs.resize(hitsPerEvent);
+        hits.WireID_Planes.resize(hitsPerEvent);
+        hits.WireID_Wires.resize(hitsPerEvent);
+        for (int i = 0; i < hitsPerEvent; ++i) {
+            const auto& h = aosHits[i];
+            hits.Channels[i] = h.fChannel;
+            hits.Views[i] = h.fView;
+            hits.StartTicks[i] = h.fStartTick;
+            hits.EndTicks[i] = h.fEndTick;
+            hits.PeakTimes[i] = h.fPeakTime;
+            hits.SigmaPeakTimes[i] = h.fSigmaPeakTime;
+            hits.RMSs[i] = h.fRMS;
+            hits.PeakAmplitudes[i] = h.fPeakAmplitude;
+            hits.SigmaPeakAmplitudes[i] = h.fSigmaPeakAmplitude;
+            hits.ROISummedADCs[i] = h.fROISummedADC;
+            hits.HitSummedADCs[i] = h.fHitSummedADC;
+            hits.Integrals[i] = h.fIntegral;
+            hits.SigmaIntegrals[i] = h.fSigmaIntegral;
+            hits.Multiplicities[i] = h.fMultiplicity;
+            hits.LocalIndices[i] = h.fLocalIndex;
+            hits.GoodnessOfFits[i] = h.fGoodnessOfFit;
+            hits.NDFs[i] = h.fNDF;
+            hits.SignalTypes[i] = h.fSignalType;
+            hits.WireID_Cryostats[i] = h.fWireID_Cryostat;
+            hits.WireID_TPCs[i] = h.fWireID_TPC;
+            hits.WireID_Planes[i] = h.fWireID_Plane;
+            hits.WireID_Wires[i] = h.fWireID_Wire;
+        }
+
+        auto aosWires = generateEventWiresDeterministic(evt, wiresPerEvent, roisPerWire);
+        SOAWireVector wires;
+        wires.EventIDs.resize(wiresPerEvent, evt);
+        wires.Channels.resize(wiresPerEvent);
+        wires.Views.resize(wiresPerEvent);
+        wires.ROIs.resize(wiresPerEvent);
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            const auto& wi = aosWires[w];
+            wires.Channels[w] = wi.fWire_Channel;
+            wires.Views[w] = wi.fWire_View;
+            wires.ROIs[w].resize(static_cast<int>(wi.getSignalROI().size()));
+            for (size_t r = 0; r < wi.getSignalROI().size(); ++r) {
+                wires.ROIs[w][r].data = wi.getSignalROI()[r].data;
+            }
+        }
         auto rois = flattenSOAROIs(wires);
         auto baseWires = extractSOABaseWires(wires);
         sw.Start();
@@ -1010,10 +1332,79 @@ double RunSOA_spill_allDataProductWorkFunc(int first, int last, unsigned seed, R
     double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
         int evt = idx / numSpills;
-        long long spillID = evt * numSpills + (idx % numSpills);
+        int spill = idx % numSpills;
+        int startHit = spill * adjustedHits;
+        int startWire = spill * adjustedWires;
         EventSOA spillData;
-        spillData.hits = generateSOASpillHits(spillID, adjustedHits, rng);
-        spillData.wires = generateSOASpillWires(spillID, adjustedWires, roisPerWire, rng);
+        // Build deterministic SOA from deterministic AOS slices
+        auto aosHits = generateEventHitsDeterministicRange(evt, startHit, adjustedHits);
+        SOAHitVector hits;
+        hits.EventIDs.resize(adjustedHits, evt);
+        hits.Channels.resize(adjustedHits);
+        hits.Views.resize(adjustedHits);
+        hits.StartTicks.resize(adjustedHits);
+        hits.EndTicks.resize(adjustedHits);
+        hits.PeakTimes.resize(adjustedHits);
+        hits.SigmaPeakTimes.resize(adjustedHits);
+        hits.RMSs.resize(adjustedHits);
+        hits.PeakAmplitudes.resize(adjustedHits);
+        hits.SigmaPeakAmplitudes.resize(adjustedHits);
+        hits.ROISummedADCs.resize(adjustedHits);
+        hits.HitSummedADCs.resize(adjustedHits);
+        hits.Integrals.resize(adjustedHits);
+        hits.SigmaIntegrals.resize(adjustedHits);
+        hits.Multiplicities.resize(adjustedHits);
+        hits.LocalIndices.resize(adjustedHits);
+        hits.GoodnessOfFits.resize(adjustedHits);
+        hits.NDFs.resize(adjustedHits);
+        hits.SignalTypes.resize(adjustedHits);
+        hits.WireID_Cryostats.resize(adjustedHits);
+        hits.WireID_TPCs.resize(adjustedHits);
+        hits.WireID_Planes.resize(adjustedHits);
+        hits.WireID_Wires.resize(adjustedHits);
+        for (int i = 0; i < adjustedHits; ++i) {
+            const auto& h = aosHits[i];
+            hits.Channels[i] = h.fChannel;
+            hits.Views[i] = h.fView;
+            hits.StartTicks[i] = h.fStartTick;
+            hits.EndTicks[i] = h.fEndTick;
+            hits.PeakTimes[i] = h.fPeakTime;
+            hits.SigmaPeakTimes[i] = h.fSigmaPeakTime;
+            hits.RMSs[i] = h.fRMS;
+            hits.PeakAmplitudes[i] = h.fPeakAmplitude;
+            hits.SigmaPeakAmplitudes[i] = h.fSigmaPeakAmplitude;
+            hits.ROISummedADCs[i] = h.fROISummedADC;
+            hits.HitSummedADCs[i] = h.fHitSummedADC;
+            hits.Integrals[i] = h.fIntegral;
+            hits.SigmaIntegrals[i] = h.fSigmaIntegral;
+            hits.Multiplicities[i] = h.fMultiplicity;
+            hits.LocalIndices[i] = h.fLocalIndex;
+            hits.GoodnessOfFits[i] = h.fGoodnessOfFit;
+            hits.NDFs[i] = h.fNDF;
+            hits.SignalTypes[i] = h.fSignalType;
+            hits.WireID_Cryostats[i] = h.fWireID_Cryostat;
+            hits.WireID_TPCs[i] = h.fWireID_TPC;
+            hits.WireID_Planes[i] = h.fWireID_Plane;
+            hits.WireID_Wires[i] = h.fWireID_Wire;
+        }
+
+        auto aosWires = generateEventWiresDeterministicRange(evt, startWire, adjustedWires, roisPerWire);
+        SOAWireVector wires;
+        wires.EventIDs.resize(adjustedWires, evt);
+        wires.Channels.resize(adjustedWires);
+        wires.Views.resize(adjustedWires);
+        wires.ROIs.resize(adjustedWires);
+        for (int w = 0; w < adjustedWires; ++w) {
+            const auto& wi = aosWires[w];
+            wires.Channels[w] = wi.fWire_Channel;
+            wires.Views[w] = wi.fWire_View;
+            wires.ROIs[w].resize(static_cast<int>(wi.getSignalROI().size()));
+            for (size_t r = 0; r < wi.getSignalROI().size(); ++r) {
+                wires.ROIs[w][r].data = wi.getSignalROI()[r].data;
+            }
+        }
+        spillData.hits = std::move(hits);
+        spillData.wires = std::move(wires);
         sw.Start();
         entry.BindRawPtr(token, &spillData);
         ROOT::RNTupleFillStatus status;
@@ -1028,14 +1419,81 @@ double RunSOA_spill_allDataProductWorkFunc(int first, int last, unsigned seed, R
 }
 
 double RunSOA_spill_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
         int evt = idx / numSpills;
-        long long spillID = evt * numSpills + (idx % numSpills);
-        auto hits = generateSOASpillHits(spillID, adjustedHits, rng);
-        auto wires = generateSOASpillWires(spillID, adjustedWires, roisPerWire, rng);
+        int spill = idx % numSpills;
+        int startHit = spill * adjustedHits;
+        int startWire = spill * adjustedWires;
+
+        // Build SOA from deterministic AOS slices
+        auto aosHits = generateEventHitsDeterministicRange(evt, startHit, adjustedHits);
+        SOAHitVector hits;
+        hits.EventIDs.resize(adjustedHits, evt);
+        hits.Channels.resize(adjustedHits);
+        hits.Views.resize(adjustedHits);
+        hits.StartTicks.resize(adjustedHits);
+        hits.EndTicks.resize(adjustedHits);
+        hits.PeakTimes.resize(adjustedHits);
+        hits.SigmaPeakTimes.resize(adjustedHits);
+        hits.RMSs.resize(adjustedHits);
+        hits.PeakAmplitudes.resize(adjustedHits);
+        hits.SigmaPeakAmplitudes.resize(adjustedHits);
+        hits.ROISummedADCs.resize(adjustedHits);
+        hits.HitSummedADCs.resize(adjustedHits);
+        hits.Integrals.resize(adjustedHits);
+        hits.SigmaIntegrals.resize(adjustedHits);
+        hits.Multiplicities.resize(adjustedHits);
+        hits.LocalIndices.resize(adjustedHits);
+        hits.GoodnessOfFits.resize(adjustedHits);
+        hits.NDFs.resize(adjustedHits);
+        hits.SignalTypes.resize(adjustedHits);
+        hits.WireID_Cryostats.resize(adjustedHits);
+        hits.WireID_TPCs.resize(adjustedHits);
+        hits.WireID_Planes.resize(adjustedHits);
+        hits.WireID_Wires.resize(adjustedHits);
+        for (int i = 0; i < adjustedHits; ++i) {
+            const auto& h = aosHits[i];
+            hits.Channels[i] = h.fChannel;
+            hits.Views[i] = h.fView;
+            hits.StartTicks[i] = h.fStartTick;
+            hits.EndTicks[i] = h.fEndTick;
+            hits.PeakTimes[i] = h.fPeakTime;
+            hits.SigmaPeakTimes[i] = h.fSigmaPeakTime;
+            hits.RMSs[i] = h.fRMS;
+            hits.PeakAmplitudes[i] = h.fPeakAmplitude;
+            hits.SigmaPeakAmplitudes[i] = h.fSigmaPeakAmplitude;
+            hits.ROISummedADCs[i] = h.fROISummedADC;
+            hits.HitSummedADCs[i] = h.fHitSummedADC;
+            hits.Integrals[i] = h.fIntegral;
+            hits.SigmaIntegrals[i] = h.fSigmaIntegral;
+            hits.Multiplicities[i] = h.fMultiplicity;
+            hits.LocalIndices[i] = h.fLocalIndex;
+            hits.GoodnessOfFits[i] = h.fGoodnessOfFit;
+            hits.NDFs[i] = h.fNDF;
+            hits.SignalTypes[i] = h.fSignalType;
+            hits.WireID_Cryostats[i] = h.fWireID_Cryostat;
+            hits.WireID_TPCs[i] = h.fWireID_TPC;
+            hits.WireID_Planes[i] = h.fWireID_Plane;
+            hits.WireID_Wires[i] = h.fWireID_Wire;
+        }
+
+        auto aosWires = generateEventWiresDeterministicRange(evt, startWire, adjustedWires, roisPerWire);
+        SOAWireVector wires;
+        wires.EventIDs.resize(adjustedWires, evt);
+        wires.Channels.resize(adjustedWires);
+        wires.Views.resize(adjustedWires);
+        wires.ROIs.resize(adjustedWires);
+        for (int w = 0; w < adjustedWires; ++w) {
+            const auto& wi = aosWires[w];
+            wires.Channels[w] = wi.fWire_Channel;
+            wires.Views[w] = wi.fWire_View;
+            wires.ROIs[w].resize(static_cast<int>(wi.getSignalROI().size()));
+            for (size_t r = 0; r < wi.getSignalROI().size(); ++r) {
+                wires.ROIs[w][r].data = wi.getSignalROI()[r].data;
+            }
+        }
         sw.Start();
         hitsEntry.BindRawPtr(hitsToken, &hits);
         ROOT::RNTupleFillStatus hitsStatus;
@@ -1057,14 +1515,80 @@ double RunSOA_spill_perDataProductWorkFunc(int first, int last, unsigned seed, R
 }
 
 double RunSOA_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& hitsEntry, ROOT::RFieldToken hitsToken, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& wiresEntry, ROOT::RFieldToken wiresToken, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::Experimental::Detail::RRawPtrWriteEntry& roisEntry, ROOT::RFieldToken roisToken, std::mutex& mutex, int numSpills, int adjustedHits, int adjustedWires, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     for (int idx = first; idx < last; ++idx) {
         int evt = idx / numSpills;
-        long long spillID = evt * numSpills + (idx % numSpills);
-        auto hits = generateSOASpillHits(spillID, adjustedHits, rng);
-        auto wires = generateSOASpillWires(spillID, adjustedWires, roisPerWire, rng);
+        int spill = idx % numSpills;
+        int startHit = spill * adjustedHits;
+        int startWire = spill * adjustedWires;
+        // Build SOA from deterministic AOS slices for consistency
+        auto aosHits = generateEventHitsDeterministicRange(evt, startHit, adjustedHits);
+        SOAHitVector hits;
+        hits.EventIDs.resize(adjustedHits, evt);
+        hits.Channels.resize(adjustedHits);
+        hits.Views.resize(adjustedHits);
+        hits.StartTicks.resize(adjustedHits);
+        hits.EndTicks.resize(adjustedHits);
+        hits.PeakTimes.resize(adjustedHits);
+        hits.SigmaPeakTimes.resize(adjustedHits);
+        hits.RMSs.resize(adjustedHits);
+        hits.PeakAmplitudes.resize(adjustedHits);
+        hits.SigmaPeakAmplitudes.resize(adjustedHits);
+        hits.ROISummedADCs.resize(adjustedHits);
+        hits.HitSummedADCs.resize(adjustedHits);
+        hits.Integrals.resize(adjustedHits);
+        hits.SigmaIntegrals.resize(adjustedHits);
+        hits.Multiplicities.resize(adjustedHits);
+        hits.LocalIndices.resize(adjustedHits);
+        hits.GoodnessOfFits.resize(adjustedHits);
+        hits.NDFs.resize(adjustedHits);
+        hits.SignalTypes.resize(adjustedHits);
+        hits.WireID_Cryostats.resize(adjustedHits);
+        hits.WireID_TPCs.resize(adjustedHits);
+        hits.WireID_Planes.resize(adjustedHits);
+        hits.WireID_Wires.resize(adjustedHits);
+        for (int i = 0; i < adjustedHits; ++i) {
+            const auto& h = aosHits[i];
+            hits.Channels[i] = h.fChannel;
+            hits.Views[i] = h.fView;
+            hits.StartTicks[i] = h.fStartTick;
+            hits.EndTicks[i] = h.fEndTick;
+            hits.PeakTimes[i] = h.fPeakTime;
+            hits.SigmaPeakTimes[i] = h.fSigmaPeakTime;
+            hits.RMSs[i] = h.fRMS;
+            hits.PeakAmplitudes[i] = h.fPeakAmplitude;
+            hits.SigmaPeakAmplitudes[i] = h.fSigmaPeakAmplitude;
+            hits.ROISummedADCs[i] = h.fROISummedADC;
+            hits.HitSummedADCs[i] = h.fHitSummedADC;
+            hits.Integrals[i] = h.fIntegral;
+            hits.SigmaIntegrals[i] = h.fSigmaIntegral;
+            hits.Multiplicities[i] = h.fMultiplicity;
+            hits.LocalIndices[i] = h.fLocalIndex;
+            hits.GoodnessOfFits[i] = h.fGoodnessOfFit;
+            hits.NDFs[i] = h.fNDF;
+            hits.SignalTypes[i] = h.fSignalType;
+            hits.WireID_Cryostats[i] = h.fWireID_Cryostat;
+            hits.WireID_TPCs[i] = h.fWireID_TPC;
+            hits.WireID_Planes[i] = h.fWireID_Plane;
+            hits.WireID_Wires[i] = h.fWireID_Wire;
+        }
+
+        auto aosWires = generateEventWiresDeterministicRange(evt, startWire, adjustedWires, roisPerWire);
+        SOAWireVector wires;
+        wires.EventIDs.resize(adjustedWires, evt);
+        wires.Channels.resize(adjustedWires);
+        wires.Views.resize(adjustedWires);
+        wires.ROIs.resize(adjustedWires);
+        for (int w = 0; w < adjustedWires; ++w) {
+            const auto& wi = aosWires[w];
+            wires.Channels[w] = wi.fWire_Channel;
+            wires.Views[w] = wi.fWire_View;
+            wires.ROIs[w].resize(static_cast<int>(wi.getSignalROI().size()));
+            for (size_t r = 0; r < wi.getSignalROI().size(); ++r) {
+                wires.ROIs[w][r].data = wi.getSignalROI()[r].data;
+            }
+        }
         auto rois = flattenSOAROIs(wires);
         auto baseWires = extractSOABaseWires(wires);
         sw.Start();
@@ -1104,14 +1628,51 @@ SOAWire generateSOATopWire(long long id, int roisPerWire, std::mt19937& rng) {
 }
 
 double RunSOA_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire) {
-    std::mt19937 rng(seed);
     TStopwatch sw;
     double totalTime = 0.0;
     auto hitPtr = hitsEntry.GetPtr<SOAHit>("hit");
     auto wirePtr = wiresEntry.GetPtr<SOAWire>("wire");
     for (int idx = first; idx < last; ++idx) {
-        SOAHit hit = generateSOASingleHit(idx, rng);
-        SOAWire wire = generateSOASingleWire(idx, roisPerWire, rng);
+        // Build SOA from deterministic AOS individuals
+        std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(idx), static_cast<std::uint64_t>(0));
+        std::mt19937 hRng(hSeed);
+        HitIndividual hInd = generateRandomHitIndividual(idx, hRng);
+        SOAHit hit;
+        hit.EventID = hInd.EventID;
+        hit.Channel = hInd.fChannel;
+        hit.View = hInd.fView;
+        hit.StartTick = hInd.fStartTick;
+        hit.EndTick = hInd.fEndTick;
+        hit.PeakTime = hInd.fPeakTime;
+        hit.SigmaPeakTime = hInd.fSigmaPeakTime;
+        hit.RMS = hInd.fRMS;
+        hit.PeakAmplitude = hInd.fPeakAmplitude;
+        hit.SigmaPeakAmplitude = hInd.fSigmaPeakAmplitude;
+        hit.ROISummedADC = hInd.fROISummedADC;
+        hit.HitSummedADC = hInd.fHitSummedADC;
+        hit.Integral = hInd.fIntegral;
+        hit.SigmaIntegral = hInd.fSigmaIntegral;
+        hit.Multiplicity = hInd.fMultiplicity;
+        hit.LocalIndex = hInd.fLocalIndex;
+        hit.GoodnessOfFit = hInd.fGoodnessOfFit;
+        hit.NDF = hInd.fNDF;
+        hit.SignalType = hInd.fSignalType;
+        hit.WireID_Cryostat = hInd.fWireID_Cryostat;
+        hit.WireID_TPC = hInd.fWireID_TPC;
+        hit.WireID_Plane = hInd.fWireID_Plane;
+        hit.WireID_Wire = hInd.fWireID_Wire;
+
+        std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(idx), static_cast<std::uint64_t>(0));
+        std::mt19937 wRng(wSeed);
+        WireIndividual wInd = generateRandomWireIndividual(idx, roisPerWire, wRng);
+        SOAWire wire;
+        wire.EventID = wInd.EventID;
+        wire.Channel = wInd.fWire_Channel;
+        wire.View = wInd.fWire_View;
+        wire.ROIs.resize(wInd.getSignalROI().size());
+        for (size_t r = 0; r < wInd.getSignalROI().size(); ++r) {
+            wire.ROIs[r].data = wInd.getSignalROI()[r].data;
+        }
         sw.Start();
         *hitPtr = hit;
         ROOT::RNTupleFillStatus hitsStatus;

@@ -65,13 +65,14 @@ static void print_file_sizes_table(const std::string& title,
 
 int main() {
     ROOT::EnableThreadSafety();
-    int nThreads = std::thread::hardware_concurrency();
-    //int nThreads = 1;
+    //int nThreads = std::thread::hardware_concurrency();
+    std::cout << "nThreads: " << std::thread::hardware_concurrency() << std::endl;
+    int nThreads = 8;
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
     
     // Configuration parameters
-    int numEvents = 1000;
+    int numEvents = 10000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 100;
     int roisPerWire = 10;
@@ -82,9 +83,9 @@ int main() {
     std::filesystem::create_directories(kOutputDir);
 
     // Commented: AOS writer/reader benchmarks
-    auto aos_writer_results = outAOS(nThreads, 3, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
+    auto aos_writer_results = outAOS(nThreads, 1, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
     visualize_aos_writer_results(aos_writer_results);
-    auto aos_reader_results = inAOS(nThreads, 3, kOutputDir);
+    auto aos_reader_results = inAOS(nThreads, 1, kOutputDir);
     visualize_aos_reader_results(aos_reader_results);
 
     // Collect AOS file sizes
@@ -114,9 +115,9 @@ int main() {
 
     // Add SOA visualization - use separate SOA-only functions
     // Commented: SOA writer/reader benchmarks
-    auto soa_writer_results = outSOA(nThreads, 3, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
+    auto soa_writer_results = outSOA(nThreads, 1, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
     visualize_soa_writer_results(soa_writer_results);
-    auto soa_reader_results = inSOA(nThreads, 3, kOutputDir);
+    auto soa_reader_results = inSOA(nThreads, 1, kOutputDir);
     visualize_soa_reader_results(soa_reader_results);
 
     // Collect SOA file sizes

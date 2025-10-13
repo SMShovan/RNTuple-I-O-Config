@@ -56,52 +56,123 @@ double RunSOA_element_perGroupCombinedWorkFunc(int firstEvt, int lastEvt, unsign
     std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
 
 // Move executeInParallel to the top of the file, before any function implementations
-static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned, int)>& workFunc) {
+static double executeInParallel(int totalEvents, int nThreads, const std::function<double(int, int, unsigned, int)>& workFunc,
+                                double* launchOut = nullptr, double* waitOut = nullptr, double* wallOut = nullptr) {
+    // Internal overall wall timer
+    TStopwatch swWall; swWall.Start();
     if (nThreads <= 0 || totalEvents < 0) return 0.0;
     if (totalEvents == 0) return 0.0;
     auto seeds = Utils::generateSeeds(nThreads);
     int chunk = totalEvents / nThreads;
     std::vector<std::future<double>> futures;
-    for (int th = 0; th < nThreads; ++th) {
-        int start = th * chunk;
-        int end = (th == nThreads - 1) ? totalEvents : start + chunk;
-        if (start >= end) continue;
-        futures.push_back(std::async(std::launch::async, workFunc, start, end, seeds[th], th));
+    // Phase 2.1 — Launch
+    double launchTime = 0.0;
+    {
+        TStopwatch swLaunch; swLaunch.Start();
+        for (int th = 0; th < nThreads; ++th) {
+            int start = th * chunk;
+            int end = (th == nThreads - 1) ? totalEvents : start + chunk;
+            if (start >= end) continue;
+            futures.push_back(std::async(std::launch::async, workFunc, start, end, seeds[th], th));
+        }
+        swLaunch.Stop();
+        launchTime = swLaunch.RealTime();
     }
     double totalTime = 0.0;
-    for (auto& f : futures) {
-        totalTime += f.get();
+    // Phase 2.2 — Wait/Join
+    double waitTime = 0.0;
+    {
+        TStopwatch swWait; swWait.Start();
+        for (auto& f : futures) {
+            totalTime += f.get();
+        }
+        swWait.Stop();
+        waitTime = swWait.RealTime();
     }
+    swWall.Stop();
+    double wallTime = swWall.RealTime();
+    if (launchOut) *launchOut = launchTime;
+    if (waitOut) *waitOut = waitTime;
+    if (wallOut) *wallOut = wallTime;
     return totalTime;
 }
 
 // One-pass implementation with single EventAOS ntuple (matches reader expectations)
 double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
-    std::mutex mutex;
+    double setupTime = 0.0;
+    double executeTime = 0.0;
+    double teardownTime = 0.0;
+    double workerSumTime = 0.0;
+    // per-thread subphase timing outputs (visible outside inner scope for aggregation)
+    std::vector<double> dataGenTimes(nThreads, 0.0), serializeTimes(nThreads, 0.0), flushColumnsTimes(nThreads, 0.0), flushClusterTimes(nThreads, 0.0);
 
-    ROOT::RNTupleWriteOptions options;
-    options.SetUseBufferedWrite(true);
-    
+    TStopwatch swTeardown;
+    {
+        // Time 1: Writer and thread-local setup
+        TStopwatch swSetup; swSetup.Start();
 
-    auto [model, token] = CreateAOSAllDataProductModelAndToken();
-    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_events", *file, options);
+        auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+        std::mutex mutex;
 
-    // Thread-local contexts and entries
-    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
-    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+        ROOT::RNTupleWriteOptions options;
+        options.SetUseBufferedWrite(true);
 
-    for (int th = 0; th < nThreads; ++th) {
-        contexts[th] = writer->CreateFillContext();
-        entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
+        auto [model, token] = CreateAOSAllDataProductModelAndToken();
+        auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_events", *file, options);
+
+        // Thread-local contexts and entries
+        std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+        std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+
+        for (int th = 0; th < nThreads; ++th) {
+            contexts[th] = writer->CreateFillContext();
+            entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
+        }
+
+        auto workFunc = [&](int first, int last, unsigned seed, int th) {
+            return RunAOS_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire,
+                &dataGenTimes[th], &serializeTimes[th], &flushColumnsTimes[th], &flushClusterTimes[th]);
+        };
+
+        swSetup.Stop();
+        setupTime = swSetup.RealTime();
+
+        // Time 2: Parallel dispatch and timing (wall-clock)
+        TStopwatch swExec; swExec.Start();
+        double launchT=0.0, waitT=0.0, wallT=0.0;
+        workerSumTime = executeInParallel(numEvents, nThreads, workFunc, &launchT, &waitT, &wallT);
+        swExec.Stop();
+        executeTime = swExec.RealTime();
+
+        // Time 3: Destruction and implicit final flushes
+        swTeardown.Start();
     }
+    swTeardown.Stop();
+    teardownTime = swTeardown.RealTime();
 
-    auto workFunc = [&](int first, int last, unsigned seed, int th) {
-        return RunAOS_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
-    };
+    // Optional: print detailed timings
+    std::cout << std::fixed << std::setprecision(6)
+              << "AOS_event_allDataProduct timings - setup: " << setupTime
+              << " s, execute: " << executeTime
+              << " s, teardown: " << teardownTime
+              << " s, workerSum: " << workerSumTime << " s" << std::endl;
 
-    double totalTime = executeInParallel(numEvents, nThreads, workFunc);
-    return totalTime;
+    // Aggregate and print worker subphase timings
+    // Note: these are sums across threads (not wall times)
+    double dataGenTotal = 0.0, serializeTotal = 0.0, flushColumnsTotal = 0.0, flushClusterTotal = 0.0;
+    for (int th = 0; th < nThreads; ++th) {
+        dataGenTotal += dataGenTimes[th];
+        serializeTotal += serializeTimes[th];
+        flushColumnsTotal += flushColumnsTimes[th];
+        flushClusterTotal += flushClusterTimes[th];
+    }
+    std::cout << std::fixed << std::setprecision(6)
+              << "AOS_event_allDataProduct worker subphases - dataGen: " << dataGenTotal
+              << " s, serialize: " << serializeTotal
+              << " s, flushColumns: " << flushColumnsTotal
+              << " s, flushCluster: " << flushClusterTotal << " s" << std::endl;
+
+    return workerSumTime;
 }
 
 // Implementation for perDataProduct
