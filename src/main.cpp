@@ -11,6 +11,10 @@
 #include <iostream>
 #include <filesystem>
 #include <iomanip>
+#include <string>
+#include <cstring>
+#include <cstdlib>
+#include <algorithm>
 
 #include "HitWireWriters.hpp"
 #include <TFile.h>
@@ -63,7 +67,7 @@ static void print_file_sizes_table(const std::string& title,
     std::cout << std::string(col1 + col2, '-') << std::endl;
 }
 
-int main() {
+int main(int argc, char** argv) {
     ROOT::EnableThreadSafety();
     //int nThreads = std::thread::hardware_concurrency();
     std::cout << "nThreads: " << std::thread::hardware_concurrency() << std::endl;
@@ -71,22 +75,54 @@ int main() {
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
     
-    // Configuration parameters
+    // Configuration parameters (defaults)
     int numEvents = 10000;
     int hitsPerEvent = 100;
     int wiresPerEvent = 100;
     int roisPerWire = 10;
     int numSpills = 10;
     const std::string kOutputDir = "./output";
+    int writerMask = -1; // -1 means run all
+    int readerMask = -1; // -1 means run all
+    bool runAOS = true;
+    bool runSOA = true;
+    int iter = 1;
+
+    // Very simple CLI parsing: supports --writer-mask, --reader-mask, --aos-only, --soa-only, --iter
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        auto parseInt = [&](const char* s) {
+            // Supports decimal and hex (0x...)
+            if (std::strlen(s) > 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+                return static_cast<int>(std::strtoul(s, nullptr, 16));
+            }
+            return std::atoi(s);
+        };
+        if (arg == "--writer-mask" && i + 1 < argc) {
+            writerMask = parseInt(argv[++i]);
+        } else if (arg == "--reader-mask" && i + 1 < argc) {
+            readerMask = parseInt(argv[++i]);
+        } else if (arg == "--aos-only") {
+            runSOA = false;
+        } else if (arg == "--soa-only") {
+            runAOS = false;
+        } else if (arg == "--iter" && i + 1 < argc) {
+            iter = std::max(1, std::atoi(argv[++i]));
+        }
+    }
     
     // Create output directory if it doesn't exist
     std::filesystem::create_directories(kOutputDir);
 
     // Commented: AOS writer/reader benchmarks
-    auto aos_writer_results = outAOS(nThreads, 1, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
-    visualize_aos_writer_results(aos_writer_results);
-    auto aos_reader_results = inAOS(nThreads, 1, kOutputDir);
-    visualize_aos_reader_results(aos_reader_results);
+    std::vector<WriterResult> aos_writer_results;
+    std::vector<ReaderResult> aos_reader_results;
+    if (runAOS) {
+        aos_writer_results = outAOS(nThreads, iter, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir, writerMask);
+        visualize_aos_writer_results(aos_writer_results);
+        aos_reader_results = inAOS(nThreads, iter, kOutputDir, readerMask);
+        visualize_aos_reader_results(aos_reader_results);
+    }
 
     // Collect AOS file sizes
     std::vector<std::pair<std::string, double>> aos_file_sizes;
@@ -102,23 +138,29 @@ int main() {
         kOutputDir + "/aos_element_perData.root",
         kOutputDir + "/aos_element_perGroup.root"
     };
-    for (const auto& f : aos_files) {
-        auto tfile = TFile::Open(f.c_str(), "READ");
-        if (tfile) {
-            double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
-            aos_file_sizes.emplace_back(f, sizeMB);
-            tfile->Close();
+    if (runAOS) {
+        for (const auto& f : aos_files) {
+            auto tfile = TFile::Open(f.c_str(), "READ");
+            if (tfile) {
+                double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
+                aos_file_sizes.emplace_back(f, sizeMB);
+                tfile->Close();
+            }
         }
+        // Print AOS file sizes to terminal in a table format
+        print_file_sizes_table("AOS File Sizes (MB)", aos_file_sizes);
     }
-    // Print AOS file sizes to terminal in a table format
-    print_file_sizes_table("AOS File Sizes (MB)", aos_file_sizes);
 
     // Add SOA visualization - use separate SOA-only functions
     // Commented: SOA writer/reader benchmarks
-    auto soa_writer_results = outSOA(nThreads, 1, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir);
-    visualize_soa_writer_results(soa_writer_results);
-    auto soa_reader_results = inSOA(nThreads, 1, kOutputDir);
-    visualize_soa_reader_results(soa_reader_results);
+    std::vector<WriterResult> soa_writer_results;
+    std::vector<ReaderResult> soa_reader_results;
+    if (runSOA) {
+        soa_writer_results = outSOA(nThreads, iter, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, numSpills, kOutputDir, writerMask);
+        visualize_soa_writer_results(soa_writer_results);
+        soa_reader_results = inSOA(nThreads, iter, kOutputDir, readerMask);
+        visualize_soa_reader_results(soa_reader_results);
+    }
 
     // Collect SOA file sizes
     std::vector<std::pair<std::string, double>> soa_file_sizes;
@@ -134,22 +176,26 @@ int main() {
         kOutputDir + "/soa_element_perData.root",
         kOutputDir + "/soa_element_perGroup.root"
     };
-    for (const auto& f : soa_files) {
-        auto tfile = TFile::Open(f.c_str(), "READ");
-        if (tfile) {
-            double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
-            soa_file_sizes.emplace_back(f, sizeMB);
-            tfile->Close();
+    if (runSOA) {
+        for (const auto& f : soa_files) {
+            auto tfile = TFile::Open(f.c_str(), "READ");
+            if (tfile) {
+                double sizeMB = tfile->GetSize() / (1024.0 * 1024.0);
+                soa_file_sizes.emplace_back(f, sizeMB);
+                tfile->Close();
+            }
         }
+        // Print SOA file sizes to terminal in a table format
+        print_file_sizes_table("SOA File Sizes (MB)", soa_file_sizes);
     }
-    // Print SOA file sizes to terminal in a table format
-    print_file_sizes_table("SOA File Sizes (MB)", soa_file_sizes);
 
     // Add comparison visualizations
     // Commented: comparison visualizations
-    visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
-    visualize_comparison_reader_results(aos_reader_results, soa_reader_results);
-    visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
+    if (runAOS && runSOA) {
+        visualize_comparison_writer_results(aos_writer_results, soa_writer_results);
+        visualize_comparison_reader_results(aos_reader_results, soa_reader_results);
+        visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
+    }
 
     // auto aos_scaling = benchmarkAOSScaling(32, 3);
     // visualize_aos_scaling(aos_scaling);

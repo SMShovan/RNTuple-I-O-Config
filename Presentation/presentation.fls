@@ -1,8 +1,8 @@
-PWD /Users/smshovan/Documents/RNTuple 4/RNTuple-I-O-Config/Presentation
+PWD /Users/smshovan/Documents/RNTuple-I-O-Config/Presentation
 INPUT /usr/local/texlive/2025/texmf.cnf
 INPUT /usr/local/texlive/2025/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/smshovan/Documents/RNTuple 4/RNTuple-I-O-Config/Presentation/presentation.tex
+INPUT /Users/smshovan/Documents/RNTuple-I-O-Config/Presentation/presentation.tex
 OUTPUT presentation.log
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/beamer/beamer.cls
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/beamer/beamer.cls

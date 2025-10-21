@@ -47,7 +47,7 @@ make && \
 ./tests/gen_test_rootfile && \
 ctest -R test_split_range_by_clusters --output-on-failure && \
 echo "Started at: $(date)" | tee ../experiments/log.txt && \
-./hitwire 2>&1 | tee -a ../experiments/log.txt && \
+./hitwire --writer-mask 1023 --reader-mask 1023 2>&1 | tee -a ../experiments/log.txt && \
 rm -rf build && \
 cd .. && cd ..
 ```
@@ -62,6 +62,44 @@ The project now uses centralized configuration parameters in `main.cpp`:
 - `roisPerWire`: Number of ROIs per wire
 - `numSpills`: Number of spills
 - `kOutputDir`: Output directory for ROOT files
+
+## Selecting Benchmarks via Bitmask
+
+You can select which writer/reader benchmarks to run using bitmask flags.
+
+- `--writer-mask N`: run only writer benchmarks whose bit is set in N
+- `--reader-mask N`: run only reader benchmarks whose bit is set in N
+- `--aos-only` / `--soa-only`: limit execution to a layout
+- `--iter K`: number of iterations (first is cold, rest warm for readers)
+
+Bit-to-benchmark mapping (index → benchmark):
+
+0: event_allDataProduct  
+1: event_perDataProduct  
+2: event_perGroup  
+3: spill_allDataProduct  
+4: spill_perDataProduct  
+5: spill_perGroup  
+6: topObject_perDataProduct  
+7: topObject_perGroup  
+8: element_perDataProduct  
+9: element_perGroup
+
+Examples:
+
+```sh
+# Run only 1st and 2nd AOS writer/reader benchmarks
+./hitwire --aos-only --writer-mask 3 --reader-mask 3
+
+# Run 1st, 3rd, 5th SOA writer/reader benchmarks
+./hitwire --soa-only --writer-mask 0x15 --reader-mask 0x15
+
+# Run all AOS and SOA benchmarks (explicit mask)
+./hitwire --writer-mask 1023 --reader-mask 1023
+
+# Increase iterations to 3
+./hitwire --iter 3 --writer-mask 3 --reader-mask 3
+```
 
 ## Output
 
