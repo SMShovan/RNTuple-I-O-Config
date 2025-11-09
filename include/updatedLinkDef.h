@@ -3,4 +3,6 @@
 #pragma link C++ class WireROI+;
 #pragma link C++ class EventAOS+;
 #pragma link C++ class WireBase+;
+#pragma link C++ class AOSUnionRow+;
+#pragma link C++ class AOSTopBatchRow+;
 #endif 

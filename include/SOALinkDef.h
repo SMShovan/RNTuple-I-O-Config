@@ -10,4 +10,6 @@
 #pragma link C++ class SOAWire+;
 #pragma link C++ class SOAWireBase+;
 #pragma link C++ class FlatSOAROI+;
+#pragma link C++ class SOAUnionRow+;
+#pragma link C++ class SOATopBatchRow+;
 #endif 

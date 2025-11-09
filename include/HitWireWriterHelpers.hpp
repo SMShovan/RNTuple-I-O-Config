@@ -11,6 +11,8 @@
 #include <vector>
 #include <mutex>
 #include <TStopwatch.h>
+// Union row forward declarations
+#include <string>
 
 struct FlatROI {
     unsigned int EventID;   // parent event
@@ -125,3 +127,26 @@ double RunSOA_element_wireROIFunc(int first, int last, unsigned seed, ROOT::Expe
 
 double RunSOA_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
 double RunSOA_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire); 
+
+// Union models (allDataProduct) and work functions
+auto CreateAOSUnionModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateSOAUnionModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+// Batch (topObject allDataProduct) models
+auto CreateAOSTopBatchModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+auto CreateSOATopBatchModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;
+
+double RunAOS_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
+double RunAOS_element_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
+double RunSOA_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+
+double RunSOA_element_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);

@@ -23,6 +23,8 @@
 #include <functional>
 #include <exception>
 #include <TROOT.h>
+#include "UnionRow.hpp"
+#include "UnionRowSOA.hpp"
 
 // Add forward declarations
 double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
@@ -32,6 +34,12 @@ double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
 double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 double SOA_element_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 double SOA_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+
+// New union-based allDataProduct writers (forward declarations)
+double AOS_topObject_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double AOS_element_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_topObject_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
+double SOA_element_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads);
 
 double RunAOS_element_perDataProductCombinedWorkFunc(int firstEvt, int lastEvt, unsigned seed,
     ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry,
@@ -616,7 +624,9 @@ std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hits
     if (shouldRun(6)) benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_perData.root", nThreads);
     if (shouldRun(7)) benchmark("AOS_topObject_perGroup", AOS_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_perGroup.root", nThreads);
     if (shouldRun(8)) benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perData.root", nThreads);
-    if (shouldRun(9)) benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perGroup.root", nThreads);
+    if (shouldRun(9))  benchmark("AOS_element_perGroup", AOS_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perGroup.root", nThreads);
+    if (shouldRun(10)) benchmark("AOS_topObject_allDataProduct", AOS_topObject_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_top_all.root", nThreads);
+    if (shouldRun(11)) benchmark("AOS_element_allDataProduct", AOS_element_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_all.root", nThreads);
 
     tablePrinter.printFooter();
     return results;
@@ -667,6 +677,44 @@ double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
     return totalTime;
 }
 
+// TopObject allDataProduct (AOS) - K fills per event using batch row (K = max(H, W))
+double AOS_topObject_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options; options.SetUseBufferedWrite(true);
+    auto [model, token] = CreateAOSTopBatchModelAndToken("row");
+    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_top_all", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        contexts[th] = writer->CreateFillContext();
+        entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunAOS_top_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    return executeInParallel(numEvents, nThreads, workFunc);
+}
+
+// Element allDataProduct (AOS) - 1 fill per element using union row
+double AOS_element_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex;
+    ROOT::RNTupleWriteOptions options; options.SetUseBufferedWrite(true);
+    auto [model, token] = CreateAOSUnionModelAndToken("row");
+    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "aos_element_all", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+    for (int th = 0; th < nThreads; ++th) {
+        contexts[th] = writer->CreateFillContext();
+        entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry();
+    }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunAOS_element_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    return executeInParallel(numEvents, nThreads, workFunc);
+}
+
 double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
     int adjustedHits = hitsPerEvent / numSpills;
     int adjustedWires = wiresPerEvent / numSpills;
@@ -697,6 +745,36 @@ double SOA_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime;
+}
+
+// TopObject allDataProduct (SOA) - K fills per event using batch row (K = max(H, W))
+double SOA_topObject_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex; ROOT::RNTupleWriteOptions options; options.SetUseBufferedWrite(true);
+    auto [model, token] = CreateSOATopBatchModelAndToken("row");
+    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "soa_top_all", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+    for (int th = 0; th < nThreads; ++th) { contexts[th] = writer->CreateFillContext(); entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry(); }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunSOA_top_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    return executeInParallel(numEvents, nThreads, workFunc);
+}
+
+// Element allDataProduct (SOA) - 1 fill per element using union row
+double SOA_element_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
+    auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
+    std::mutex mutex; ROOT::RNTupleWriteOptions options; options.SetUseBufferedWrite(true);
+    auto [model, token] = CreateSOAUnionModelAndToken("row");
+    auto writer = ROOT::Experimental::RNTupleParallelWriter::Append(std::move(model), "soa_element_all", *file, options);
+    std::vector<std::shared_ptr<ROOT::Experimental::RNTupleFillContext>> contexts(nThreads);
+    std::vector<std::unique_ptr<ROOT::Experimental::Detail::RRawPtrWriteEntry>> entries(nThreads);
+    for (int th = 0; th < nThreads; ++th) { contexts[th] = writer->CreateFillContext(); entries[th] = contexts[th]->GetModel().CreateRawPtrWriteEntry(); }
+    auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
+        return RunSOA_element_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
+    };
+    return executeInParallel(numEvents, nThreads, workFunc);
 }
 
 // Group 3: Complete topObject perGroup
@@ -908,7 +986,9 @@ std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hits
     if (shouldRun(6)) benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_perData.root", nThreads);
     if (shouldRun(7)) benchmark("SOA_topObject_perGroup", SOA_topObject_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_perGroup.root", nThreads);
     if (shouldRun(8)) benchmark("SOA_element_perDataProduct", SOA_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perData.root", nThreads);
-    if (shouldRun(9)) benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perGroup.root", nThreads);
+    if (shouldRun(9))  benchmark("SOA_element_perGroup", SOA_element_perGroup, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perGroup.root", nThreads);
+    if (shouldRun(10)) benchmark("SOA_topObject_allDataProduct", SOA_topObject_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_top_all.root", nThreads);
+    if (shouldRun(11)) benchmark("SOA_element_allDataProduct", SOA_element_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_all.root", nThreads);
 
     tablePrinter.printFooter();
     return results;

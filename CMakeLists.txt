@@ -63,7 +63,7 @@ target_include_directories(WireDict PRIVATE ${ROOT_INCDIR})
 target_link_libraries(WireDict PRIVATE ${ROOT_LIBS})
 
 # --- AOS Dictionary Generation ---
-set(AOS_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp ${CMAKE_SOURCE_DIR}/include/HitWireWriterHelpers.hpp)
+set(AOS_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp ${CMAKE_SOURCE_DIR}/include/HitWireWriterHelpers.hpp ${CMAKE_SOURCE_DIR}/include/UnionRow.hpp ${CMAKE_SOURCE_DIR}/include/TopBatchRow.hpp)
 set(AOS_LINKDEF_FILE ${CMAKE_SOURCE_DIR}/include/updatedLinkDef.h)
 set(AOS_DICT_OUTPUT ${CMAKE_BINARY_DIR}/AOSDict.cxx)
 
@@ -80,7 +80,7 @@ add_dependencies(AOSDict WireDict)
 target_link_libraries(AOSDict PRIVATE ${ROOT_LIBS} WireDict)
 
 # --- SOA Dictionary Generation ---
-set(SOA_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp)
+set(SOA_DICT_HEADERS ${CMAKE_SOURCE_DIR}/include/Hit.hpp ${CMAKE_SOURCE_DIR}/include/Wire.hpp ${CMAKE_SOURCE_DIR}/include/UnionRowSOA.hpp ${CMAKE_SOURCE_DIR}/include/TopBatchRowSOA.hpp)
 set(SOA_LINKDEF_FILE ${CMAKE_SOURCE_DIR}/include/SOALinkDef.h)
 set(SOA_DICT_OUTPUT ${CMAKE_BINARY_DIR}/SOADict.cxx)
 

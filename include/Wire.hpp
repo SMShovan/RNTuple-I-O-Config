@@ -106,8 +106,9 @@ struct SOAWireBase {
 struct FlatSOAROI {
     unsigned int EventID;   // Parent event identifier
     unsigned int WireID;    // Row index (or channel) of the parent wire within the event
+    std::size_t  offset;    // ROI offset within the waveform
     std::vector<float> data;
-    ClassDef(FlatSOAROI, 2);
+    ClassDef(FlatSOAROI, 3);
 };
 
 struct SOAWireVector {

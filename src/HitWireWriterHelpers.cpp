@@ -12,6 +12,10 @@
 #include <vector>
 #include <mutex>
 #include <TStopwatch.h>
+#include "UnionRow.hpp"
+#include "UnionRowSOA.hpp"
+#include "TopBatchRow.hpp"
+#include "TopBatchRowSOA.hpp"
 #include "Utils.hpp"
 
 // Data generation (adapt from existing generators)
@@ -116,6 +120,218 @@ auto CreateAOSAllDataProductModelAndToken() -> std::pair<std::unique_ptr<ROOT::R
     auto model = ROOT::RNTupleModel::Create();
     model->MakeField<EventAOS>("EventAOS");
     return {std::move(model), model->GetToken("EventAOS")};
+}
+
+// Union models for allDataProduct (per-top/element rows)
+auto CreateAOSUnionModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<AOSUnionRow>(fieldName.c_str());
+    return {std::move(model), model->GetToken(fieldName.c_str())};
+}
+
+auto CreateSOAUnionModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<SOAUnionRow>(fieldName.c_str());
+    return {std::move(model), model->GetToken(fieldName.c_str())};
+}
+
+auto CreateAOSTopBatchModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<AOSTopBatchRow>(fieldName.c_str());
+    return {std::move(model), model->GetToken(fieldName.c_str())};
+}
+
+auto CreateSOATopBatchModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken> {
+    auto model = ROOT::RNTupleModel::Create();
+    model->MakeField<SOATopBatchRow>(fieldName.c_str());
+    return {std::move(model), model->GetToken(fieldName.c_str())};
+}
+
+// AOS top-batch work: K rows per event (K = max(H, W)), optional hit/wire
+double RunAOS_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*seed*/,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    TStopwatch sw; double totalTime = 0.0;
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        const int K = (hitsPerEvent > wiresPerEvent) ? hitsPerEvent : wiresPerEvent;
+        for (int k = 0; k < K; ++k) {
+            AOSTopBatchRow row{}; row.EventID = static_cast<unsigned int>(evt);
+            if (k < hitsPerEvent) {
+                std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
+                std::mt19937 hRng(hSeed);
+                row.hasHit = true;
+                row.hit = generateRandomHitIndividual(static_cast<long long>(evt) * hitsPerEvent + k, hRng);
+            } else {
+                row.hasHit = false;
+            }
+            if (k < wiresPerEvent) {
+                std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
+                std::mt19937 wRng(wSeed);
+                WireIndividual wi = generateRandomWireIndividual(evt, roisPerWire, wRng);
+                row.hasWire = true;
+                row.wire = extractWireBase(wi);
+                row.rois.clear();
+                row.rois.reserve(roisPerWire);
+                for (int r = 0; r < roisPerWire; ++r) {
+                    FlatROI flat{};
+                    flat.EventID = static_cast<unsigned int>(evt);
+                    flat.WireID  = wi.fWire_Channel;
+                    flat.offset  = wi.getSignalROI()[r].offset;
+                    flat.data    = wi.getSignalROI()[r].data;
+                    row.rois.push_back(std::move(flat));
+                }
+            } else {
+                row.hasWire = false;
+                row.rois.clear();
+            }
+            sw.Start();
+            entry.BindRawPtr(token, &row);
+            { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st);
+              if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } }
+            totalTime += sw.RealTime();
+        }
+    }
+    return totalTime;
+}
+
+// AOS union work: 1 fill per element (hit, wire, ROI elements)
+double RunAOS_element_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    TStopwatch sw; double totalTime = 0.0;
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        // Hit elements
+        for (int h = 0; h < hitsPerEvent; ++h) {
+            std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(h));
+            std::mt19937 hRng(hSeed);
+            HitIndividual hi = generateRandomHitIndividual(static_cast<long long>(evt) * hitsPerEvent + h, hRng);
+            AOSUnionRow row{}; row.EventID = evt; row.recordType = 0; row.WireID = 0; row.hit = hi;
+            sw.Start(); entry.BindRawPtr(token, &row);
+            { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st); if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } }
+            totalTime += sw.RealTime();
+        }
+        // Wire elements and their ROI elements
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(w));
+            std::mt19937 wRng(wSeed);
+            WireIndividual wi = generateRandomWireIndividual(evt, roisPerWire, wRng);
+            // Wire element row
+            AOSUnionRow rowW{}; rowW.EventID = evt; rowW.recordType = 1; rowW.WireID = wi.fWire_Channel; rowW.wire = extractWireBase(wi);
+            sw.Start(); entry.BindRawPtr(token, &rowW);
+            { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st); if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } }
+            totalTime += sw.RealTime();
+            // ROI element rows
+            for (int r = 0; r < roisPerWire; ++r) {
+                AOSUnionRow rowR{}; rowR.EventID = evt; rowR.recordType = 2; rowR.WireID = wi.fWire_Channel;
+                rowR.roi.EventID = evt; rowR.roi.WireID = wi.fWire_Channel; rowR.roi.offset = wi.getSignalROI()[r].offset; rowR.roi.data = wi.getSignalROI()[r].data;
+                sw.Start(); entry.BindRawPtr(token, &rowR);
+                { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st); if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } }
+                totalTime += sw.RealTime();
+            }
+        }
+    }
+    return totalTime;
+}
+
+// SOA top-batch work: K rows per event (K = max(H, W)), optional hit/wire
+double RunSOA_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*seed*/,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    TStopwatch sw; double totalTime = 0.0;
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        const int K = (hitsPerEvent > wiresPerEvent) ? hitsPerEvent : wiresPerEvent;
+        for (int k = 0; k < K; ++k) {
+            SOATopBatchRow row{}; row.EventID = static_cast<unsigned int>(evt);
+            if (k < hitsPerEvent) {
+                std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
+                std::mt19937 hRng(hSeed);
+                HitIndividual hInd = generateRandomHitIndividual(static_cast<long long>(evt) * hitsPerEvent + k, hRng);
+                row.hasHit = true;
+                row.hit.EventID = hInd.EventID;
+                row.hit.Channel = hInd.fChannel;
+                row.hit.View = hInd.fView;
+                row.hit.StartTick = hInd.fStartTick;
+                row.hit.EndTick = hInd.fEndTick;
+                row.hit.PeakTime = hInd.fPeakTime;
+                row.hit.SigmaPeakTime = hInd.fSigmaPeakTime;
+                row.hit.RMS = hInd.fRMS;
+                row.hit.PeakAmplitude = hInd.fPeakAmplitude;
+                row.hit.SigmaPeakAmplitude = hInd.fSigmaPeakAmplitude;
+                row.hit.ROISummedADC = hInd.fROISummedADC;
+                row.hit.HitSummedADC = hInd.fHitSummedADC;
+                row.hit.Integral = hInd.fIntegral;
+                row.hit.SigmaIntegral = hInd.fSigmaIntegral;
+                row.hit.Multiplicity = hInd.fMultiplicity;
+                row.hit.LocalIndex = hInd.fLocalIndex;
+                row.hit.GoodnessOfFit = hInd.fGoodnessOfFit;
+                row.hit.NDF = hInd.fNDF;
+                row.hit.SignalType = hInd.fSignalType;
+                row.hit.WireID_Cryostat = hInd.fWireID_Cryostat;
+                row.hit.WireID_TPC = hInd.fWireID_TPC;
+                row.hit.WireID_Plane = hInd.fWireID_Plane;
+                row.hit.WireID_Wire = hInd.fWireID_Wire;
+            } else {
+                row.hasHit = false;
+            }
+            if (k < wiresPerEvent) {
+                std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
+                std::mt19937 wRng(wSeed);
+                WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
+                row.hasWire = true;
+                row.wire.EventID = evt;
+                row.wire.Channel = wInd.fWire_Channel;
+                row.wire.View = wInd.fWire_View;
+                row.rois.clear();
+                row.rois.resize(roisPerWire);
+                for (int r = 0; r < roisPerWire; ++r) {
+                    row.rois[r].data = wInd.getSignalROI()[r].data;
+                }
+            } else {
+                row.hasWire = false;
+                row.rois.clear();
+            }
+            sw.Start();
+            entry.BindRawPtr(token, &row);
+            { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st);
+              if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } }
+            totalTime += sw.RealTime();
+        }
+    }
+    return totalTime;
+}
+
+// SOA union work: 1 fill per element
+double RunSOA_element_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned seed,
+    ROOT::Experimental::RNTupleFillContext& ctx, ROOT::Experimental::Detail::RRawPtrWriteEntry& entry,
+    ROOT::RFieldToken token, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire) {
+    TStopwatch sw; double totalTime = 0.0;
+    for (int evt = firstEvt; evt < lastEvt; ++evt) {
+        for (int h = 0; h < hitsPerEvent; ++h) {
+            std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(h));
+            std::mt19937 hRng(hSeed);
+            HitIndividual hInd = generateRandomHitIndividual(static_cast<long long>(evt) * hitsPerEvent + h, hRng);
+            SOAUnionRow row{}; row.EventID = evt; row.recordType = 0; row.WireID = 0;
+            row.hit.EventID = hInd.EventID; row.hit.Channel = hInd.fChannel; row.hit.View = hInd.fView;
+            row.hit.StartTick = hInd.fStartTick; row.hit.EndTick = hInd.fEndTick; row.hit.PeakTime = hInd.fPeakTime; row.hit.SigmaPeakTime = hInd.fSigmaPeakTime;
+            row.hit.RMS = hInd.fRMS; row.hit.PeakAmplitude = hInd.fPeakAmplitude; row.hit.SigmaPeakAmplitude = hInd.fSigmaPeakAmplitude;
+            row.hit.ROISummedADC = hInd.fROISummedADC; row.hit.HitSummedADC = hInd.fHitSummedADC; row.hit.Integral = hInd.fIntegral; row.hit.SigmaIntegral = hInd.fSigmaIntegral;
+            row.hit.Multiplicity = hInd.fMultiplicity; row.hit.LocalIndex = hInd.fLocalIndex; row.hit.GoodnessOfFit = hInd.fGoodnessOfFit;
+            row.hit.NDF = hInd.fNDF; row.hit.SignalType = hInd.fSignalType; row.hit.WireID_Cryostat = hInd.fWireID_Cryostat; row.hit.WireID_TPC = hInd.fWireID_TPC; row.hit.WireID_Plane = hInd.fWireID_Plane; row.hit.WireID_Wire = hInd.fWireID_Wire;
+            sw.Start(); entry.BindRawPtr(token, &row); { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st); if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } } totalTime += sw.RealTime();
+        }
+        for (int w = 0; w < wiresPerEvent; ++w) {
+            std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(w));
+            std::mt19937 wRng(wSeed);
+            WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
+            SOAUnionRow rowW{}; rowW.EventID = evt; rowW.recordType = 1; rowW.WireID = wInd.fWire_Channel; rowW.wire.EventID = evt; rowW.wire.Channel = wInd.fWire_Channel; rowW.wire.View = wInd.fWire_View;
+            sw.Start(); entry.BindRawPtr(token, &rowW); { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st); if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } } totalTime += sw.RealTime();
+            for (int r = 0; r < roisPerWire; ++r) {
+                SOAUnionRow rowR{}; rowR.EventID = evt; rowR.recordType = 2; rowR.WireID = wInd.fWire_Channel; rowR.roi.EventID = evt; rowR.roi.WireID = wInd.fWire_Channel; rowR.roi.offset = wInd.getSignalROI()[r].offset; rowR.roi.data = wInd.getSignalROI()[r].data;
+                sw.Start(); entry.BindRawPtr(token, &rowR); { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st); if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } } totalTime += sw.RealTime();
+            }
+        }
+    }
+    return totalTime;
 }
 
 // Model for perDataProduct: separate hits and wires models
