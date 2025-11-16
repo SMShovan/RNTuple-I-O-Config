@@ -135,8 +135,10 @@ int main(int argc, char** argv) {
         kOutputDir + "/aos_spill_perGroup.root",
         kOutputDir + "/aos_topObject_perData.root",
         kOutputDir + "/aos_topObject_perGroup.root",
+        kOutputDir + "/aos_topObject_all.root",
         kOutputDir + "/aos_element_perData.root",
-        kOutputDir + "/aos_element_perGroup.root"
+        kOutputDir + "/aos_element_perGroup.root",
+        kOutputDir + "/aos_element_all.root"
     };
     if (runAOS) {
         for (const auto& f : aos_files) {
@@ -173,8 +175,10 @@ int main(int argc, char** argv) {
         kOutputDir + "/soa_spill_perGroup.root",
         kOutputDir + "/soa_topObject_perData.root",
         kOutputDir + "/soa_topObject_perGroup.root",
+        kOutputDir + "/soa_topObject_all.root",
         kOutputDir + "/soa_element_perData.root",
-        kOutputDir + "/soa_element_perGroup.root"
+        kOutputDir + "/soa_element_perGroup.root",
+        kOutputDir + "/soa_element_all.root"
     };
     if (runSOA) {
         for (const auto& f : soa_files) {

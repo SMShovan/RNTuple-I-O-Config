@@ -3,6 +3,10 @@
 #include <TFile.h>
 #include <TStopwatch.h>
 #include "HitWireWriterHelpers.hpp"
+#include "TopBatchRow.hpp"
+#include "TopBatchRowSOA.hpp"
+#include "UnionRow.hpp"
+#include "UnionRowSOA.hpp"
 #include "ReaderResult.hpp"
 #include <iomanip> // For std::setw
 #include <future>
@@ -144,6 +148,22 @@ double readAOS_element_perGroup(const std::string& fileName, int nThreads) {
     hitsFuture.get();
     wiresFuture.get();
     roisFuture.get();
+    sw.Stop();
+    return sw.RealTime();
+}
+
+double readAOS_topObject_allDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    processNtuple<AOSTopBatchRow>(fileName, "aos_top_all", "row", nThreads);
+    sw.Stop();
+    return sw.RealTime();
+}
+
+double readAOS_element_allDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    processNtuple<AOSUnionRow>(fileName, "aos_element_all", "row", nThreads);
     sw.Stop();
     return sw.RealTime();
 }
@@ -339,6 +359,31 @@ void traverse(const SOAROI& roi) {
     }
 }
 
+void traverse(const std::vector<SOAROI>& rois) {
+    for (const auto& r : rois) {
+        if (!r.data.empty()) {
+            volatile float sink = r.data[0]; (void)sink;
+        }
+    }
+}
+
+void traverse(const SOATopBatchRow& row) {
+    if (row.hasHit) traverse(row.hit);
+    if (row.hasWire) {
+        traverse(row.wire);
+        traverse(row.rois);
+    }
+}
+
+void traverse(const SOAUnionRow& row) {
+    switch (row.recordType) {
+        case 0: traverse(row.hit); break;
+        case 1: traverse(row.wire); break;
+        case 2: traverse(row.roi); break;
+        default: break;
+    }
+}
+
 double readSOA_topObject_perGroup(const std::string& fileName, int nThreads) {
     TStopwatch sw;
     sw.Start();
@@ -362,6 +407,22 @@ double readSOA_element_perGroup(const std::string& fileName, int nThreads) {
     hitsFuture.get();
     wiresFuture.get();
     roisFuture.get();
+    sw.Stop();
+    return sw.RealTime();
+}
+
+double readSOA_topObject_allDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    processNtuple<SOATopBatchRow>(fileName, "soa_top_all", "row", nThreads);
+    sw.Stop();
+    return sw.RealTime();
+}
+
+double readSOA_element_allDataProduct(const std::string& fileName, int nThreads) {
+    TStopwatch sw;
+    sw.Start();
+    processNtuple<SOAUnionRow>(fileName, "soa_element_all", "row", nThreads);
     sw.Stop();
     return sw.RealTime();
 }
@@ -418,16 +479,18 @@ std::vector<ReaderResult> inAOS(int nThreads, int iter, const std::string& outpu
     };
 
     auto shouldRun = [&](int idx) { return mask < 0 || ((mask & (1 << idx)) != 0); };
-    if (shouldRun(0)) benchmark("AOS_event_allDataProduct", readAOS_event_allDataProduct, outputDir + "/aos_event_all.root");
-    if (shouldRun(1)) benchmark("AOS_event_perDataProduct", readAOS_event_perDataProduct, outputDir + "/aos_event_perData.root");
-    if (shouldRun(2)) benchmark("AOS_event_perGroup", readAOS_event_perGroup, outputDir + "/aos_event_perGroup.root");
-    if (shouldRun(3)) benchmark("AOS_spill_allDataProduct", readAOS_spill_allDataProduct, outputDir + "/aos_spill_all.root");
-    if (shouldRun(4)) benchmark("AOS_spill_perDataProduct", readAOS_spill_perDataProduct, outputDir + "/aos_spill_perData.root");
-    if (shouldRun(5)) benchmark("AOS_spill_perGroup", readAOS_spill_perGroup, outputDir + "/aos_spill_perGroup.root");
-    if (shouldRun(6)) benchmark("AOS_topObject_perDataProduct", readAOS_topObject_perDataProduct, outputDir + "/aos_topObject_perData.root");
-    if (shouldRun(7)) benchmark("AOS_topObject_perGroup", readAOS_topObject_perGroup, outputDir + "/aos_topObject_perGroup.root");
-    if (shouldRun(8)) benchmark("AOS_element_perDataProduct", readAOS_element_perDataProduct, outputDir + "/aos_element_perData.root");
-    if (shouldRun(9)) benchmark("AOS_element_perGroup", readAOS_element_perGroup, outputDir + "/aos_element_perGroup.root");
+    if (shouldRun(0))  benchmark("AOS_event_allDataProduct",     readAOS_event_allDataProduct,     outputDir + "/aos_event_all.root");
+    if (shouldRun(1))  benchmark("AOS_event_perDataProduct",     readAOS_event_perDataProduct,     outputDir + "/aos_event_perData.root");
+    if (shouldRun(2))  benchmark("AOS_event_perGroup",           readAOS_event_perGroup,           outputDir + "/aos_event_perGroup.root");
+    if (shouldRun(3))  benchmark("AOS_spill_allDataProduct",     readAOS_spill_allDataProduct,     outputDir + "/aos_spill_all.root");
+    if (shouldRun(4))  benchmark("AOS_spill_perDataProduct",     readAOS_spill_perDataProduct,     outputDir + "/aos_spill_perData.root");
+    if (shouldRun(5))  benchmark("AOS_spill_perGroup",           readAOS_spill_perGroup,           outputDir + "/aos_spill_perGroup.root");
+    if (shouldRun(6))  benchmark("AOS_topObject_perDataProduct", readAOS_topObject_perDataProduct, outputDir + "/aos_topObject_perData.root");
+    if (shouldRun(7))  benchmark("AOS_topObject_perGroup",       readAOS_topObject_perGroup,       outputDir + "/aos_topObject_perGroup.root");
+    if (shouldRun(8))  benchmark("AOS_topObject_allDataProduct", readAOS_topObject_allDataProduct, outputDir + "/aos_topObject_all.root");
+    if (shouldRun(9))  benchmark("AOS_element_perDataProduct",   readAOS_element_perDataProduct,   outputDir + "/aos_element_perData.root");
+    if (shouldRun(10)) benchmark("AOS_element_perGroup",         readAOS_element_perGroup,         outputDir + "/aos_element_perGroup.root");
+    if (shouldRun(11)) benchmark("AOS_element_allDataProduct",   readAOS_element_allDataProduct,   outputDir + "/aos_element_all.root");
 
     tablePrinter.printFooter();
     return results;
@@ -485,16 +548,18 @@ std::vector<ReaderResult> inSOA(int nThreads, int iter, const std::string& outpu
     };
 
     auto shouldRun = [&](int idx) { return mask < 0 || ((mask & (1 << idx)) != 0); };
-    if (shouldRun(0)) benchmark("SOA_event_allDataProduct", readSOA_event_allDataProduct, outputDir + "/soa_event_all.root");
-    if (shouldRun(1)) benchmark("SOA_event_perDataProduct", readSOA_event_perDataProduct, outputDir + "/soa_event_perData.root");
-    if (shouldRun(2)) benchmark("SOA_event_perGroup", readSOA_event_perGroup, outputDir + "/soa_event_perGroup.root");
-    if (shouldRun(3)) benchmark("SOA_spill_allDataProduct", readSOA_spill_allDataProduct, outputDir + "/soa_spill_all.root");
-    if (shouldRun(4)) benchmark("SOA_spill_perDataProduct", readSOA_spill_perDataProduct, outputDir + "/soa_spill_perData.root");
-    if (shouldRun(5)) benchmark("SOA_spill_perGroup", readSOA_spill_perGroup, outputDir + "/soa_spill_perGroup.root");
-    if (shouldRun(6)) benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, outputDir + "/soa_topObject_perData.root");
-    if (shouldRun(7)) benchmark("SOA_topObject_perGroup", readSOA_topObject_perGroup, outputDir + "/soa_topObject_perGroup.root");
-    if (shouldRun(8)) benchmark("SOA_element_perDataProduct", readSOA_element_perDataProduct, outputDir + "/soa_element_perData.root");
-    if (shouldRun(9)) benchmark("SOA_element_perGroup", readSOA_element_perGroup, outputDir + "/soa_element_perGroup.root");
+    if (shouldRun(0))  benchmark("SOA_event_allDataProduct",     readSOA_event_allDataProduct,     outputDir + "/soa_event_all.root");
+    if (shouldRun(1))  benchmark("SOA_event_perDataProduct",     readSOA_event_perDataProduct,     outputDir + "/soa_event_perData.root");
+    if (shouldRun(2))  benchmark("SOA_event_perGroup",           readSOA_event_perGroup,           outputDir + "/soa_event_perGroup.root");
+    if (shouldRun(3))  benchmark("SOA_spill_allDataProduct",     readSOA_spill_allDataProduct,     outputDir + "/soa_spill_all.root");
+    if (shouldRun(4))  benchmark("SOA_spill_perDataProduct",     readSOA_spill_perDataProduct,     outputDir + "/soa_spill_perData.root");
+    if (shouldRun(5))  benchmark("SOA_spill_perGroup",           readSOA_spill_perGroup,           outputDir + "/soa_spill_perGroup.root");
+    if (shouldRun(6))  benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, outputDir + "/soa_topObject_perData.root");
+    if (shouldRun(7))  benchmark("SOA_topObject_perGroup",       readSOA_topObject_perGroup,       outputDir + "/soa_topObject_perGroup.root");
+    if (shouldRun(8))  benchmark("SOA_topObject_allDataProduct", readSOA_topObject_allDataProduct, outputDir + "/soa_topObject_all.root");
+    if (shouldRun(9))  benchmark("SOA_element_perDataProduct",   readSOA_element_perDataProduct,   outputDir + "/soa_element_perData.root");
+    if (shouldRun(10)) benchmark("SOA_element_perGroup",         readSOA_element_perGroup,         outputDir + "/soa_element_perGroup.root");
+    if (shouldRun(11)) benchmark("SOA_element_allDataProduct",   readSOA_element_allDataProduct,   outputDir + "/soa_element_all.root");
 
     tablePrinter.printFooter();
     return results;
@@ -577,6 +642,23 @@ void traverse(const WireROI& wireRoi) {
     }
 }
 
+void traverse(const AOSTopBatchRow& row) {
+    if (row.hasHit) traverse(row.hit);
+    if (row.hasWire) {
+        traverse(row.wire);
+        traverse(row.rois);
+    }
+}
+
+void traverse(const AOSUnionRow& row) {
+    switch (row.recordType) {
+        case 0: traverse(row.hit); break;
+        case 1: traverse(row.wire); break;
+        case 2: traverse(row.roi); break;
+        default: break;
+    }
+}
+
 void traverse(const EventSOA& event) {
     for (size_t i = 0; i < event.hits.EventIDs.size(); ++i) {
         volatile float sink = event.hits.PeakAmplitudes[i]; (void)sink;
@@ -611,13 +693,5 @@ void traverse(const SOAWireVector& wires) {
 void traverse(const std::vector<SOAWireBase>& wires) {
     for (const auto& w : wires) {
         volatile unsigned int sink = w.Channel; (void)sink;
-    }
-}
-
-void traverse(const std::vector<SOAROI>& rois) {
-    for (const auto& r : rois) {
-        if (!r.data.empty()) {
-            volatile float sink = r.data[0]; (void)sink;
-        }
     }
 }
