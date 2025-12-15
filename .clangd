@@ -1,0 +1,8 @@
+CompileFlags:
+  Add: [
+    -I/opt/homebrew/Cellar/root/6.36.00/include/root,
+    -I/opt/homebrew/Cellar/googletest/1.17.0/include,
+    -I/opt/homebrew/Cellar/googletest/1.17.0/include/gtest,
+    -I../include
+  ]
+  Compiler: /usr/bin/g++

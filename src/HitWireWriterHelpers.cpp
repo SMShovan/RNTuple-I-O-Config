@@ -158,7 +158,7 @@ double RunAOS_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*s
             AOSTopBatchRow row{}; row.EventID = static_cast<unsigned int>(evt);
             if (k < hitsPerEvent) {
                 std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
-                std::mt19937 hRng(hSeed);
+        std::mt19937 hRng(hSeed);
                 row.hasHit = true;
                 row.hit = generateRandomHitIndividual(static_cast<long long>(evt) * hitsPerEvent + k, hRng);
             } else {
@@ -166,7 +166,7 @@ double RunAOS_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*s
             }
             if (k < wiresPerEvent) {
                 std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
-                std::mt19937 wRng(wSeed);
+        std::mt19937 wRng(wSeed);
                 WireIndividual wi = generateRandomWireIndividual(evt, roisPerWire, wRng);
                 row.hasWire = true;
                 row.wire = extractWireBase(wi);
@@ -184,8 +184,8 @@ double RunAOS_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*s
                 row.hasWire = false;
                 row.rois.clear();
             }
-            sw.Start();
-            entry.BindRawPtr(token, &row);
+        sw.Start();
+        entry.BindRawPtr(token, &row);
             { ROOT::RNTupleFillStatus st; ctx.FillNoFlush(entry, st);
               if (st.ShouldFlushCluster()) { ctx.FlushColumns(); std::lock_guard<std::mutex> lk(mutex); ctx.FlushCluster(); } }
             totalTime += sw.RealTime();
@@ -244,7 +244,7 @@ double RunSOA_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*s
             SOATopBatchRow row{}; row.EventID = static_cast<unsigned int>(evt);
             if (k < hitsPerEvent) {
                 std::uint32_t hSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('H'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
-                std::mt19937 hRng(hSeed);
+        std::mt19937 hRng(hSeed);
                 HitIndividual hInd = generateRandomHitIndividual(static_cast<long long>(evt) * hitsPerEvent + k, hRng);
                 row.hasHit = true;
                 row.hit.EventID = hInd.EventID;
@@ -275,15 +275,15 @@ double RunSOA_top_allDataProductWorkFunc(int firstEvt, int lastEvt, unsigned /*s
             }
             if (k < wiresPerEvent) {
                 std::uint32_t wSeed = Utils::make_seed(Utils::kBaseSeed, static_cast<std::uint64_t>('W'), static_cast<std::uint64_t>(evt), static_cast<std::uint64_t>(k));
-                std::mt19937 wRng(wSeed);
-                WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
+        std::mt19937 wRng(wSeed);
+        WireIndividual wInd = generateRandomWireIndividual(evt, roisPerWire, wRng);
                 row.hasWire = true;
                 row.wire.EventID = evt;
                 row.wire.Channel = wInd.fWire_Channel;
                 row.wire.View = wInd.fWire_View;
                 row.rois.clear();
                 row.rois.resize(roisPerWire);
-                for (int r = 0; r < roisPerWire; ++r) {
+        for (int r = 0; r < roisPerWire; ++r) {
                     row.rois[r].data = wInd.getSignalROI()[r].data;
                 }
             } else {

@@ -485,12 +485,12 @@ std::vector<ReaderResult> inAOS(int nThreads, int iter, const std::string& outpu
     if (shouldRun(3))  benchmark("AOS_spill_allDataProduct",     readAOS_spill_allDataProduct,     outputDir + "/aos_spill_all.root");
     if (shouldRun(4))  benchmark("AOS_spill_perDataProduct",     readAOS_spill_perDataProduct,     outputDir + "/aos_spill_perData.root");
     if (shouldRun(5))  benchmark("AOS_spill_perGroup",           readAOS_spill_perGroup,           outputDir + "/aos_spill_perGroup.root");
-    if (shouldRun(6))  benchmark("AOS_topObject_perDataProduct", readAOS_topObject_perDataProduct, outputDir + "/aos_topObject_perData.root");
-    if (shouldRun(7))  benchmark("AOS_topObject_perGroup",       readAOS_topObject_perGroup,       outputDir + "/aos_topObject_perGroup.root");
-    if (shouldRun(8))  benchmark("AOS_topObject_allDataProduct", readAOS_topObject_allDataProduct, outputDir + "/aos_topObject_all.root");
-    if (shouldRun(9))  benchmark("AOS_element_perDataProduct",   readAOS_element_perDataProduct,   outputDir + "/aos_element_perData.root");
-    if (shouldRun(10)) benchmark("AOS_element_perGroup",         readAOS_element_perGroup,         outputDir + "/aos_element_perGroup.root");
-    if (shouldRun(11)) benchmark("AOS_element_allDataProduct",   readAOS_element_allDataProduct,   outputDir + "/aos_element_all.root");
+    if (shouldRun(6))  benchmark("AOS_topObject_allDataProduct", readAOS_topObject_allDataProduct, outputDir + "/aos_topObject_all.root");
+    if (shouldRun(7))  benchmark("AOS_topObject_perDataProduct", readAOS_topObject_perDataProduct, outputDir + "/aos_topObject_perData.root");
+    if (shouldRun(8))  benchmark("AOS_topObject_perGroup",       readAOS_topObject_perGroup,       outputDir + "/aos_topObject_perGroup.root");
+    if (shouldRun(9))  benchmark("AOS_element_allDataProduct",   readAOS_element_allDataProduct,   outputDir + "/aos_element_all.root");
+    if (shouldRun(10)) benchmark("AOS_element_perDataProduct",   readAOS_element_perDataProduct,   outputDir + "/aos_element_perData.root");
+    if (shouldRun(11)) benchmark("AOS_element_perGroup",         readAOS_element_perGroup,         outputDir + "/aos_element_perGroup.root");
 
     tablePrinter.printFooter();
     return results;
@@ -554,12 +554,12 @@ std::vector<ReaderResult> inSOA(int nThreads, int iter, const std::string& outpu
     if (shouldRun(3))  benchmark("SOA_spill_allDataProduct",     readSOA_spill_allDataProduct,     outputDir + "/soa_spill_all.root");
     if (shouldRun(4))  benchmark("SOA_spill_perDataProduct",     readSOA_spill_perDataProduct,     outputDir + "/soa_spill_perData.root");
     if (shouldRun(5))  benchmark("SOA_spill_perGroup",           readSOA_spill_perGroup,           outputDir + "/soa_spill_perGroup.root");
-    if (shouldRun(6))  benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, outputDir + "/soa_topObject_perData.root");
-    if (shouldRun(7))  benchmark("SOA_topObject_perGroup",       readSOA_topObject_perGroup,       outputDir + "/soa_topObject_perGroup.root");
-    if (shouldRun(8))  benchmark("SOA_topObject_allDataProduct", readSOA_topObject_allDataProduct, outputDir + "/soa_topObject_all.root");
-    if (shouldRun(9))  benchmark("SOA_element_perDataProduct",   readSOA_element_perDataProduct,   outputDir + "/soa_element_perData.root");
-    if (shouldRun(10)) benchmark("SOA_element_perGroup",         readSOA_element_perGroup,         outputDir + "/soa_element_perGroup.root");
-    if (shouldRun(11)) benchmark("SOA_element_allDataProduct",   readSOA_element_allDataProduct,   outputDir + "/soa_element_all.root");
+    if (shouldRun(6))  benchmark("SOA_topObject_allDataProduct", readSOA_topObject_allDataProduct, outputDir + "/soa_topObject_all.root");
+    if (shouldRun(7))  benchmark("SOA_topObject_perDataProduct", readSOA_topObject_perDataProduct, outputDir + "/soa_topObject_perData.root");
+    if (shouldRun(8))  benchmark("SOA_topObject_perGroup",       readSOA_topObject_perGroup,       outputDir + "/soa_topObject_perGroup.root");
+    if (shouldRun(9))  benchmark("SOA_element_allDataProduct",   readSOA_element_allDataProduct,   outputDir + "/soa_element_all.root");
+    if (shouldRun(10)) benchmark("SOA_element_perDataProduct",   readSOA_element_perDataProduct,   outputDir + "/soa_element_perData.root");
+    if (shouldRun(11)) benchmark("SOA_element_perGroup",         readSOA_element_perGroup,         outputDir + "/soa_element_perGroup.root");
 
     tablePrinter.printFooter();
     return results;

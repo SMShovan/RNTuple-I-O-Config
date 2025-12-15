@@ -621,12 +621,12 @@ std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hits
     if (shouldRun(3))  benchmark("AOS_spill_allDataProduct",   AOS_spill_allDataProduct,   numEvents, numSpills,    hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_spill_all.root",      nThreads);
     if (shouldRun(4))  benchmark("AOS_spill_perDataProduct",   AOS_spill_perDataProduct,   numEvents, numSpills,    hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_spill_perData.root",  nThreads);
     if (shouldRun(5))  benchmark("AOS_spill_perGroup",         AOS_spill_perGroup,         numEvents, numSpills,    hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_spill_perGroup.root",nThreads);
-    if (shouldRun(6))  benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_perData.root",   nThreads);
-    if (shouldRun(7))  benchmark("AOS_topObject_perGroup",     AOS_topObject_perGroup,     numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_perGroup.root", nThreads);
-    if (shouldRun(8))  benchmark("AOS_topObject_allDataProduct", AOS_topObject_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_all.root",   nThreads);
-    if (shouldRun(9))  benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perData.root",   nThreads);
-    if (shouldRun(10)) benchmark("AOS_element_perGroup",       AOS_element_perGroup,       numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perGroup.root", nThreads);
-    if (shouldRun(11)) benchmark("AOS_element_allDataProduct", AOS_element_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_all.root",      nThreads);
+    if (shouldRun(6))  benchmark("AOS_topObject_allDataProduct", AOS_topObject_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_all.root",   nThreads);
+    if (shouldRun(7))  benchmark("AOS_topObject_perDataProduct", AOS_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_perData.root",   nThreads);
+    if (shouldRun(8))  benchmark("AOS_topObject_perGroup",     AOS_topObject_perGroup,     numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_topObject_perGroup.root", nThreads);
+    if (shouldRun(9))  benchmark("AOS_element_allDataProduct", AOS_element_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_all.root",      nThreads);
+    if (shouldRun(10)) benchmark("AOS_element_perDataProduct", AOS_element_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perData.root",   nThreads);
+    if (shouldRun(11)) benchmark("AOS_element_perGroup",       AOS_element_perGroup,       numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/aos_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;
@@ -983,12 +983,12 @@ std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hits
     if (shouldRun(3))  benchmark("SOA_spill_allDataProduct",     SOA_spill_allDataProduct,     numEvents, numSpills,    hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_spill_all.root",      nThreads);
     if (shouldRun(4))  benchmark("SOA_spill_perDataProduct",     SOA_spill_perDataProduct,     numEvents, numSpills,    hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_spill_perData.root",  nThreads);
     if (shouldRun(5))  benchmark("SOA_spill_perGroup",           SOA_spill_perGroup,           numEvents, numSpills,    hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_spill_perGroup.root",nThreads);
-    if (shouldRun(6))  benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_perData.root",   nThreads);
-    if (shouldRun(7))  benchmark("SOA_topObject_perGroup",       SOA_topObject_perGroup,       numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_perGroup.root", nThreads);
-    if (shouldRun(8))  benchmark("SOA_topObject_allDataProduct", SOA_topObject_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_all.root",     nThreads);
-    if (shouldRun(9))  benchmark("SOA_element_perDataProduct",   SOA_element_perDataProduct,   numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perData.root",   nThreads);
-    if (shouldRun(10)) benchmark("SOA_element_perGroup",         SOA_element_perGroup,         numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perGroup.root", nThreads);
-    if (shouldRun(11)) benchmark("SOA_element_allDataProduct",   SOA_element_allDataProduct,   numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_all.root",      nThreads);
+    if (shouldRun(6))  benchmark("SOA_topObject_allDataProduct", SOA_topObject_allDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_all.root",     nThreads);
+    if (shouldRun(7))  benchmark("SOA_topObject_perDataProduct", SOA_topObject_perDataProduct, numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_perData.root",   nThreads);
+    if (shouldRun(8))  benchmark("SOA_topObject_perGroup",       SOA_topObject_perGroup,       numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_topObject_perGroup.root", nThreads);
+    if (shouldRun(9))  benchmark("SOA_element_allDataProduct",   SOA_element_allDataProduct,   numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_all.root",      nThreads);
+    if (shouldRun(10)) benchmark("SOA_element_perDataProduct",   SOA_element_perDataProduct,   numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perData.root",   nThreads);
+    if (shouldRun(11)) benchmark("SOA_element_perGroup",         SOA_element_perGroup,         numEvents, hitsPerEvent, wiresPerEvent, roisPerWire, outputDir + "/soa_element_perGroup.root", nThreads);
 
     tablePrinter.printFooter();
     return results;
