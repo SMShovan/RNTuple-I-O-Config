@@ -151,6 +151,8 @@ int main(int argc, char** argv) {
         }
         // Print AOS file sizes to terminal in a table format
         print_file_sizes_table("AOS File Sizes (MB)", aos_file_sizes);
+        // Generate AOS-only file size plot
+        visualize_aos_file_sizes(aos_file_sizes);
     }
 
     // Add SOA visualization - use separate SOA-only functions
@@ -191,6 +193,8 @@ int main(int argc, char** argv) {
         }
         // Print SOA file sizes to terminal in a table format
         print_file_sizes_table("SOA File Sizes (MB)", soa_file_sizes);
+        // Generate SOA-only file size plot
+        visualize_soa_file_sizes(soa_file_sizes);
     }
 
     // Add comparison visualizations
@@ -220,4 +224,8 @@ echo "Started at: $(date)" | tee ../experiments/log.txt && \
 ./hitwire 2>&1 | tee -a ../experiments/log.txt && \
 rm -rf build && \
 cd .. && cd ..
+
+root --web=safari
+gSystem->Load("/Users/smshovan/Documents/RNTuple-I-O-Config/build/libWireDict.dylib");
+TBrowser b;
 */

@@ -1,45 +1,43 @@
-Started at: Mon Jan 12 22:47:17 CST 2026
+Started at: Mon Jan 12 23:48:48 CST 2026
 nThreads: 10
-AOS_event_allDataProduct timings - setup: 0.009280 s, execute: 4.009996 s, teardown: 0.742976 s, workerSum: 4.833294 s
-AOS_event_allDataProduct worker subphases - dataGen: 25.636372 s, serialize: 4.812627 s, flushColumns: 0.000000 s, flushCluster: 0.000000 s
+AOS_event_allDataProduct timings - setup: 0.007903 s, execute: 3.736021 s, teardown: 0.732363 s, workerSum: 4.547865 s
+AOS_event_allDataProduct worker subphases - dataGen: 24.153364 s, serialize: 4.527798 s, flushColumns: 0.000000 s, flushCluster: 0.000000 s
 
 AOS Writer Benchmarks (Progressive Results)
 Writer                          Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 ----------------------------------------------------------------------------------------------------
-AOS_event_allDataProduct        4.833294        nan             4.833294    -           -           
-AOS_event_perDataProduct        4.545413        nan             4.545413    -           -           
-AOS_event_perGroup              5.102963        nan             5.102963    -           -           
-AOS_spill_allDataProduct        4.535310        nan             4.535310    -           -           
-AOS_spill_perDataProduct        4.574874        nan             4.574874    -           -           
-AOS_spill_perGroup              5.067428        nan             5.067428    -           -           
-AOS_topObject_allDataProduct    8.062528        nan             8.062528    -           -           
-AOS_topObject_perDataProduct    8.157828        nan             8.157828    -           -           
-AOS_topObject_perGroup          7.908395        nan             7.908395    -           -           
-AOS_element_allDataProduct      70.633732       nan             70.633732   -           -           
-AOS_element_perDataProduct      60.671236       nan             60.671236   -           -           
-AOS_element_perGroup            67.045723       nan             67.045723   -           -           
+AOS_event_allDataProduct        4.547865        0.000000        4.547865    -           -           
+AOS_event_perDataProduct        4.440500        0.000000        4.440500    -           -           
+AOS_event_perGroup              5.072571        0.000000        5.072571    -           -           
+AOS_spill_allDataProduct        4.516134        0.000000        4.516134    -           -           
+AOS_spill_perDataProduct        4.528864        0.000000        4.528864    -           -           
+AOS_spill_perGroup              5.146585        0.000000        5.146585    -           -           
+AOS_topObject_allDataProduct    6.544971        0.000000        6.544971    -           -           
+AOS_topObject_perDataProduct    7.350669        0.000000        7.350669    -           -           
+AOS_topObject_perGroup          7.859150        0.000000        7.859150    -           -           
+AOS_element_allDataProduct      70.648085       0.000000        70.648085   -           -           
+AOS_element_perDataProduct      59.094748       0.000000        59.094748   -           -           
+AOS_element_perGroup            65.749519       0.000000        65.749519   -           -           
 ----------------------------------------------------------------------------------------------------
 
-Error in <TGaxis::PaintAxis>: wmin (0.000000) == wmax (0.000000)
-Error in <TGaxis::PaintAxis>: wmin (0.000000) == wmax (0.000000)
 Info in <TCanvas::Print>: pdf file ../experiments/aos_write_times.pdf has been created
 AOS Write times plot saved to ../experiments/aos_write_times.pdf
 
 AOS Reader Benchmarks (Progressive Results)
 Reader                          Cold (s)        Warm Avg (s)    Warm StdDev (s) Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 --------------------------------------------------------------------------------------------------------------------
-AOS_event_allDataProduct        0.198208        -               -               0.198208    -           -           
-AOS_event_perDataProduct        0.143036        -               -               0.143036    -           -           
-AOS_event_perGroup              0.186544        -               -               0.186544    -           -           
-AOS_spill_allDataProduct        0.173346        -               -               0.173346    -           -           
-AOS_spill_perDataProduct        0.148828        -               -               0.148828    -           -           
-AOS_spill_perGroup              0.161630        -               -               0.161630    -           -           
-AOS_topObject_allDataProduct    0.230501        -               -               0.230501    -           -           
-AOS_topObject_perDataProduct    0.169301        -               -               0.169301    -           -           
-AOS_topObject_perGroup          0.175166        -               -               0.175166    -           -           
-AOS_element_allDataProduct      0.756276        -               -               0.756276    -           -           
-AOS_element_perDataProduct      0.167300        -               -               0.167300    -           -           
-AOS_element_perGroup            0.128740        -               -               0.128740    -           -           
+AOS_event_allDataProduct        0.128714        -               -               0.128714    -           -           
+AOS_event_perDataProduct        0.133987        -               -               0.133987    -           -           
+AOS_event_perGroup              0.143166        -               -               0.143166    -           -           
+AOS_spill_allDataProduct        0.128996        -               -               0.128996    -           -           
+AOS_spill_perDataProduct        0.129869        -               -               0.129869    -           -           
+AOS_spill_perGroup              0.147441        -               -               0.147441    -           -           
+AOS_topObject_allDataProduct    0.156298        -               -               0.156298    -           -           
+AOS_topObject_perDataProduct    0.139663        -               -               0.139663    -           -           
+AOS_topObject_perGroup          0.159974        -               -               0.159974    -           -           
+AOS_element_allDataProduct      0.516852        -               -               0.516852    -           -           
+AOS_element_perDataProduct      0.146105        -               -               0.146105    -           -           
+AOS_element_perGroup            0.134774        -               -               0.134774    -           -           
 --------------------------------------------------------------------------------------------------------------------
 
 Info in <TCanvas::Print>: pdf file ../experiments/aos_cold_times.pdf has been created
@@ -55,51 +53,51 @@ AOS_event_perGroup                      361.689359
 AOS_spill_allDataProduct                359.954121      
 AOS_spill_perDataProduct                359.973921      
 AOS_spill_perGroup                      361.795125      
-AOS_topObject_perDataProduct            359.985403      
-AOS_topObject_perGroup                  361.708765      
+AOS_topObject_perDataProduct            359.985392      
+AOS_topObject_perGroup                  361.708769      
 AOS_topObject_allDataProduct            361.700410      
-AOS_element_perDataProduct              360.770596      
-AOS_element_perGroup                    361.687103      
+AOS_element_perDataProduct              360.770601      
+AOS_element_perGroup                    361.687114      
 AOS_element_allDataProduct              367.906067      
 --------------------------------------------------------
+Info in <TCanvas::Print>: pdf file ../experiments/aos_file_sizes.pdf has been created
+AOS File sizes plot saved to ../experiments/aos_file_sizes.pdf
 
 SOA Writer Benchmarks (Progressive Results)
 SOA Writer                      Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 ----------------------------------------------------------------------------------------------------
-SOA_event_allDataProduct        3.905225        nan             3.905225    -           -           
-SOA_event_perDataProduct        3.805260        nan             3.805260    -           -           
-SOA_event_perGroup              3.817137        nan             3.817137    -           -           
-SOA_spill_allDataProduct        3.965823        nan             3.965823    -           -           
-SOA_spill_perDataProduct        4.085253        nan             4.085253    -           -           
-SOA_spill_perGroup              4.030942        nan             4.030942    -           -           
-SOA_topObject_allDataProduct    5.753776        nan             5.753776    -           -           
-SOA_topObject_perDataProduct    6.797263        nan             6.797263    -           -           
-SOA_topObject_perGroup          6.968059        nan             6.968059    -           -           
-SOA_element_allDataProduct      71.927780       nan             71.927780   -           -           
-SOA_element_perDataProduct      61.069065       nan             61.069065   -           -           
-SOA_element_perGroup            77.208297       nan             77.208297   -           -           
+SOA_event_allDataProduct        3.871736        0.000000        3.871736    -           -           
+SOA_event_perDataProduct        3.802285        0.000000        3.802285    -           -           
+SOA_event_perGroup              3.834630        0.000000        3.834630    -           -           
+SOA_spill_allDataProduct        3.975540        0.000000        3.975540    -           -           
+SOA_spill_perDataProduct        3.978194        0.000000        3.978194    -           -           
+SOA_spill_perGroup              4.010535        0.000000        4.010535    -           -           
+SOA_topObject_allDataProduct    5.607893        0.000000        5.607893    -           -           
+SOA_topObject_perDataProduct    6.843465        0.000000        6.843465    -           -           
+SOA_topObject_perGroup          6.754050        0.000000        6.754050    -           -           
+SOA_element_allDataProduct      71.695650       0.000000        71.695650   -           -           
+SOA_element_perDataProduct      59.384414       0.000000        59.384414   -           -           
+SOA_element_perGroup            73.824957       0.000000        73.824957   -           -           
 ----------------------------------------------------------------------------------------------------
 
-Error in <TGaxis::PaintAxis>: wmin (0.000000) == wmax (0.000000)
-Error in <TGaxis::PaintAxis>: wmin (0.000000) == wmax (0.000000)
 Info in <TCanvas::Print>: pdf file ../experiments/soa_write_times.pdf has been created
 SOA Write times plot saved to ../experiments/soa_write_times.pdf
 
 SOA Reader Benchmarks (Progressive Results)
 SOA Reader                      Cold (s)        Warm Avg (s)    Warm StdDev (s) Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 --------------------------------------------------------------------------------------------------------------------
-SOA_event_allDataProduct        0.158682        -               -               0.158682    -           -           
-SOA_event_perDataProduct        0.134985        -               -               0.134985    -           -           
-SOA_event_perGroup              0.116056        -               -               0.116056    -           -           
-SOA_spill_allDataProduct        0.152631        -               -               0.152631    -           -           
-SOA_spill_perDataProduct        0.133505        -               -               0.133505    -           -           
-SOA_spill_perGroup              0.122439        -               -               0.122439    -           -           
-SOA_topObject_allDataProduct    0.159981        -               -               0.159981    -           -           
-SOA_topObject_perDataProduct    0.146725        -               -               0.146725    -           -           
-SOA_topObject_perGroup          0.126041        -               -               0.126041    -           -           
-SOA_element_allDataProduct      0.544507        -               -               0.544507    -           -           
-SOA_element_perDataProduct      0.150455        -               -               0.150455    -           -           
-SOA_element_perGroup            0.236501        -               -               0.236501    -           -           
+SOA_event_allDataProduct        0.168221        -               -               0.168221    -           -           
+SOA_event_perDataProduct        0.136182        -               -               0.136182    -           -           
+SOA_event_perGroup              0.119780        -               -               0.119780    -           -           
+SOA_spill_allDataProduct        0.151162        -               -               0.151162    -           -           
+SOA_spill_perDataProduct        0.148951        -               -               0.148951    -           -           
+SOA_spill_perGroup              0.129781        -               -               0.129781    -           -           
+SOA_topObject_allDataProduct    0.176935        -               -               0.176935    -           -           
+SOA_topObject_perDataProduct    0.145459        -               -               0.145459    -           -           
+SOA_topObject_perGroup          0.147465        -               -               0.147465    -           -           
+SOA_element_allDataProduct      0.516004        -               -               0.516004    -           -           
+SOA_element_perDataProduct      0.154538        -               -               0.154538    -           -           
+SOA_element_perGroup            0.239794        -               -               0.239794    -           -           
 --------------------------------------------------------------------------------------------------------------------
 
 Info in <TCanvas::Print>: pdf file ../experiments/soa_cold_times.pdf has been created
@@ -115,15 +113,15 @@ SOA_event_perGroup                      348.849264
 SOA_spill_allDataProduct                348.827873      
 SOA_spill_perDataProduct                348.847700      
 SOA_spill_perGroup                      348.849317      
-SOA_topObject_perDataProduct            348.859350      
-SOA_topObject_perGroup                  348.856397      
+SOA_topObject_perDataProduct            348.859367      
+SOA_topObject_perGroup                  348.856399      
 SOA_topObject_allDataProduct            348.860257      
-SOA_element_perDataProduct              348.885289      
-SOA_element_perGroup                    348.894017      
+SOA_element_perDataProduct              348.885282      
+SOA_element_perGroup                    348.894030      
 SOA_element_allDataProduct              367.906097      
 --------------------------------------------------------
-Error in <TGaxis::PaintAxis>: wmin (0.000000) == wmax (0.000000)
-Error in <TGaxis::PaintAxis>: wmin (0.000000) == wmax (0.000000)
+Info in <TCanvas::Print>: pdf file ../experiments/soa_file_sizes.pdf has been created
+SOA File sizes plot saved to ../experiments/soa_file_sizes.pdf
 Info in <TCanvas::Print>: pdf file ../experiments/comparison_write_times.pdf has been created
 Comparison write times plot saved to ../experiments/comparison_write_times.pdf
 Info in <TCanvas::Print>: pdf file ../experiments/comparison_cold_times.pdf has been created

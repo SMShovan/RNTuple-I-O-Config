@@ -597,7 +597,10 @@ std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hits
             }
             double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
             double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-            double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
+            double stddev = 0.0;
+            if (times.size() > 1) {
+                stddev = std::sqrt(std::max(0.0, (sq_sum - times.size() * avg * avg) / (times.size() - 1)));
+            }
             result.avg = avg;
             result.stddev = stddev;
             result.iterationTimes = times; // Store individual iteration times
@@ -959,7 +962,10 @@ std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hits
             }
             double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
             double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-            double stddev = std::sqrt((sq_sum - times.size() * avg * avg) / (times.size() - 1));
+            double stddev = 0.0;
+            if (times.size() > 1) {
+                stddev = std::sqrt(std::max(0.0, (sq_sum - times.size() * avg * avg) / (times.size() - 1)));
+            }
             result.avg = avg;
             result.stddev = stddev;
             result.iterationTimes = times; // Store individual iteration times
