@@ -23,27 +23,56 @@
 
 using namespace std;
 
+// Normalize labels/paths to a consistent benchmark key used for ordering.
+// Accepts inputs like:
+// - "AOS_event_allDataProduct"
+// - "SOA_element_perGroup"
+// - "./output/aos_event_all.root"
+// - "/abs/path/soa_spill_perData.root"
+static std::string normalizeBenchmarkKey(std::string s) {
+    // Drop any directory path
+    const auto lastSlash = s.find_last_of("/\\");
+    if (lastSlash != std::string::npos) s = s.substr(lastSlash + 1);
+
+    // Drop extension (e.g. .root)
+    const auto dot = s.rfind('.');
+    if (dot != std::string::npos) s = s.substr(0, dot);
+
+    // Strip layout prefixes used in different contexts
+    if (s.rfind("AOS_", 0) == 0) s = s.substr(4);
+    if (s.rfind("SOA_", 0) == 0) s = s.substr(4);
+    if (s.rfind("aos_", 0) == 0) s = s.substr(4);
+    if (s.rfind("soa_", 0) == 0) s = s.substr(4);
+
+    // Map filename-style suffixes to the internal label-style suffixes
+    // (main.cpp builds labels from paths similarly)
+    if (s.size() >= 4 && s.compare(s.size() - 4, 4, "_all") == 0) {
+        s.replace(s.size() - 4, 4, "_allDataProduct");
+    }
+    if (s.size() >= 8 && s.compare(s.size() - 8, 8, "_perData") == 0) {
+        s.replace(s.size() - 8, 8, "_perDataProduct");
+    }
+    return s;
+}
+
 // Function to get the sort order for consistent x-axis ordering
 int getSortOrder(const std::string& label) {
-    // Remove AOS_ or SOA_ prefix for sorting
-    std::string cleanLabel = label;
-    if (cleanLabel.find("AOS_") == 0) {
-        cleanLabel = cleanLabel.substr(4);
-    } else if (cleanLabel.find("SOA_") == 0) {
-        cleanLabel = cleanLabel.substr(4);
-    }
+    // Normalize label/path into a consistent key
+    std::string cleanLabel = normalizeBenchmarkKey(label);
     
     // Define the desired order
     if (cleanLabel == "event_allDataProduct") return 1;
     if (cleanLabel == "event_perDataProduct") return 2;
     if (cleanLabel == "event_perGroup") return 3;
     if (cleanLabel == "spill_allDataProduct") return 4;
-    if (cleanLabel == "spill_perGroup") return 5;
-    if (cleanLabel == "topObject_perDataProduct") return 6;
-    if (cleanLabel == "topObject_perGroup") return 7;
-    if (cleanLabel == "element_allDataProduct") return 8;
-    if (cleanLabel == "element_perDataProduct") return 9;
-    if (cleanLabel == "element_perGroup") return 10;
+    if (cleanLabel == "spill_perDataProduct") return 5;
+    if (cleanLabel == "spill_perGroup") return 6;
+    if (cleanLabel == "topObject_allDataProduct") return 7;
+    if (cleanLabel == "topObject_perDataProduct") return 8;
+    if (cleanLabel == "topObject_perGroup") return 9;
+    if (cleanLabel == "element_allDataProduct") return 10;
+    if (cleanLabel == "element_perDataProduct") return 11;
+    if (cleanLabel == "element_perGroup") return 12;
     
     // Default for any other labels
     return 999;
@@ -80,6 +109,10 @@ std::vector<std::pair<std::string, double>> sortFileSizes(const std::vector<std:
 }
 
 void visualize_aos_writer_results(const std::vector<WriterResult>& results) {
+    if (results.empty()) {
+        cout << "No AOS writer results to plot (skipping aos_write_times.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the results for consistent ordering
@@ -102,7 +135,9 @@ void visualize_aos_writer_results(const std::vector<WriterResult>& results) {
         hWrite->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hWrite->GetXaxis()->SetLabelSize(0.06);
-    hWrite->GetXaxis()->LabelsOption("a");
+    // NOTE: do NOT use LabelsOption("a") here; it alphabetically reorders labels and can
+    // desynchronize bar values from their intended labels. We already sort explicitly.
+    hWrite->GetXaxis()->LabelsOption("v");
     hWrite->GetYaxis()->SetLabelSize(0.06);
     auto cWrite = make_unique<TCanvas>("cWriteAOS", "AOS Write Times", 1600, 800);
     cWrite->SetBottomMargin(0.3);
@@ -124,6 +159,10 @@ void visualize_aos_writer_results(const std::vector<WriterResult>& results) {
 }
 
 void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
+    if (results.empty()) {
+        cout << "No AOS reader results to plot (skipping aos_cold_times.pdf / aos_warm_times.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the results for consistent ordering
@@ -145,7 +184,8 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
         hCold->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hCold->GetXaxis()->SetLabelSize(0.06);
-    hCold->GetXaxis()->LabelsOption("a");
+    // Keep label order (already sorted) while drawing vertically for readability.
+    hCold->GetXaxis()->LabelsOption("v");
     hCold->GetYaxis()->SetLabelSize(0.06);
     auto cCold = make_unique<TCanvas>("cColdAOS", "AOS Cold Read Times", 1600, 800);
     cCold->SetBottomMargin(0.3);
@@ -181,7 +221,7 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
         hWarm->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hWarm->GetXaxis()->SetLabelSize(0.06);
-    hWarm->GetXaxis()->LabelsOption("a");
+    hWarm->GetXaxis()->LabelsOption("v");
     hWarm->GetYaxis()->SetLabelSize(0.06);
     auto cWarm = make_unique<TCanvas>("cWarmAOS", "AOS Warm Read Times", 1600, 800);
     cWarm->SetBottomMargin(0.3);
@@ -203,6 +243,10 @@ void visualize_aos_reader_results(const std::vector<ReaderResult>& results) {
 }
 
 void visualize_aos_file_sizes(const std::vector<std::pair<std::string, double>>& fileSizes) {
+    if (fileSizes.empty()) {
+        cout << "No AOS file sizes to plot (skipping aos_file_sizes.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the file sizes for consistent ordering
@@ -227,7 +271,7 @@ void visualize_aos_file_sizes(const std::vector<std::pair<std::string, double>>&
         hSize->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hSize->GetXaxis()->SetLabelSize(0.06);
-    hSize->GetXaxis()->LabelsOption("a");
+    hSize->GetXaxis()->LabelsOption("v");
     hSize->GetYaxis()->SetLabelSize(0.06);
     auto cSize = make_unique<TCanvas>("cSizeAOS", "AOS File Sizes", 1600, 800);
     cSize->SetBottomMargin(0.3);
@@ -290,6 +334,10 @@ void visualize_aos_scaling(const std::map<std::string, std::vector<std::pair<int
 
 // SOA visualization functions
 void visualize_soa_writer_results(const std::vector<WriterResult>& results) {
+    if (results.empty()) {
+        cout << "No SOA writer results to plot (skipping soa_write_times.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the results for consistent ordering
@@ -312,7 +360,7 @@ void visualize_soa_writer_results(const std::vector<WriterResult>& results) {
         hWrite->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hWrite->GetXaxis()->SetLabelSize(0.06);
-    hWrite->GetXaxis()->LabelsOption("a");
+    hWrite->GetXaxis()->LabelsOption("v");
     hWrite->GetYaxis()->SetLabelSize(0.06);
     auto cWrite = make_unique<TCanvas>("cWriteSOA", "SOA Write Times", 1600, 800);
     cWrite->SetBottomMargin(0.3);
@@ -334,6 +382,10 @@ void visualize_soa_writer_results(const std::vector<WriterResult>& results) {
 }
 
 void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
+    if (results.empty()) {
+        cout << "No SOA reader results to plot (skipping soa_cold_times.pdf / soa_warm_times.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the results for consistent ordering
@@ -355,7 +407,7 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
         hCold->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hCold->GetXaxis()->SetLabelSize(0.06);
-    hCold->GetXaxis()->LabelsOption("a");
+    hCold->GetXaxis()->LabelsOption("v");
     hCold->GetYaxis()->SetLabelSize(0.06);
     auto cCold = make_unique<TCanvas>("cColdSOA", "SOA Cold Read Times", 1600, 800);
     cCold->SetBottomMargin(0.3);
@@ -391,7 +443,7 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
         hWarm->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hWarm->GetXaxis()->SetLabelSize(0.06);
-    hWarm->GetXaxis()->LabelsOption("a");
+    hWarm->GetXaxis()->LabelsOption("v");
     hWarm->GetYaxis()->SetLabelSize(0.06);
     auto cWarm = make_unique<TCanvas>("cWarmSOA", "SOA Warm Read Times", 1600, 800);
     cWarm->SetBottomMargin(0.3);
@@ -413,6 +465,10 @@ void visualize_soa_reader_results(const std::vector<ReaderResult>& results) {
 }
 
 void visualize_soa_file_sizes(const std::vector<std::pair<std::string, double>>& fileSizes) {
+    if (fileSizes.empty()) {
+        cout << "No SOA file sizes to plot (skipping soa_file_sizes.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the file sizes for consistent ordering
@@ -437,7 +493,7 @@ void visualize_soa_file_sizes(const std::vector<std::pair<std::string, double>>&
         hSize->GetXaxis()->SetBinLabel(i + 1, label.c_str());
     }
     hSize->GetXaxis()->SetLabelSize(0.06);
-    hSize->GetXaxis()->LabelsOption("a");
+    hSize->GetXaxis()->LabelsOption("v");
     hSize->GetYaxis()->SetLabelSize(0.06);
     auto cSize = make_unique<TCanvas>("cSizeSOA", "SOA File Sizes", 1600, 800);
     cSize->SetBottomMargin(0.3);
@@ -500,6 +556,10 @@ void visualize_soa_scaling(const std::map<std::string, std::vector<std::pair<int
 
 // Comparison functions for AOS vs SOA
 void visualize_comparison_writer_results(const std::vector<WriterResult>& aosResults, const std::vector<WriterResult>& soaResults) {
+    if (aosResults.empty() || soaResults.empty()) {
+        cout << "Missing AOS or SOA writer results (skipping comparison_write_times.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the results for consistent ordering
@@ -525,7 +585,7 @@ void visualize_comparison_writer_results(const std::vector<WriterResult>& aosRes
     }
     hWrite->SetFillColor(kRed - 2);
     hWrite->GetXaxis()->SetLabelSize(0.06);
-    hWrite->GetXaxis()->LabelsOption("a");
+    hWrite->GetXaxis()->LabelsOption("v");
     hWrite->GetYaxis()->SetLabelSize(0.06);
     
     auto cWrite = make_unique<TCanvas>("cWriteComp", "AOS vs SOA Write Times", 1600, 800);
@@ -557,6 +617,10 @@ void visualize_comparison_writer_results(const std::vector<WriterResult>& aosRes
 }
 
 void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosResults, const std::vector<ReaderResult>& soaResults) {
+    if (aosResults.empty() || soaResults.empty()) {
+        cout << "Missing AOS or SOA reader results (skipping comparison_cold_times.pdf / comparison_warm_times.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the results for consistent ordering
@@ -580,7 +644,7 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
     }
     hCold->SetFillColor(kRed - 2);
     hCold->GetXaxis()->SetLabelSize(0.06);
-    hCold->GetXaxis()->LabelsOption("a");
+    hCold->GetXaxis()->LabelsOption("v");
     hCold->GetYaxis()->SetLabelSize(0.06);
     
     auto cCold = make_unique<TCanvas>("cColdComp", "AOS vs SOA Cold Read Times", 1600, 800);
@@ -624,7 +688,7 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
     }
     hWarm->SetFillColor(kRed - 2);
     hWarm->GetXaxis()->SetLabelSize(0.06);
-    hWarm->GetXaxis()->LabelsOption("a");
+    hWarm->GetXaxis()->LabelsOption("v");
     hWarm->GetYaxis()->SetLabelSize(0.06);
     
     auto cWarm = make_unique<TCanvas>("cWarmComp", "AOS vs SOA Warm Read Times", 1600, 800);
@@ -654,6 +718,10 @@ void visualize_comparison_reader_results(const std::vector<ReaderResult>& aosRes
 }
 
 void visualize_comparison_file_sizes(const std::vector<std::pair<std::string, double>>& aosSizes, const std::vector<std::pair<std::string, double>>& soaSizes) {
+    if (aosSizes.empty() || soaSizes.empty()) {
+        cout << "Missing AOS or SOA file sizes (skipping comparison_file_sizes.pdf)" << endl;
+        return;
+    }
     filesystem::create_directory("../experiments");
 
     // Sort the file sizes for consistent ordering
@@ -680,7 +748,7 @@ void visualize_comparison_file_sizes(const std::vector<std::pair<std::string, do
     }
     hSize->SetFillColor(kRed - 2);
     hSize->GetXaxis()->SetLabelSize(0.06);
-    hSize->GetXaxis()->LabelsOption("a");
+    hSize->GetXaxis()->LabelsOption("v");
     hSize->GetYaxis()->SetLabelSize(0.06);
     
     auto cSize = make_unique<TCanvas>("cSizeComp", "AOS vs SOA File Sizes", 1600, 800);
