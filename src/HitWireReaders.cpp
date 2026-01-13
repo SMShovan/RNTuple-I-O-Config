@@ -313,12 +313,12 @@ double readSOA_topObject_perDataProduct(const std::string& fileName, int nThread
 
 // Add traverse for SOAHit, SOAWire, std::vector<SOAROI>.
 void traverse(const SOAHit& hit) {
-    volatile float sink = hit.PeakAmplitude; (void)sink;
+    volatile float sink = hit.fPeakAmplitude; (void)sink;
 }
 
 void traverse(const SOAWire& wire) {
-    volatile unsigned int sink = wire.Channel; (void)sink;
-    for (const auto& roi : wire.ROIs) {
+    volatile unsigned int sink = wire.fWire_Channel; (void)sink;
+    for (const auto& roi : wire.fSignalROI) {
         if (!roi.data.empty()) {
             volatile float sink2 = roi.data[0]; (void)sink2;
         }
@@ -326,7 +326,7 @@ void traverse(const SOAWire& wire) {
 }
 
 void traverse(const SOAWireBase& wire) {
-    volatile unsigned int sink = wire.Channel; (void)sink;
+    volatile unsigned int sink = wire.fWire_Channel; (void)sink;
 }
 
 // Group 4 readers
@@ -661,11 +661,11 @@ void traverse(const AOSUnionRow& row) {
 
 void traverse(const EventSOA& event) {
     for (size_t i = 0; i < event.hits.EventIDs.size(); ++i) {
-        volatile float sink = event.hits.PeakAmplitudes[i]; (void)sink;
+        volatile float sink = event.hits.fPeakAmplitude[i]; (void)sink;
     }
     for (size_t w = 0; w < event.wires.EventIDs.size(); ++w) {
-        volatile unsigned int sink = event.wires.Channels[w]; (void)sink;
-        for (const auto& roi : event.wires.ROIs[w]) {
+        volatile unsigned int sink = event.wires.fWire_Channel[w]; (void)sink;
+        for (const auto& roi : event.wires.fSignalROI[w]) {
             if (!roi.data.empty()) {
                 volatile float sink2 = roi.data[0]; (void)sink2;
             }
@@ -675,14 +675,14 @@ void traverse(const EventSOA& event) {
 
 void traverse(const SOAHitVector& hits) {
     for (size_t i = 0; i < hits.EventIDs.size(); ++i) {
-        volatile float sink = hits.PeakAmplitudes[i]; (void)sink;
+        volatile float sink = hits.fPeakAmplitude[i]; (void)sink;
     }
 }
 
 void traverse(const SOAWireVector& wires) {
     for (size_t w = 0; w < wires.EventIDs.size(); ++w) {
-        volatile unsigned int sink = wires.Channels[w]; (void)sink;
-        for (const auto& roi : wires.ROIs[w]) {
+        volatile unsigned int sink = wires.fWire_Channel[w]; (void)sink;
+        for (const auto& roi : wires.fSignalROI[w]) {
             if (!roi.data.empty()) {
                 volatile float sink2 = roi.data[0]; (void)sink2;
             }
@@ -692,6 +692,6 @@ void traverse(const SOAWireVector& wires) {
 
 void traverse(const std::vector<SOAWireBase>& wires) {
     for (const auto& w : wires) {
-        volatile unsigned int sink = w.Channel; (void)sink;
+        volatile unsigned int sink = w.fWire_Channel; (void)sink;
     }
 }
