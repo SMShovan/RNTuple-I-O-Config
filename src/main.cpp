@@ -69,9 +69,8 @@ static void print_file_sizes_table(const std::string& title,
 
 int main(int argc, char** argv) {
     ROOT::EnableThreadSafety();
-    //int nThreads = std::thread::hardware_concurrency();
-    std::cout << "nThreads: " << std::thread::hardware_concurrency() << std::endl;
-    int nThreads = 8;
+    int nThreads = std::thread::hardware_concurrency();
+    std::cout << "nThreads: " << nThreads << std::endl;
     ROOT::EnableImplicitMT(nThreads);
     gSystem->Load("libWireDict");
     
@@ -86,7 +85,11 @@ int main(int argc, char** argv) {
     int readerMask = -1; // -1 means run all
     bool runAOS = true;
     bool runSOA = true;
-    int iter = 1;
+    int iter = 3;
+    bool runScaling = false;
+    int scalingMaxThreads = 32;
+    int scalingIter = 3;
+    int scalingEvents = 10000;
 
     // Very simple CLI parsing: supports --writer-mask, --reader-mask, --aos-only, --soa-only, --iter
     for (int i = 1; i < argc; ++i) {
@@ -108,11 +111,34 @@ int main(int argc, char** argv) {
             runAOS = false;
         } else if (arg == "--iter" && i + 1 < argc) {
             iter = std::max(1, std::atoi(argv[++i]));
+        } else if (arg == "--scaling") {
+            runScaling = true;
+        } else if (arg == "--scaling-max-threads" && i + 1 < argc) {
+            scalingMaxThreads = std::max(1, std::atoi(argv[++i]));
+        } else if (arg == "--scaling-iter" && i + 1 < argc) {
+            scalingIter = std::max(1, std::atoi(argv[++i]));
+        } else if (arg == "--scaling-events" && i + 1 < argc) {
+            scalingEvents = std::max(1, std::atoi(argv[++i]));
         }
     }
     
     // Create output directory if it doesn't exist
     std::filesystem::create_directories(kOutputDir);
+
+    // Optional: scaling study (write time vs thread count), generates:
+    // - ../experiments/aos_scaling_plot.pdf
+    // - ../experiments/soa_scaling_plot.pdf
+    if (runScaling) {
+        if (runAOS) {
+            auto aos_scaling = benchmarkAOSScaling(scalingMaxThreads, scalingIter, scalingEvents, writerMask);
+            visualize_aos_scaling(aos_scaling);
+        }
+        if (runSOA) {
+            auto soa_scaling = benchmarkSOAScaling(scalingMaxThreads, scalingIter, scalingEvents, writerMask);
+            visualize_soa_scaling(soa_scaling);
+        }
+        return 0;
+    }
 
     // Commented: AOS writer/reader benchmarks
     std::vector<WriterResult> aos_writer_results;
@@ -204,9 +230,6 @@ int main(int argc, char** argv) {
         visualize_comparison_reader_results(aos_reader_results, soa_reader_results);
         visualize_comparison_file_sizes(aos_file_sizes, soa_file_sizes);
     }
-
-    // auto aos_scaling = benchmarkAOSScaling(32, 3);
-    // visualize_aos_scaling(aos_scaling);
 
     return 0;
 }

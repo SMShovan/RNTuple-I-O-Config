@@ -107,17 +107,23 @@ static double executeInParallel(int totalEvents, int nThreads, const std::functi
 
 // One-pass implementation with single EventAOS ntuple (matches reader expectations)
 double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    double setupTime = 0.0;
-    double executeTime = 0.0;
-    double teardownTime = 0.0;
+    // NOTE: Detailed timing instrumentation intentionally kept (commented out) so we can
+    // re-enable it later without re-implementing. It is disabled to avoid impacting
+    // benchmark behavior/overhead relative to the other writer variants.
+    //
+    // double setupTime = 0.0;
+    // double executeTime = 0.0;
+    // double teardownTime = 0.0;
+    // double workerSumTime = 0.0;
+    // // per-thread subphase timing outputs (visible outside inner scope for aggregation)
+    // std::vector<double> dataGenTimes(nThreads, 0.0), serializeTimes(nThreads, 0.0),
+    //                   flushColumnsTimes(nThreads, 0.0), flushClusterTimes(nThreads, 0.0);
+    //
+    // TStopwatch swTeardown;
     double workerSumTime = 0.0;
-    // per-thread subphase timing outputs (visible outside inner scope for aggregation)
-    std::vector<double> dataGenTimes(nThreads, 0.0), serializeTimes(nThreads, 0.0), flushColumnsTimes(nThreads, 0.0), flushClusterTimes(nThreads, 0.0);
-
-    TStopwatch swTeardown;
     {
         // Time 1: Writer and thread-local setup
-        TStopwatch swSetup; swSetup.Start();
+        // TStopwatch swSetup; swSetup.Start();
 
         auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
         std::mutex mutex;
@@ -138,47 +144,28 @@ double AOS_event_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerEve
         }
 
         auto workFunc = [&](int first, int last, unsigned seed, int th) {
-            return RunAOS_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire,
-                &dataGenTimes[th], &serializeTimes[th], &flushColumnsTimes[th], &flushClusterTimes[th]);
+            // Instrumentation version (kept for later):
+            // return RunAOS_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire,
+            //     &dataGenTimes[th], &serializeTimes[th], &flushColumnsTimes[th], &flushClusterTimes[th]);
+
+            // Benchmark version (no extra timing bookkeeping):
+            return RunAOS_event_allDataProductWorkFunc(first, last, seed, *contexts[th], *entries[th], token, mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
         };
 
-        swSetup.Stop();
-        setupTime = swSetup.RealTime();
+        // swSetup.Stop();
+        // setupTime = swSetup.RealTime();
 
         // Time 2: Parallel dispatch and timing (wall-clock)
-        TStopwatch swExec; swExec.Start();
-        double launchT=0.0, waitT=0.0, wallT=0.0;
-        workerSumTime = executeInParallel(numEvents, nThreads, workFunc, &launchT, &waitT, &wallT);
-        swExec.Stop();
-        executeTime = swExec.RealTime();
+        // TStopwatch swExec; swExec.Start();
+        // double launchT=0.0, waitT=0.0, wallT=0.0;
+        // workerSumTime = executeInParallel(numEvents, nThreads, workFunc, &launchT, &waitT, &wallT);
+        // swExec.Stop();
+        // executeTime = swExec.RealTime();
+        workerSumTime = executeInParallel(numEvents, nThreads, workFunc);
 
         // Time 3: Destruction and implicit final flushes
-        swTeardown.Start();
+        // swTeardown.Start();
     }
-    swTeardown.Stop();
-    teardownTime = swTeardown.RealTime();
-
-    // Optional: print detailed timings
-    std::cout << std::fixed << std::setprecision(6)
-              << "AOS_event_allDataProduct timings - setup: " << setupTime
-              << " s, execute: " << executeTime
-              << " s, teardown: " << teardownTime
-              << " s, workerSum: " << workerSumTime << " s" << std::endl;
-
-    // Aggregate and print worker subphase timings
-    // Note: these are sums across threads (not wall times)
-    double dataGenTotal = 0.0, serializeTotal = 0.0, flushColumnsTotal = 0.0, flushClusterTotal = 0.0;
-    for (int th = 0; th < nThreads; ++th) {
-        dataGenTotal += dataGenTimes[th];
-        serializeTotal += serializeTimes[th];
-        flushColumnsTotal += flushColumnsTimes[th];
-        flushClusterTotal += flushClusterTimes[th];
-    }
-    std::cout << std::fixed << std::setprecision(6)
-              << "AOS_event_allDataProduct worker subphases - dataGen: " << dataGenTotal
-              << " s, serialize: " << serializeTotal
-              << " s, flushColumns: " << flushColumnsTotal
-              << " s, flushCluster: " << flushClusterTotal << " s" << std::endl;
 
     return workerSumTime;
 }
@@ -425,7 +412,8 @@ double AOS_spill_perGroup(int numEvents, int numSpills, int hitsPerEvent, int wi
 
 
 double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    int totalEntries = numEvents * hitsPerEvent;
+    const int K = (hitsPerEvent > wiresPerEvent) ? hitsPerEvent : wiresPerEvent;
+    int totalEntries = numEvents * K;
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -446,7 +434,7 @@ double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
         wiresEntries[th] = wiresContexts[th]->CreateEntry();
     }
     auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, roisPerWire);
+        return RunAOS_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime;
@@ -454,7 +442,8 @@ double AOS_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
 
 
 double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    int totalEntries = numEvents * hitsPerEvent;
+    const int K = (hitsPerEvent > wiresPerEvent) ? hitsPerEvent : wiresPerEvent;
+    int totalEntries = numEvents * K;
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -480,7 +469,7 @@ double AOS_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
         roisEntries[th] = roisContexts[th]->CreateEntry();
     }
     auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunAOS_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
+        return RunAOS_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime;
@@ -576,7 +565,7 @@ double AOS_element_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, 
     return totalTime;
 } 
 
-std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, int numSpills, const std::string& outputDir, int mask = -1) {
+std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, int numSpills, const std::string& outputDir, int mask, bool measureWallTime) {
     std::vector<WriterResult> results;
     
     // Create progressive table printer
@@ -592,8 +581,15 @@ std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hits
         try {
             std::vector<double> times;
             for (int i = 0; i < iter; ++i) {
-                double t = func(args...);
-                times.push_back(t);
+                if (measureWallTime) {
+                    TStopwatch sw; sw.Start();
+                    (void)func(args...);
+                    sw.Stop();
+                    times.push_back(sw.RealTime());
+                } else {
+                    double t = func(args...);
+                    times.push_back(t);
+                }
             }
             double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
             double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
@@ -635,12 +631,22 @@ std::vector<WriterResult> outAOS(int nThreads, int iter, int numEvents, int hits
     return results;
 } 
 
-std::map<std::string, std::vector<std::pair<int, double>>> benchmarkAOSScaling(int maxThreads, int iter) {
-    std::vector<int> threadCounts = {1, 2, 4, 8, 16, 32};
+// Forward declaration (defined later in this file)
+std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, int numSpills, const std::string& outputDir, int mask, bool measureWallTime);
+
+std::map<std::string, std::vector<std::pair<int, double>>> benchmarkAOSScaling(int maxThreads, int iter, int numEvents, int mask) {
+    // Powers of two up to maxThreads (e.g. maxThreads=10 -> 1,2,4,8)
+    std::vector<int> threadCounts;
+    for (int t = 1; t > 0 && t <= maxThreads; t *= 2) {
+        threadCounts.push_back(t);
+    }
     std::map<std::string, std::vector<std::pair<int, double>>> data;
+    // Ensure output directory exists (ROOT/TFile won't create parent dirs)
+    std::filesystem::create_directories("./output_scaling");
     for (int threads : threadCounts) {
         ROOT::EnableImplicitMT(threads);
-    auto results = outAOS(threads, iter, 1000000, 100, 100, 10, 10, "./output");
+        // Use a separate output dir to avoid mixing with normal benchmark outputs
+        auto results = outAOS(threads, iter, numEvents, 100, 100, 10, 10, "./output_scaling", mask, /*measureWallTime=*/true);
         for (const auto& res : results) {
             data[res.label].emplace_back(threads, res.avg);
         }
@@ -648,6 +654,27 @@ std::map<std::string, std::vector<std::pair<int, double>>> benchmarkAOSScaling(i
     ROOT::DisableImplicitMT();
     return data;
 } 
+
+std::map<std::string, std::vector<std::pair<int, double>>> benchmarkSOAScaling(int maxThreads, int iter, int numEvents, int mask) {
+    // Powers of two up to maxThreads (e.g. maxThreads=10 -> 1,2,4,8)
+    std::vector<int> threadCounts;
+    for (int t = 1; t > 0 && t <= maxThreads; t *= 2) {
+        threadCounts.push_back(t);
+    }
+    std::map<std::string, std::vector<std::pair<int, double>>> data;
+    // Ensure output directory exists (ROOT/TFile won't create parent dirs)
+    std::filesystem::create_directories("./output_scaling");
+    for (int threads : threadCounts) {
+        ROOT::EnableImplicitMT(threads);
+        // Use a separate output dir to avoid mixing with normal benchmark outputs
+        auto results = outSOA(threads, iter, numEvents, 100, 100, 10, 10, "./output_scaling", mask, /*measureWallTime=*/true);
+        for (const auto& res : results) {
+            data[res.label].emplace_back(threads, res.avg);
+        }
+    }
+    ROOT::DisableImplicitMT();
+    return data;
+}
 
 // Group 2: SOA spill functions - complete perData and perGroup
 double SOA_spill_perDataProduct(int numEvents, int numSpills, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
@@ -782,7 +809,8 @@ double SOA_element_allDataProduct(int numEvents, int hitsPerEvent, int wiresPerE
 
 // Group 3: Complete topObject perGroup
 double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    int totalEntries = numEvents * hitsPerEvent;
+    const int K = (hitsPerEvent > wiresPerEvent) ? hitsPerEvent : wiresPerEvent;
+    int totalEntries = numEvents * K;
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -808,7 +836,7 @@ double SOA_topObject_perGroup(int numEvents, int hitsPerEvent, int wiresPerEvent
         roisEntries[th] = roisContexts[th]->CreateEntry();
     }
     auto workFunc = [&](int first, int last, unsigned seed, int th) -> double {
-        return RunSOA_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, roisPerWire);
+        return RunSOA_topObject_perGroupWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], *roisContexts[th], *roisEntries[th], mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime;
@@ -912,7 +940,8 @@ double SOA_spill_allDataProduct(int numEvents, int numSpills, int hitsPerEvent, 
 }
 
 double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, const std::string& fileName, int nThreads) {
-    int totalEntries = numEvents * hitsPerEvent;
+    const int K = (hitsPerEvent > wiresPerEvent) ? hitsPerEvent : wiresPerEvent;
+    int totalEntries = numEvents * K;
     auto file = std::make_unique<TFile>(fileName.c_str(), "RECREATE");
     std::mutex mutex;
     ROOT::RNTupleWriteOptions options;
@@ -935,13 +964,13 @@ double SOA_topObject_perDataProduct(int numEvents, int hitsPerEvent, int wiresPe
         wiresEntries[th] = wiresContexts[th]->CreateEntry();
     }
     auto workFunc = [&](int first, int last, unsigned seed, int th) {
-        return RunSOA_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, roisPerWire);
+        return RunSOA_topObject_perDataProductWorkFunc(first, last, seed, *hitsContexts[th], *hitsEntries[th], *wiresContexts[th], *wiresEntries[th], mutex, hitsPerEvent, wiresPerEvent, roisPerWire);
     };
     double totalTime = executeInParallel(totalEntries, nThreads, workFunc);
     return totalTime;
 } 
 
-std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, int numSpills, const std::string& outputDir, int mask = -1) {
+std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hitsPerEvent, int wiresPerEvent, int roisPerWire, int numSpills, const std::string& outputDir, int mask, bool measureWallTime) {
     std::vector<WriterResult> results;
     
     // Create progressive table printer
@@ -957,8 +986,15 @@ std::vector<WriterResult> outSOA(int nThreads, int iter, int numEvents, int hits
         try {
             std::vector<double> times;
             for (int i = 0; i < iter; ++i) {
-                double t = func(args...);
-                times.push_back(t);
+                if (measureWallTime) {
+                    TStopwatch sw; sw.Start();
+                    (void)func(args...);
+                    sw.Stop();
+                    times.push_back(sw.RealTime());
+                } else {
+                    double t = func(args...);
+                    times.push_back(t);
+                }
             }
             double avg = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
             double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);

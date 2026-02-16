@@ -57,8 +57,8 @@ double RunAOS_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::E
 HitIndividual generateSingleHit(long long id, std::mt19937& rng);
 WireIndividual generateSingleWire(long long id, int roisPerWire, std::mt19937& rng);
 
-double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
-double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire); 
+double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire); 
 
 struct WireBase {
     long long EventID;
@@ -117,16 +117,16 @@ double RunSOA_spill_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::E
 
 // Update declarations for AOS_topObject_perDataProductWorkFunc and AOS_topObject_perGroupWorkFunc to use REntry without tokens
 
-double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
-double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire);
+double RunAOS_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunAOS_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
 // Element work funcs
 double RunSOA_element_hitsWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex);
 double RunSOA_element_wiresWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex);
 double RunSOA_element_roisWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire);
 double RunSOA_element_wireROIFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& context, ROOT::REntry& entry, std::mutex& mutex, int roisPerWire); 
 
-double RunSOA_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int roisPerWire);
-double RunSOA_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int roisPerWire); 
+double RunSOA_topObject_perDataProductWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire);
+double RunSOA_topObject_perGroupWorkFunc(int first, int last, unsigned seed, ROOT::Experimental::RNTupleFillContext& hitsContext, ROOT::REntry& hitsEntry, ROOT::Experimental::RNTupleFillContext& wiresContext, ROOT::REntry& wiresEntry, ROOT::Experimental::RNTupleFillContext& roisContext, ROOT::REntry& roisEntry, std::mutex& mutex, int hitsPerEvent, int wiresPerEvent, int roisPerWire); 
 
 // Union models (allDataProduct) and work functions
 auto CreateAOSUnionModelAndToken(const std::string& fieldName) -> std::pair<std::unique_ptr<ROOT::RNTupleModel>, ROOT::RFieldToken>;

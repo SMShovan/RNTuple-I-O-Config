@@ -1,131 +1,68 @@
-Started at: Mon Jan 12 23:48:48 CST 2026
+Started at: Thu Jan 15 11:39:09 CST 2026
 nThreads: 10
-AOS_event_allDataProduct timings - setup: 0.007903 s, execute: 3.736021 s, teardown: 0.732363 s, workerSum: 4.547865 s
-AOS_event_allDataProduct worker subphases - dataGen: 24.153364 s, serialize: 4.527798 s, flushColumns: 0.000000 s, flushCluster: 0.000000 s
 
 AOS Writer Benchmarks (Progressive Results)
 Writer                          Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 ----------------------------------------------------------------------------------------------------
-AOS_event_allDataProduct        4.547865        0.000000        4.547865    -           -           
-AOS_event_perDataProduct        4.440500        0.000000        4.440500    -           -           
-AOS_event_perGroup              5.072571        0.000000        5.072571    -           -           
-AOS_spill_allDataProduct        4.516134        0.000000        4.516134    -           -           
-AOS_spill_perDataProduct        4.528864        0.000000        4.528864    -           -           
-AOS_spill_perGroup              5.146585        0.000000        5.146585    -           -           
-AOS_topObject_allDataProduct    6.544971        0.000000        6.544971    -           -           
-AOS_topObject_perDataProduct    7.350669        0.000000        7.350669    -           -           
-AOS_topObject_perGroup          7.859150        0.000000        7.859150    -           -           
-AOS_element_allDataProduct      70.648085       0.000000        70.648085   -           -           
-AOS_element_perDataProduct      59.094748       0.000000        59.094748   -           -           
-AOS_element_perGroup            65.749519       0.000000        65.749519   -           -           
+AOS_event_allDataProduct        25.6153         0.212844        25.5687     25.4296     25.8475     
+AOS_event_perDataProduct        25.4308         0.0170719       25.4161     25.4495     25.4268     
+AOS_event_perGroup              31.1015         0.528241        30.8414     31.7093     30.7537     
+AOS_spill_allDataProduct        25.5886         0.0301182       25.5801     25.5637     25.6221     
+AOS_spill_perDataProduct        25.609          0.0612343       25.5886     25.6779     25.5607     
+AOS_spill_perGroup              24.5496         0.698585        24.2266     25.3513     24.071      
+AOS_topObject_allDataProduct    30.506          0.0659832       30.5179     30.4349     30.5653     
+AOS_topObject_perDataProduct    28.2059         0.836685        27.6905     27.756      29.1713     
+AOS_topObject_perGroup          39.6972         0.181208        39.9009     39.5541     39.6366     
+AOS_element_allDataProduct      46.2585         0.0732073       46.1844     46.2603     46.3308     
 ----------------------------------------------------------------------------------------------------
 
-Info in <TCanvas::Print>: pdf file ../experiments/aos_write_times.pdf has been created
-AOS Write times plot saved to ../experiments/aos_write_times.pdf
 
-AOS Reader Benchmarks (Progressive Results)
-Reader                          Cold (s)        Warm Avg (s)    Warm StdDev (s) Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
---------------------------------------------------------------------------------------------------------------------
-AOS_event_allDataProduct        0.128714        -               -               0.128714    -           -           
-AOS_event_perDataProduct        0.133987        -               -               0.133987    -           -           
-AOS_event_perGroup              0.143166        -               -               0.143166    -           -           
-AOS_spill_allDataProduct        0.128996        -               -               0.128996    -           -           
-AOS_spill_perDataProduct        0.129869        -               -               0.129869    -           -           
-AOS_spill_perGroup              0.147441        -               -               0.147441    -           -           
-AOS_topObject_allDataProduct    0.156298        -               -               0.156298    -           -           
-AOS_topObject_perDataProduct    0.139663        -               -               0.139663    -           -           
-AOS_topObject_perGroup          0.159974        -               -               0.159974    -           -           
-AOS_element_allDataProduct      0.516852        -               -               0.516852    -           -           
-AOS_element_perDataProduct      0.146105        -               -               0.146105    -           -           
-AOS_element_perGroup            0.134774        -               -               0.134774    -           -           
---------------------------------------------------------------------------------------------------------------------
-
-Info in <TCanvas::Print>: pdf file ../experiments/aos_cold_times.pdf has been created
-Info in <TCanvas::Print>: pdf file ../experiments/aos_warm_times.pdf has been created
-AOS Read times plots saved to ../experiments/aos_cold_times.pdf and ../experiments/aos_warm_times.pdf
-
-AOS File Sizes (MB)
-File                                    Size (MB)       
---------------------------------------------------------
-AOS_event_allDataProduct                359.954127      
-AOS_event_perDataProduct                359.973851      
-AOS_event_perGroup                      361.689359      
-AOS_spill_allDataProduct                359.954121      
-AOS_spill_perDataProduct                359.973921      
-AOS_spill_perGroup                      361.795125      
-AOS_topObject_perDataProduct            359.985392      
-AOS_topObject_perGroup                  361.708769      
-AOS_topObject_allDataProduct            361.700410      
-AOS_element_perDataProduct              360.770601      
-AOS_element_perGroup                    361.687114      
-AOS_element_allDataProduct              367.906067      
---------------------------------------------------------
-Info in <TCanvas::Print>: pdf file ../experiments/aos_file_sizes.pdf has been created
-AOS File sizes plot saved to ../experiments/aos_file_sizes.pdf
-
-SOA Writer Benchmarks (Progressive Results)
-SOA Writer                      Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
+AOS Writer Benchmarks (Progressive Results)
+Writer                          Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
 ----------------------------------------------------------------------------------------------------
-SOA_event_allDataProduct        3.871736        0.000000        3.871736    -           -           
-SOA_event_perDataProduct        3.802285        0.000000        3.802285    -           -           
-SOA_event_perGroup              3.834630        0.000000        3.834630    -           -           
-SOA_spill_allDataProduct        3.975540        0.000000        3.975540    -           -           
-SOA_spill_perDataProduct        3.978194        0.000000        3.978194    -           -           
-SOA_spill_perGroup              4.010535        0.000000        4.010535    -           -           
-SOA_topObject_allDataProduct    5.607893        0.000000        5.607893    -           -           
-SOA_topObject_perDataProduct    6.843465        0.000000        6.843465    -           -           
-SOA_topObject_perGroup          6.754050        0.000000        6.754050    -           -           
-SOA_element_allDataProduct      71.695650       0.000000        71.695650   -           -           
-SOA_element_perDataProduct      59.384414       0.000000        59.384414   -           -           
-SOA_element_perGroup            73.824957       0.000000        73.824957   -           -           
+AOS_event_allDataProduct        14.3388         0.00756632      14.3425     14.3439     14.3301     
+AOS_event_perDataProduct        14.4457         0.0323286       14.466      14.4628     14.4085     
+AOS_event_perGroup              17.0418         0.0598883       16.9772     17.0955     17.0525     
+AOS_spill_allDataProduct        14.5401         0.0304787       14.5062     14.565      14.5493     
+AOS_spill_perDataProduct        14.6287         0.0354977       14.6042     14.6124     14.6694     
+AOS_spill_perGroup              14.328          0.458787        14.8564     14.0966     14.0309     
+AOS_topObject_allDataProduct    17.0561         0.0417892       17.0079     17.0788     17.0817     
+AOS_topObject_perDataProduct    15.816          0.124258        15.7914     15.7058     15.9507     
+AOS_topObject_perGroup          22.4514         0.163046        22.4808     22.2756     22.5977     
+AOS_element_allDataProduct      25.7664         0.323237        25.5163     25.6514     26.1314     
 ----------------------------------------------------------------------------------------------------
 
-Info in <TCanvas::Print>: pdf file ../experiments/soa_write_times.pdf has been created
-SOA Write times plot saved to ../experiments/soa_write_times.pdf
 
-SOA Reader Benchmarks (Progressive Results)
-SOA Reader                      Cold (s)        Warm Avg (s)    Warm StdDev (s) Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
---------------------------------------------------------------------------------------------------------------------
-SOA_event_allDataProduct        0.168221        -               -               0.168221    -           -           
-SOA_event_perDataProduct        0.136182        -               -               0.136182    -           -           
-SOA_event_perGroup              0.119780        -               -               0.119780    -           -           
-SOA_spill_allDataProduct        0.151162        -               -               0.151162    -           -           
-SOA_spill_perDataProduct        0.148951        -               -               0.148951    -           -           
-SOA_spill_perGroup              0.129781        -               -               0.129781    -           -           
-SOA_topObject_allDataProduct    0.176935        -               -               0.176935    -           -           
-SOA_topObject_perDataProduct    0.145459        -               -               0.145459    -           -           
-SOA_topObject_perGroup          0.147465        -               -               0.147465    -           -           
-SOA_element_allDataProduct      0.516004        -               -               0.516004    -           -           
-SOA_element_perDataProduct      0.154538        -               -               0.154538    -           -           
-SOA_element_perGroup            0.239794        -               -               0.239794    -           -           
---------------------------------------------------------------------------------------------------------------------
+AOS Writer Benchmarks (Progressive Results)
+Writer                          Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
+----------------------------------------------------------------------------------------------------
+AOS_event_allDataProduct        7.77372         0.315289        8.135       7.55419     7.63195     
+AOS_event_perDataProduct        7.62556         0.0383771       7.66904     7.5964      7.61124     
+AOS_event_perGroup              10.0172         1.06004         9.01843     9.90377     11.1294     
+AOS_spill_allDataProduct        7.68647         0.070627        7.60725     7.74283     7.70934     
+AOS_spill_perDataProduct        7.61586         0.0700996       7.56486     7.58692     7.69579     
+AOS_spill_perGroup              7.68281         0.384179        7.43816     7.48465     8.12561     
+AOS_topObject_allDataProduct    9.31585         0.0184768       9.33158     9.2955      9.32046     
+AOS_topObject_perDataProduct    8.4236          0.0387958       8.4012      8.4012      8.4684      
+AOS_topObject_perGroup          11.8146         0.0996062       11.8498     11.8918     11.7021     
+AOS_element_allDataProduct      15.254          0.170977        15.2909     15.0676     15.4036     
+----------------------------------------------------------------------------------------------------
 
-Info in <TCanvas::Print>: pdf file ../experiments/soa_cold_times.pdf has been created
-Info in <TCanvas::Print>: pdf file ../experiments/soa_warm_times.pdf has been created
-SOA Read times plots saved to ../experiments/soa_cold_times.pdf and ../experiments/soa_warm_times.pdf
 
-SOA File Sizes (MB)
-File                                    Size (MB)       
---------------------------------------------------------
-SOA_event_allDataProduct                348.827868      
-SOA_event_perDataProduct                348.847651      
-SOA_event_perGroup                      348.849264      
-SOA_spill_allDataProduct                348.827873      
-SOA_spill_perDataProduct                348.847700      
-SOA_spill_perGroup                      348.849317      
-SOA_topObject_perDataProduct            348.859367      
-SOA_topObject_perGroup                  348.856399      
-SOA_topObject_allDataProduct            348.860257      
-SOA_element_perDataProduct              348.885282      
-SOA_element_perGroup                    348.894030      
-SOA_element_allDataProduct              367.906097      
---------------------------------------------------------
-Info in <TCanvas::Print>: pdf file ../experiments/soa_file_sizes.pdf has been created
-SOA File sizes plot saved to ../experiments/soa_file_sizes.pdf
-Info in <TCanvas::Print>: pdf file ../experiments/comparison_write_times.pdf has been created
-Comparison write times plot saved to ../experiments/comparison_write_times.pdf
-Info in <TCanvas::Print>: pdf file ../experiments/comparison_cold_times.pdf has been created
-Info in <TCanvas::Print>: pdf file ../experiments/comparison_warm_times.pdf has been created
-Comparison read times plots saved to ../experiments/comparison_cold_times.pdf and ../experiments/comparison_warm_times.pdf
-Info in <TCanvas::Print>: pdf file ../experiments/comparison_file_sizes.pdf has been created
-Comparison file sizes plot saved to ../experiments/comparison_file_sizes.pdf
+AOS Writer Benchmarks (Progressive Results)
+Writer                          Average (s)     StdDev (s)      Itr 1 (s)   Itr 2 (s)   Itr 3 (s)   
+----------------------------------------------------------------------------------------------------
+AOS_event_allDataProduct        4.63846         0.0655018       4.70701     4.5765      4.63187     
+AOS_event_perDataProduct        4.65086         0.0367563       4.68638     4.65321     4.61298     
+AOS_event_perGroup              5.40733         0.0185741       5.42625     5.38912     5.40664     
+AOS_spill_allDataProduct        4.58932         0.0363266       4.59091     4.62482     4.55222     
+AOS_spill_perDataProduct        4.58133         0.0332242       4.61048     4.58835     4.54515     
+AOS_spill_perGroup              4.5901          0.0901868       4.68182     4.50153     4.58695     
+AOS_topObject_allDataProduct    5.53953         0.0438661       5.58092     5.49355     5.54412     
+AOS_topObject_perDataProduct    5.09684         0.061943        5.10085     5.15668     5.03299     
+AOS_topObject_perGroup          6.88393         0.0348027       6.90791     6.89988     6.84402     
+AOS_element_allDataProduct      20.7913         0.227946        20.6605     21.0545     20.659      
+----------------------------------------------------------------------------------------------------
+
+Info in <TCanvas::Print>: pdf file ../experiments/aos_scaling_plot.pdf has been created
+AOS Scaling plot saved to ../experiments/aos_scaling_plot.pdf

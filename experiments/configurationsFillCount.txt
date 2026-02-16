@@ -1,0 +1,107 @@
+================================================================================
+  RNTuple Fill Count Configurations
+================================================================================
+  Parameters:
+    numEvents      = 100,000
+    hitsPerEvent   = 100
+    wiresPerEvent  = 100
+    roisPerWire    = 10
+    numSpills      = 10
+================================================================================
+
+  Fill count formulas (per event):
+    Event      : 1
+    Spill      : numSpills = 10
+    TopObject  : max(hitsPerEvent, wiresPerEvent) = 100
+    Element    : hitsPerEvent + wiresPerEvent + wiresPerEvent * roisPerWire
+               = 100 + 100 + 100*10 = 1,200
+
+  NTuple split effect on fills per logical fill:
+    allDataProduct : 1 ntuple  -> 1 FillNoFlush call per logical fill
+    perDataProduct : 2 ntuples -> 2 FillNoFlush calls per logical fill
+    perGroup       : 3 ntuples -> 3 FillNoFlush calls per logical fill
+
+  Exception — Element-wise perDataProduct:
+    Wire info is bundled into each wireROI/roi row (no separate wire fill).
+    Fills per event = H + W*R = 100 + 1,000 = 1,100  (not 1,200 * 2)
+
+================================================================================
+  AOS (Array-of-Structs) — Total FillNoFlush Calls
+================================================================================
+
+               | allDataProduct  | perDataProduct  | perGroup
+  -------------+-----------------+-----------------+-----------------
+  Event        |     100,000     |     200,000     |     300,000
+  Spill        |   1,000,000     |   2,000,000     |   3,000,000
+  TopObject    |  10,000,000     |  20,000,000     |  30,000,000
+  Element      | 120,000,000     | 110,000,000     | 120,000,000
+
+  Derivations (AOS):
+    Event-allDataProduct      : 100,000 * 1                    = 100,000
+    Event-perDataProduct      : 100,000 * 2                    = 200,000
+    Event-perGroup            : 100,000 * 3                    = 300,000
+
+    Spill-allDataProduct      : 100,000 * 10 * 1              = 1,000,000
+    Spill-perDataProduct      : 100,000 * 10 * 2              = 2,000,000
+    Spill-perGroup            : 100,000 * 10 * 3              = 3,000,000
+
+    TopObject-allDataProduct  : 100,000 * 100 * 1             = 10,000,000
+    TopObject-perDataProduct  : 100,000 * 100 * 2             = 20,000,000
+    TopObject-perGroup        : 100,000 * 100 * 3             = 30,000,000
+
+    Element-allDataProduct    : 100,000 * (100+100+1000) * 1  = 120,000,000
+    Element-perDataProduct    : 100,000 * (100+1000)           = 110,000,000
+      (wire bundled into wireROI — no separate wire fill)
+    Element-perGroup          : 100,000 * (100+100+1000)       = 120,000,000
+      (hits, wires, rois each in own ntuple)
+
+================================================================================
+  SOA (Struct-of-Arrays) — Total FillNoFlush Calls
+================================================================================
+
+               | allDataProduct  | perDataProduct  | perGroup
+  -------------+-----------------+-----------------+-----------------
+  Event        |     100,000     |     200,000     |     300,000
+  Spill        |   1,000,000     |   2,000,000     |   3,000,000
+  TopObject    |  10,000,000     |  20,000,000     |  30,000,000
+  Element      | 120,000,000     | 110,000,000     | 120,000,000
+
+  Derivations (SOA):
+    Event-allDataProduct      : 100,000 * 1                    = 100,000
+    Event-perDataProduct      : 100,000 * 2                    = 200,000
+    Event-perGroup            : 100,000 * 3                    = 300,000
+
+    Spill-allDataProduct      : 100,000 * 10 * 1              = 1,000,000
+    Spill-perDataProduct      : 100,000 * 10 * 2              = 2,000,000
+    Spill-perGroup            : 100,000 * 10 * 3              = 3,000,000
+
+    TopObject-allDataProduct  : 100,000 * 100 * 1             = 10,000,000
+    TopObject-perDataProduct  : 100,000 * 100 * 2             = 20,000,000
+    TopObject-perGroup        : 100,000 * 100 * 3             = 30,000,000
+
+    Element-allDataProduct    : 100,000 * (100+100+1000) * 1  = 120,000,000
+    Element-perDataProduct    : 100,000 * (100+1000)           = 110,000,000
+      (wire info embedded in roi rows — no separate wire fill)
+    Element-perGroup          : 100,000 * (100+100+1000)       = 120,000,000
+      (hits, wires, rois each in own ntuple)
+
+================================================================================
+  Notes
+================================================================================
+  - AOS and SOA have identical fill counts; they differ only in data layout
+    (AOS stores complete structs per row; SOA stores individual fields per row).
+  - Element-perDataProduct has fewer total fills than Element-allDataProduct
+    because wire metadata is bundled into each wireROI/roi fill (eliminating
+    the separate 100 wire fills per event).
+  - Code references (HitWireWriterHelpers.cpp):
+      Event-allDataProduct     : RunAOS_event_allDataProductWorkFunc (line 363)
+      Event-perDataProduct     : RunAOS_event_perDataProductWorkFunc (line 407)
+      Event-perGroup           : RunAOS_event_perGroupWorkFunc       (line 438)
+      Spill-allDataProduct     : RunAOS_spill_allDataProductWorkFunc (line 483)
+      TopObject-allDataProduct : RunAOS_top_allDataProductWorkFunc   (line 151)
+      TopObject-perDataProduct : RunAOS_topObject_perDataProductWorkFunc (line 595)
+      TopObject-perGroup       : RunAOS_topObject_perGroupWorkFunc   (line 631)
+      Element-allDataProduct   : RunAOS_element_allDataProductWorkFunc (line 198)
+      Element-perDataProduct   : RunAOS_element_perDataProductCombinedWorkFunc (line 789)
+      Element-perGroup         : RunAOS_element_perGroupCombinedWorkFunc (line 929)
+================================================================================

@@ -17,6 +17,8 @@
 #include <TString.h>
 #include <TMultiGraph.h>
 #include <TAxis.h>
+#include <limits>
+#include <cmath>
 
 #include "WriterResult.hpp"
 #include "ReaderResult.hpp"
@@ -312,14 +314,24 @@ void visualize_aos_scaling(const std::map<std::string, std::vector<std::pair<int
         gPad->SetLogx(1);
         TGraph* graph = new TGraph(points.size());
         double maxY = 0;
+        double minX = std::numeric_limits<double>::infinity();
+        double maxX = 0.0;
         for (size_t i = 0; i < points.size(); ++i) {
             graph->SetPoint(i, points[i].first, points[i].second);
             if (points[i].second > maxY) maxY = points[i].second;
+            minX = std::min(minX, static_cast<double>(points[i].first));
+            maxX = std::max(maxX, static_cast<double>(points[i].first));
         }
         graph->SetTitle(("AOS " + label).c_str());
         graph->GetXaxis()->SetTitle("Number of Threads");
         graph->GetYaxis()->SetTitle("Average Time (s)");
         graph->Draw("ALP");
+        // On log-x axes ROOT only labels powers of 10 by default; this makes 2/4/8 show up.
+        graph->GetXaxis()->SetMoreLogLabels(true);
+        graph->GetXaxis()->SetNoExponent(true);
+        if (std::isfinite(minX) && maxX > 0.0) {
+            graph->GetXaxis()->SetLimits(std::max(0.5, minX * 0.9), maxX * 1.1);
+        }
         graph->GetYaxis()->SetRangeUser(0, maxY * 1.1);
         graph->SetMarkerStyle(20);
         graph->SetLineWidth(2);
@@ -534,14 +546,24 @@ void visualize_soa_scaling(const std::map<std::string, std::vector<std::pair<int
         gPad->SetLogx(1);
         TGraph* graph = new TGraph(points.size());
         double maxY = 0;
+        double minX = std::numeric_limits<double>::infinity();
+        double maxX = 0.0;
         for (size_t i = 0; i < points.size(); ++i) {
             graph->SetPoint(i, points[i].first, points[i].second);
             if (points[i].second > maxY) maxY = points[i].second;
+            minX = std::min(minX, static_cast<double>(points[i].first));
+            maxX = std::max(maxX, static_cast<double>(points[i].first));
         }
         graph->SetTitle(("SOA " + label).c_str());
         graph->GetXaxis()->SetTitle("Number of Threads");
         graph->GetYaxis()->SetTitle("Average Time (s)");
         graph->Draw("ALP");
+        // On log-x axes ROOT only labels powers of 10 by default; this makes 2/4/8 show up.
+        graph->GetXaxis()->SetMoreLogLabels(true);
+        graph->GetXaxis()->SetNoExponent(true);
+        if (std::isfinite(minX) && maxX > 0.0) {
+            graph->GetXaxis()->SetLimits(std::max(0.5, minX * 0.9), maxX * 1.1);
+        }
         graph->GetYaxis()->SetRangeUser(0, maxY * 1.1);
         graph->SetMarkerStyle(20);
         graph->SetLineWidth(2);
